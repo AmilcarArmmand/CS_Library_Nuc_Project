@@ -4,7 +4,7 @@
 
 **Team Members:**
 - Amilcar Armmand - [Role/Responsibilities]
-- Kenny Monlina - [Role/Responsibilities]
+- Kenny Molina - [Role/Responsibilities]
 - Jose Gaspar Marin - [Role/Responsibilities]
 
 **Document Version:** Draft v1.0
