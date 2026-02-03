@@ -4,10 +4,6 @@
 
 **Team Members:**
 - Amilcar Armmand - [Role/Responsibilities]
-<<<<<<< HEAD
-=======
-- Kenny Molina - [Role/Responsibilities]
->>>>>>> 918e6f8ca692cfc7781df7716ac6493fed379a1a
 - Jose Gaspar Marin - [Role/Responsibilities]
 - Kenny Monlina - [Role/Responsibilities]
 
