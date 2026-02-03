@@ -803,8 +803,7 @@ Goals:
 - **Term 2:** [Definition]
 
 ### B. References
-- [AI Confidence Framework](link)
-- [Design Brief](link-to-your-design-brief)
+
 - [User Research Summary](link)
 
 ### C. Change Log
