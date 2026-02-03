@@ -357,81 +357,261 @@ Goals:
 ### 5.1 Technology Stack
 
 **Frontend:**
-- HTML/CSS/JavaScript
-- EJS templating
-- Bootstrap or Tailwind CSS for styling
+
+- Terminal-based UI: ncurses (python-ncurses library)
+
+- Python Frameworks: urwid (alternative to ncurses for more complex UIs)
+
+- Graphical Options (if needed): PyGame, Tkinter, or Kivy for simple GUIs
+
+- Touchscreen Support: evdev for touch input handling
+
+- Display Management: fbcp (Framebuffer copy) for secondary display support
 
 **Backend:**
-- Node.js
-- Express.js framework
-- Passport.js for OAuth authentication
+
+- Runtime: Python 3.11+ (optimized for Raspberry Pi 5)
+
+- Framework: Custom service architecture with asyncio
+
+- Authentication: Custom barcode authentication system
+
+- Validation: Pydantic for data validation
+
+- Web Framework (Optional): FastAPI for admin web interface
 
 **Database:**
-- [MongoDB / PostgreSQL]
-- [ODM/ORM if applicable]
+
+- Primary Database: SQLite with aiosqlite for async operations
+
+- Alternative: PostgreSQL with asyncpg for larger deployments
+
+- Cache Layer: Redis (optional for performance)
+
+**Hardware Integration:**
+
+- Raspberry Pi GPIO: RPi.GPIO or gpiozero library
+
+- USB Device Management: pyusb / libusb for scanner control
+
+- Barcode Scanning: python-barcode / pyzbar for barcode decoding
+
+- Touchscreen: evdev for touch input
+
+- Power Management: python-raspi for system monitoring
 
 **Deployment:**
-- Google Cloud Platform (GCP)
-- PM2 for process management
-- Nginx for reverse proxy
+
+- Platform: Raspberry Pi 5 (on-premise)
+
+- OS: Raspberry Pi OS (64-bit) Lite
+
+- Process Management: Systemd for daemon management
+
+- Service Orchestration: Supervisor or systemd services
+
+- Logging: journald (systemd journal) with Python logging integration
+
+- Backup: rsync + cron for automated backups
+
+**Development Tools:**
+
+- Version Control: Git + GitHub
+
+- Package Management: pip + uv (faster Python package installer)
+
+- Environment Management: pipenv or poetry
+
+- Testing: pytest + pytest-asyncio
+
+- IDE: VS Code with SSH remote development
+
+- Debugging: pdb++, remote debugging with VS Code
+
+- Documentation: Sphinx for API documentation
 
 **Third-Party Services:**
-- Google OAuth 2.0
-- [Any other APIs or services you'll use]
+
+- ISBN API: Open Library API via aiohttp
+
+- Fallback API: Google Books API
+
+- No external authentication (self-contained system)
 
 ### 5.2 User Interface Design
 
+**Design Principles:**
+
+- Terminal-First Design: Optimized for 7-inch touchscreen with terminal interface
+
+- Keyboard/Touch Navigation: Support for both keyboard shortcuts and touch taps
+
+- High Contrast: Black/white or custom color schemes for readability
+
+- Minimal Information: Display only essential information at each step
+
+- Progressive Disclosure: Advanced options hidden until needed
+
 **Key Screens:**
-1. **Landing Page** - [Brief description of what users see and can do]
-2. **Dashboard** - [Main interface after login]
-3. **[Core Feature Screen]** - [Description]
-4. **[Core Feature Screen]** - [Description]
-5. **Profile/Settings** - [User account management]
 
-> **Tip:** Include wireframes or mockups here. Can be hand-drawn and scanned, or created with Figma/Draw.io.
+1. Welcome/Login Screen
 
-### 5.3 Database Schema
+  **Purpose:** Initial screen for user authentication
 
-**Entity: User**
-```
-{
-  _id: ObjectId,
-  googleId: String,
-  email: String,
-  name: String,
-  profilePicture: String,
-  createdAt: Date,
-  lastLogin: Date
-}
-```
+  **Key Elements:**
 
-**Entity: [Your Main Entity]**
-```
-{
-  _id: ObjectId,
-  [field]: [type],
-  [field]: [type],
-  createdBy: ObjectId (ref: User),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+  - System header with library name
 
-> **Tip:** Add all your main data entities with their fields and relationships.
+  - "Scan Student ID" prompt with blinking cursor
 
-### 5.4 System Architecture
+  - Admin login shortcut (Ctrl+A)
 
-**Architecture Pattern:** MVC (Model-View-Controller)
+  - System status indicators (network, time)
 
-**Request Flow:**
-1. User makes request (browser)
-2. Nginx reverse proxy forwards to Express
-3. Express routes request to appropriate controller
-4. Controller interacts with database models
-5. Data rendered through EJS templates
-6. Response sent back to user
+  **User Actions:**
 
-> **Tip:** Include an architecture diagram showing how components connect.
+  - Scan student ID barcode
+
+  - Press Ctrl+A for admin login
+
+  - Tap screen to focus scanner input
+
+2. Main Menu Screen
+
+  **Purpose:** Central navigation hub
+
+  **Key Elements:**
+
+  - User greeting line
+
+  - Numbered menu options (1. Checkout, 2. Return, 3. Search, 4. My Books)
+
+  - Status bar with current time and logout option
+
+  - Quick stats (books checked out)
+
+  **User Actions:**
+
+  - Type menu number or tap corresponding area
+
+  - Press 'L' to logout
+
+  - Press 'Q' to quit to terminal
+
+3. Checkout Screen
+
+  **Purpose:** Complete book checkout transaction
+
+  **Key Elements:**
+
+  - Current step indicator (Step 1/2: Scan Book)
+
+  - Book details panel (appears after scan)
+
+  - Confirmation prompt with (Y/N)
+
+  - Transaction summary
+
+  **User Actions:**
+
+  - Scan book ISBN barcode
+
+  - Press Y to confirm, N to cancel
+
+  - Press ESC to return to main menu
+
+4. Return Screen
+
+  **Purpose:** Complete book return transaction
+
+  **Key Elements:**
+
+  - Scan prompt with animation
+
+  - Return confirmation display
+
+  - Receipt option (print or display)
+
+  - Success/failure message
+
+  **User Actions:**
+
+  - Scan book barcode
+
+  - Confirm return
+
+  - Choose receipt option
+
+5. Search Screen
+
+  **Purpose:** Find books in library catalog
+
+  **Key Elements:**
+
+  - Search input field
+
+  - Filter toggles (Title/Author/Category)
+
+  - Results list with scrollable window
+
+  - Book details pane (on selection)
+
+  **User Actions:**
+
+  - Type search query
+
+  - Navigate results with arrow keys or touch
+
+  - Select book for details
+
+  - Press B to check out selected book
+
+6. My Books Screen
+
+  **Purpose:** View personal borrowing status
+
+  **Key Elements:**
+
+  - Current checkouts list with due dates
+
+  - Overdue indicator (!)
+
+  - Renew option (R) for eligible books
+
+  - Borrowing history (last 10 transactions)
+
+  **User Actions:**
+
+  - View current checkouts
+
+  - Press R to renew eligible books
+
+  - Scroll through history
+
+7. Admin Dashboard
+
+  **Purpose:** System management (accessed via Ctrl+A)
+
+  **Key Elements:**
+
+  - Admin menu (1. Manage Books, 2. Manage Users, 3. Reports, 4. System)
+
+  - Quick stats (total books, active users, today's checkouts)
+
+  - System status indicators
+
+  - Activity log window
+
+  **User Actions:**
+
+  - Select admin function
+
+  - View system logs
+
+  - Generate reports
+
+  - Manage system settings
+
 
 ---
 
