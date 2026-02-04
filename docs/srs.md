@@ -91,6 +91,22 @@ Pain Points:
 Goals:
 - [What success looks like]
 
+Third User Persona
+Name & Role: [e.g., "Kevin Rivera, Student Book Donor"]
+Demographics: [22, CS Student/Alumni]
+Organization Context: [ Wants to donate technical books to help current students, interacting with kiosk to register books]
+Needs:
+- [Simple and guided way to donate books to CS Lounge using kiosk]
+- [Scan ISBN and have details filled in]
+- [Confirmation that books were donated/checked in to library database]
+Pain Points:
+- [No tracking of book donations]
+Goals:
+- [Donate books quick and efficiently]
+- [Confirmation of books being donated in the system]
+
+---
+
 
 ---
 
