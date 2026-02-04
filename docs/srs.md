@@ -226,6 +226,15 @@ Goals:
 - [ ] Export reports to CSV format
 - [ ] Print summary reports
 
+**US011:** As a Book Donor, I want to be able to donate a book using the kiosk by scanning it's ISBN, which should add the book to the CS Lounge Library Database.
+
+**Acceptance Criteria:**
+ - [ ] Donor scans book ISBN at kiosk
+ - [ ] System fills in book metadata from ISBN
+ - [ ] Donor can also manually enter details if ISBN is invalid or missing
+ - [ ] Confirmation from system that book has been added to the database successfully
+ - [ ] Donation is logged with timestamp
+
 ---
 
 ### Should Have (Post-MVP Enhancements)
