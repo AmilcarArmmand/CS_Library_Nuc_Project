@@ -94,7 +94,9 @@ Goals:
 Third User Persona
 
 Name & Role: [e.g., "Kevin Rivera, Student Book Donor"]
+
 Demographics: [22, CS Student/Alumni]
+
 Organization Context: [ Wants to donate technical books to help current students, interacting with kiosk to register books]
 
 Needs:
