@@ -232,7 +232,19 @@ Goals:
 
 **US011:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
 
+**Acceptance Criteria:**
+- [ ] Track books that have been checked out
+- [ ] View currently checked out books marked in the system
+- [ ] Schedule a pickup date, if pre-existing days are scheduled from other users
+- [ ] Notify the student when the book has been returned, based on scheduled time, for pickup
+
 **US012:** As a student, I want to receive email reminders about due dates so that I don't forget to return books.
+
+**Acceptance Criteria:**
+
+- [ ] Set the system to have a pre-due reminder to notify students that their book is almost due
+- [ ] System emails them based on the pre-due reminder period set
+- [ ] If the student does not return the book in time, set the system to create an overdue email to the user. Establish a set fee if overdue.
 
 ---
 
@@ -240,7 +252,17 @@ Goals:
 
 **US013:** As a department chair, I want to access library statistics from a web dashboard so that I can monitor usage remotely.
 
+**Acceptance Criteria:**
+- [ ] System must track every action created by the end user (book check ins, book check outs, etc.)
+- [ ] Dashboard is created to view statistics
+- [ ] Department chair is given admin credentials and access
+
 **US014:** As a student, I want to suggest books for purchase so that the collection meets student needs.
+
+**Acceptance Criteria:**
+- [ ] User fills out a form on the page detailing what books can be purchased
+- [ ] System collects every form filled out
+- [ ] Administrators view the form and review it for further consideration
 
 ---
 
