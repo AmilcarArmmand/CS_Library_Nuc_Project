@@ -1107,8 +1107,8 @@ Security Layer:
 ### C. Change Log
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
-| [Date] | v1.0 | Initial draft | [Team] |
-| [Date] | v1.1 | [Revision] | [Jose] |
+| [1/28] | v1.0 | Initial draft | [Team] |
+| [2/6] | v1.1 | Revision | [Jose] |
 
 ---
 
