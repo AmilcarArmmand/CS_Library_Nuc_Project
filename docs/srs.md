@@ -8,8 +8,8 @@
 - Kenny Molina - [Role/Responsibilities]
 
 
-**Document Version:** Draft v1.0
-**Last Updated:** 1/31/26
+**Document Version:** Draft v1.1
+**Last Updated:** 2/6/26
 
 ---
 
@@ -51,9 +51,9 @@ Research conducted:
 
 Key Findings:
 
-1. [Finding with supporting evidence]
-2. [Finding with supporting evidence]
-3. [Finding with supporting evidence]
+1. The CS Library shelf has a limited selection of books. There is room to add more books. We can add more books through donations which we plan to implement a way for students to give away CS books that they don't need anymore.
+2. The only way to check in and out of books is to fill out a paper with the book name, the check in date and check out date.
+3. There is more than enough room in the space to set up the device. There is also space to connect the NUC via Ethernet.
 
 ### 2.2 User Personas
 
@@ -697,6 +697,104 @@ Terminal UI Mockup:
 └─────────┘      └──────────────┘      └──────────┘
 ```
 
+Entity: User
+```bash
+{
+  "user_id": "String (unique, required, primary key)",
+  "student_id": "String (unique, required)",
+  "first_name": "String (required)",
+  "last_name": "String (required)",
+  "email": "String (unique, required)",
+  "department": "String (optional)",
+  "user_type": "String (enum: ['student', 'admin', 'super_admin'], default: 'student')",
+  "borrowing_limit": "Integer (default: 5)",
+  "books_checked_out": "Integer (default: 0)",
+  "is_active": "Boolean (default: true)",
+  "date_joined": "Date (required)",
+  "last_login": "Date (optional)",
+  "total_checkouts": "Integer (default: 0)"
+}
+```
+
+Entity: Book
+```bash
+{
+  "book_id": "String (unique, required, primary key)",
+  "isbn": "String (unique, required)", // 10 or 13 digit ISBN
+  "title": "String (required)",
+  "author": "String (required)",
+  "publisher": "String (optional)",
+  "publication_year": "Integer (optional)",
+  "category_id": "Integer (ref: Category, optional)",
+  "book_status": "String (enum: ['available', 'checked_out', 'lost', 'damaged', 'donated'], default: 'available')",
+  "location": "String (optional)", // Shelf location
+  "cover_image_url": "String (optional)",
+  "description": "Text (optional)",
+  "donor_student_id": "String (ref: User, optional)", // If donated by student
+  "date_added": "Date (required)",
+  "total_checkouts": "Integer (default: 0)",
+  "last_checkout_date": "Date (optional)"
+}
+```
+Entity: Transaction
+```bash
+{
+  "transaction_id": "String (unique, required, primary key)",
+  "user_id": "String (ref: User, required)",
+  "book_id": "String (ref: Book, required)",
+  "transaction_type": "String (enum: ['checkout', 'return', 'renewal', 'donation'], required)",
+  "checkout_date": "Date (required for checkout)",
+  "due_date": "Date (required for checkout)",
+  "return_date": "Date (optional)",
+  "actual_return_date": "Date (optional)", // For tracking lateness
+  "renewal_count": "Integer (default: 0)",
+  "is_overdue": "Boolean (default: false)",
+  "overdue_days": "Integer (default: 0)",
+  "late_fee": "Decimal(5,2) (default: 0.00)",
+  "fee_paid": "Boolean (default: false)",
+  "notes": "Text (optional)",
+  "created_at": "Date (required)"
+}
+```
+Entity: Category
+```bash
+{
+  "category_id": "Integer (unique, required, primary key)",
+  "category_name": "String (required, unique)",
+  "description": "String (optional)",
+  "book_count": "Integer (default: 0)",
+  "created_at": "Date (required)"
+}
+```
+
+Entity: SystemLog
+```bash
+{
+  "log_id": "String (unique, required, primary key)",
+  "user_id": "String (ref: User, optional)", // Null for system events
+  "action": "String (required)", // e.g., 'login', 'checkout', 'system_start'
+  "log_level": "String (enum: ['info', 'warning', 'error', 'critical'])",
+  "details": "Text (optional)",
+  "ip_address": "String (optional)",
+  "user_agent": "String (optional)",
+  "timestamp": "Date (required)"
+}
+```
+
+Entity: Reservation
+```bash
+{
+  "reservation_id": "String (unique, required, primary key)",
+  "user_id": "String (ref: User, required)",
+  "book_id": "String (ref: Book, required)",
+  "reservation_date": "Date (required)",
+  "status": "String (enum: ['pending', 'ready', 'cancelled'], default: 'pending')",
+  "notified": "Boolean (default: false)",
+  "pickup_by_date": "Date (optional)",
+  "created_at": "Date (required)"
+}
+```
+
 ### 5.4 System Architecture
 
 Component Diagram:
@@ -840,9 +938,9 @@ Security Layer:
 **Goal:** [Main feature implementation]
 
 **User Stories:**
-- US003: 
-- US004: 
-- US005: 
+- US003: Make the scanner work
+- US004: Barcode recognition
+- US005: Library catalog  creation
 
 **Deliverables:**
 - [List specific working features]
@@ -941,7 +1039,7 @@ Security Layer:
 
 ---
 
-## 6. Risk Assessment
+## 7. Risk Assessment
 
 ### Technical Risks
 
@@ -974,7 +1072,7 @@ Security Layer:
 
 ---
 
-## 7. Success Metrics
+## 8. Success Metrics
 
 ### User Metrics
 - [Metric] - [Target] (e.g., "Users complete first task within 5 minutes")
@@ -992,23 +1090,31 @@ Security Layer:
 
 ---
 
-## Appendix
+## 9. Appendix
 
 ### A. Glossary
-- **Term 1:** [Definition]
-- **Term 2:** [Definition]
+- **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
+- **RFID:** Radio-Frequency Identification - Technology using electromagnetic fields to automatically identify tags
+- **GPIO:** General Purpose Input/Output - Pins on the Raspberry Pi that can be programmed
 
 ### B. References
 
-- [User Research Summary](link)
+**Technical References**
+- Raspberry Pi Foundation. (2024). Raspberry Pi Documentation. https://www.raspberrypi.com/documentation/
+- Open Library API Documentation. https://openlibrary.org/developers/api
+- Google Books API Documentation. https://developers.google.com/books
 
 ### C. Change Log
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
 | [Date] | v1.0 | Initial draft | [Team] |
-| [Date] | v1.1 | [Description] | [Name] |
+| [Date] | v1.1 | [Revision] | [Jose] |
 
 ---
 
 **Document Status:** Draft / Review / Final
-**Next Review Date:** [Date]
+**Next Review Date:** TBA
+
+Prepared by: CS Library Nuc Project
+Course: CSC400 - Computer Science Project Seminar 
+Semester: Spring 2026 
