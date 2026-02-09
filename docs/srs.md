@@ -30,7 +30,7 @@ Our solution is a standalone Raspberry Pi-based kiosk with integrated barcode an
 ### 1.4 Client Context
 
 Client Organization: Computer Science Department, Southern Connecticut State University
-Client Contact: [IT Coordinat], IT Coordinator
+Client Contact: IT Coordinator, Computer Science Department Faculty Advisor
 Client Mission/Business: Providing resources and study space for computer science students
 Project Sponsor: Faculty Advisor
 
@@ -42,12 +42,10 @@ The Computer Science Department needs an automated library system that reduces a
 
 Research conducted:
 
-- [ ] Client discovery interviews ([number] conducted)
-- [ ] End-user interviews ([number] conducted)
-- [X] Observation/shadowing
-- [ ] Survey ([number] responses)
-- [ ] Competitive analysis
-- [ ] Other: [describe]
+- Observation or shadowing of current CS Lounge library usage
+- Discussions with students using the CS Lounge
+- Review the existing manual checkout workflow
+
 
 Key Findings:
 
@@ -79,45 +77,48 @@ Goals:
 - Efficiently borrow and return books independently
 - Access up-to-date catalog
 
-Technology Context: [Devices and tools they currently use]
-
 Secondary User Persona
-Name & Role: [e.g., "David Chen, Executive Director"]
-Demographics: [Age, background, technical proficiency level]
+Name & Role: Professor James, CS Faculty Adminstrator
+Demographics: 43, Faculty Member, strong technical proficiency
+
 Needs:
-- [What they're trying to accomplish]
+- The ability to monitor inventory and checkout activity
+- A easy way to add and remove books from the system
+  
 Pain Points:
-- [Current challenges]
+- Manual tracking of books means theres the chance of missing items
+- Can't see who has borrowed books
+- The overhead is time-consuming
+  
 Goals:
-- [What success looks like]
+- Reduce overhead an manual work of managing said library
+- Ensure books are accounted for
+- Improve the accessibility of books for students
 
 Third User Persona
 
-Name & Role: [e.g., "Kevin Rivera, Student Book Donor"]
+Name & Role: Kevin Rivera, Student Book Donor
 
-Demographics: [22, CS Student or Student Alumni]
+Demographics: 22, CS Student or Student Alumni
 
-Organization Context: [ Wants to donate technical books to help current students, interacting with kiosk to register books]
+Organization Context: Wants to donate technical books to help current students, interacting with kiosk to register books
 
 Needs:
-- [Simple and guided way to donate books to CS Lounge using kiosk]
-- [Scan ISBN and have details filled in]
-- [Confirmation that books were donated/checked in to library database]
+- Simple and guided way to donate books to CS Lounge using kiosk
+- Scan ISBN and have details filled in
+- Confirmation that books were donated/checked in to library database
   
 Pain Points:
-- [No tracking of book donations]
+- No tracking of book donations
   
 Goals:
-- [Donate books quick and efficiently]
-- [Confirmation of books being donated in the system]
+- Donate books quick and efficiently
+- Confirmation of books being donated in the system
 
 
 ---
 
 ## 3. User Stories
-
-### Format
-> **As a** [type of user], **I want** [some goal] **so that** [some benefit].
 
 ### Core User Stories (Must Have)
 
@@ -239,7 +240,7 @@ Goals:
 
 ### Should Have (Post-MVP Enhancements)
 
-**US011:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
+**US012:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
 
 **Acceptance Criteria:**
 - [ ] Track books that have been checked out
@@ -247,7 +248,7 @@ Goals:
 - [ ] Schedule a pickup date, if pre-existing days are scheduled from other users
 - [ ] Notify the student when the book has been returned, based on scheduled time, for pickup
 
-**US012:** As a student, I want to receive email reminders about due dates so that I don't forget to return books.
+**US013:** As a student, I want to receive email reminders about due dates so that I don't forget to return books.
 
 **Acceptance Criteria:**
 
@@ -259,14 +260,14 @@ Goals:
 
 ### Could Have (Future Considerations)
 
-**US013:** As a department chair, I want to access library statistics from a web dashboard so that I can monitor usage remotely.
+**US014:** As a department chair, I want to access library statistics from a web dashboard so that I can monitor usage remotely.
 
 **Acceptance Criteria:**
 - [ ] System must track every action created by the end user (book check ins, book check outs, etc.)
 - [ ] Dashboard is created to view statistics
 - [ ] Department chair is given admin credentials and access
 
-**US014:** As a student, I want to suggest books for purchase so that the collection meets student needs.
+**US015:** As a student, I want to suggest books for purchase so that the collection meets student needs.
 
 **Acceptance Criteria:**
 - [ ] User fills out a form on the page detailing what books can be purchased
