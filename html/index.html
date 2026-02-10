@@ -1,0 +1,54 @@
+<!-- CSS Library Kiosk Main Page -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Library Kiosk</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="kiosk-container text-center p-4">
+            <h1 class="kiosk-title mb-4">CS LIBRARY KIOSK v1.0</h1>
+            
+            <div class="card login-card mx-auto">
+                <div class="card-body p-4">
+                    <h2 class="card-title mb-4">Please scan your student ID</h2>
+                    
+                    <div class="scanner-area mb-4">
+                        <div class="scanner-light"></div>
+                        <div class="scanner-text">[Scanner ready...]</div>
+                    </div>
+                    
+                    <div class="admin-link mt-4">
+                        <small>Press <kbd>Ctrl+A</kbd> for Admin Login</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-bar mt-4">
+                <div class="row">
+                    <div class="col text-start">
+                        <span class="status-item network-status">Network: <span class="status-on">√</span></span>
+                    </div>
+                    <div class="col text-center">
+                        <span class="status-item">Time: <span id="current-time">14:30</span></span>
+                    </div>
+                    <div class="col text-end">
+                        <span class="status-item">Date: <span id="current-date">3/12</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+</body>
+</html>
