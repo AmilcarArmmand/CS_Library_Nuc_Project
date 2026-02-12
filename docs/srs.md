@@ -3,9 +3,9 @@
 **Project Name:** CS Library Nuc Project
 
 **Team Members:**
-- Amilcar Armmand - [Project Lead, Backend] - armmanda1@southernct.edu
-- Jose Gaspar Marin - [Frontend, UI/UX, Testing] - gasparmarij1@southernct.edu
-- Kenny Molina - [Frontend, Database, Testing] - molinak4@southernct.edu
+- Amilcar Armmand - Project Lead, Backend, Database, Testing - armmanda1@southernct.edu
+- Jose Gaspar Marin - Frontend, UI/UX, Testing - gasparmarij1@southernct.edu
+- Kenny Molina - Frontend, Database, Testing - molinak4@southernct.edu
 
 
 **Document Version:** Draft v1.1
@@ -434,7 +434,7 @@ Goals:
 
 **Database:**
 
-- Primary Database: SQLite with aiosqlite for async operations
+- Primary Database: MySQL (MariaDB) with aiomysql for async
 
 - Alternative: PostgreSQL with asyncpg for larger deployments
 
@@ -858,7 +858,7 @@ Request/Response Flow:
 
         DB Service queries database
 
-        API Service fetches external data (if needed)
+        FastAPI Service fetches external data (if needed)
 
         Transaction Service processes checkout/return logic
 
@@ -902,7 +902,7 @@ Security Layer:
 
     Data Protection:
 
-        SQLite database encryption (SQLCipher optional)
+        MySQL database encryption
 
         Configuration file encryption
 
@@ -919,7 +919,7 @@ Security Layer:
 ### 6.1 Sprint Breakdown (4 Sprints)
 
 #### Sprint 1: Foundation & Authentication
-**Timeline:** [Week 7-8]
+**Timeline:** Week 3-6
 **Goal:** Hardware setup and User Authentication
 
 **Tasks:**
@@ -934,7 +934,7 @@ Security Layer:
 ---
 
 #### Sprint 2: Core Feature Development
-**Timeline:** [Week 9-10]
+**Timeline:** Week 7-9
 **Goal:** Book Checkout, Return, Inventory
 
 **Tasks:**
@@ -947,7 +947,7 @@ Security Layer:
 ---
 
 #### Sprint 3: Feature Completion & Enhancement
-**Timeline:** [Week 11-12]
+**Timeline:** Week 10-12
 **Goal:** [Complete remaining features and polish]
 
 **User Stories:**
@@ -963,7 +963,7 @@ Security Layer:
 ---
 
 #### Sprint 4: Testing, Polish & Deployment
-**Timeline:** [Week 13-14]
+**Timeline:** Week 13-14
 **Goal:** Production-ready application
 
 **Tasks:**
