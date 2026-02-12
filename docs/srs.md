@@ -946,6 +946,7 @@ Security Layer:
 - Functional Checkout/Return flow
 ---
 
+<<<<<<< HEAD
 #### Sprint 3: Feature Completion & Enhancement
 **Timeline:** Week 10-12
 **Goal:** [Complete remaining features and polish]
@@ -980,6 +981,8 @@ Security Layer:
 
 ---
 
+=======
+>>>>>>> 31c63fba7a01fa0ed845c73849dd7d371a37c6f1
 ## 7. Risk Assessment
 
 ### Technical Risks
@@ -1023,7 +1026,7 @@ Security Layer:
 |------|---------|---------|--------|
 | [1/28] | v1.0 | Initial draft | [Team] |
 | [2/6] | v1.1 | Revision | [Jose] |
-2/12 v1.2 Kenny
+| [2/12] | v1.2 | Revision | [Kenny] |
 
 ---
 
