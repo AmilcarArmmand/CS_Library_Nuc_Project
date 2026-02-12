@@ -128,7 +128,7 @@ Goals:
 
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
-- [ ] ystem validates student is authorized to use library
+- [ ] System validates student is authorized to use library
 - [ ] User profile is created automatically
 - [ ] User is redirected to main dashboard after login
 
@@ -143,7 +143,7 @@ Goals:
 
 ---
 
-#### Book Mangaement
+#### Book Management
 
 **US003:** As a student, I want to check out a book by scanning its ISBN barcode so that I can borrow it quickly without paperwork.
 
