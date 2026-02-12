@@ -920,34 +920,30 @@ Security Layer:
 
 #### Sprint 1: Foundation & Authentication
 **Timeline:** [Week 7-8]
-**Goal:** User authentication and basic project setup
+**Goal:** Hardware setup and User Authentication
 
-**User Stories:**
-- US001: Google OAuth login
-- US002: User sessions
-- Basic project structure and database setup
+**Tasks:**
+- Amilcar: Set up Raspberry Pi OS and configure database with WAL mode
+- Jose/Kenny: Frontend either NiceGui or urwid
+- Jose/Kenny: Write script for barcode scanner evdev
 
 **Deliverables:**
 - Working authentication system
 - User dashboard (basic version)
-- Deployed to GCP
 
 ---
 
 #### Sprint 2: Core Feature Development
 **Timeline:** [Week 9-10]
-**Goal:** [Main feature implementation]
+**Goal:** Book Checkout, Return, Inventory
 
-**User Stories:**
-- US003: Make the scanner work
-- US004: Barcode recognition
-- US005: Library catalog  creation
+**Tasks:**
+- Amilcar: Implement the Library API for metadata
+- Jose/Kenny: Checkout UI
+- Jose/Kenny: Populate database and add in logic for scanner
 
 **Deliverables:**
-- [List specific working features]
-- Database models for core entities
-- Basic UI for main workflows
-
+- Functional Checkout/Return flow
 ---
 
 #### Sprint 3: Feature Completion & Enhancement
@@ -984,110 +980,27 @@ Security Layer:
 
 ---
 
-### 5.2 Team Member Responsibilities
-
-**[Team Member 1]:**
-- Authentication system
-- User profile management
-- [Other responsibilities]
-
-**[Team Member 2]:**
-- [Core feature] implementation
-- Database design and models
-- [Other responsibilities]
-
-**[Team Member 3]:**
-- UI/UX design and frontend
-- [Core feature] implementation
-- [Other responsibilities]
-
-> **Tip:** Assign responsibilities based on team member strengths and learning goals.
-
-### 5.3 Testing Strategy
-
-**Testing Approaches:**
-- **Manual Testing:** Test all user workflows before each sprint review
-- **User Acceptance Testing:** Get feedback from potential users
-- **Browser Testing:** Verify functionality on Chrome, Firefox, Safari
-- **Mobile Testing:** Ensure responsive design works on various devices
-- **Security Testing:** Verify authentication and data protection
-
-**Success Criteria:**
-- All user stories meet acceptance criteria
-- No critical bugs in core workflows
-- Application loads and performs within requirements
-- Positive feedback from user testing
-
-### 5.4 Deployment Strategy
-
-**Development Environment:**
-- Local development with hot reload
-- SQLite/MongoDB local database
-
-**Production Environment:**
-- Google Cloud Platform VM
-- PM2 process manager
-- Nginx reverse proxy
-- Production database (MongoDB Atlas / PostgreSQL)
-
-**Deployment Process:**
-1. Test locally
-2. Commit to GitHub
-3. Pull on GCP VM
-4. Install dependencies
-5. Restart PM2 process
-6. Verify deployment
-
----
-
 ## 7. Risk Assessment
 
 ### Technical Risks
 
-**Risk 1: [e.g., "OAuth integration complexity"]**
+**Risk 1: SD Card Corruption
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Start authentication early, use proven libraries, allocate extra time
+- **Mitigation:** Implementation of a WAL mode and automated USB backups
 
-**Risk 2: [e.g., "Database performance with complex queries"]**
-- **Impact:** Medium
+**Risk 2: API Rate Limiting
+- **Impact:** Low
 - **Likelihood:** Low
-- **Mitigation:** Design efficient schema, use database indexes, test with realistic data
+- **Mitigation:** Possibly caching book metadata locally in SQL and implement a manual entry fallback.
 
-**Risk 3: [Your specific technical risk]**
-- **Impact:** [High/Medium/Low]
-- **Likelihood:** [High/Medium/Low]
-- **Mitigation:** [Your plan to address it]
 
-### Project Risks
-
-**Risk 1: [e.g., "Scope creep - too many features"]**
-- **Impact:** High
-- **Likelihood:** Medium
-- **Mitigation:** Strict MVP focus, prioritize must-have features, defer nice-to-have items
-
-**Risk 2: [e.g., "Team member availability"]**
-- **Impact:** Medium
-- **Likelihood:** Medium
-- **Mitigation:** Clear task assignments, early communication, pair programming for critical features
-
----
 
 ## 8. Success Metrics
 
-### User Metrics
-- [Metric] - [Target] (e.g., "Users complete first task within 5 minutes")
-- [Metric] - [Target] (e.g., "70% of users return within one week")
-
-### Technical Metrics
-- Page load time: < 3 seconds
-- API response time: < 500ms
-- Uptime: > 99% during testing period
-
-### Team Metrics
-- All sprint goals completed on time
-- All team members contribute code
-- Positive peer feedback on collaboration
+- System uptime of 99% during testing phase specifically in school hours
+- Book checkout transaction time under 20 seconds
+- Have all available books in CS Library cataloged into the system
 
 ---
 
@@ -1095,7 +1008,7 @@ Security Layer:
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
-- **RFID:** Radio-Frequency Identification - Technology using electromagnetic fields to automatically identify tags
+- **WAL:** Write-Ahead Logging - SQLite Feature
 - **GPIO:** General Purpose Input/Output - Pins on the Raspberry Pi that can be programmed
 
 ### B. References
