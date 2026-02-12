@@ -989,7 +989,7 @@ Security Layer:
 |------|---------|---------|--------|
 | [1/28] | v1.0 | Initial draft | [Team] |
 | [2/6] | v1.1 | Revision | [Jose] |
-2/12 v1.2 Kenny
+| [2/12] | v1.2 | Revision | [Kenny] |
 
 ---
 
