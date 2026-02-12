@@ -9,7 +9,7 @@
 
 
 **Document Version:** Draft v1.1
-**Last Updated:** 2/6/26
+**Last Updated:** 2/12/26
 
 ---
 
@@ -1023,6 +1023,7 @@ Security Layer:
 |------|---------|---------|--------|
 | [1/28] | v1.0 | Initial draft | [Team] |
 | [2/6] | v1.1 | Revision | [Jose] |
+2/12 v1.2 Kenny
 
 ---
 
