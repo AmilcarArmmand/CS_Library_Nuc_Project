@@ -1,3 +1,5 @@
-__pycache__/
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+echo "venv/" >> .gitignore__pycache__/
 *.pyc
 venv/
