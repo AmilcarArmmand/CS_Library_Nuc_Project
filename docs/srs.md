@@ -870,9 +870,9 @@ Request/Response Flow:
 
         Transaction Service processes checkout/return logic
 
-    UI Update: UI Manager updates terminal display via ncurses
+    UI Update: UI Manager updates terminal display
 
-    Data Persistence: DB Service commits transaction to SQLite
+    Data Persistence: DB Service commits transaction to MySQL
 
     Logging: System logs event to both database and file system
 
