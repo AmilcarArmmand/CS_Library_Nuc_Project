@@ -8,8 +8,8 @@
 - Kenny Molina - Frontend, Database, Testing - molinak4@southernct.edu
 
 
-**Document Version:** Draft v1.1
-**Last Updated:** 2/12/26
+**Document Version:** Draft v1.3
+**Last Updated:** 2/20/26
 
 ---
 
@@ -320,7 +320,7 @@ Goals:
 
 #### Database & Storage
 
-- Primary Database: SQLite (lightweight, suitable for Raspberry Pi)
+- Primary Database: MySQL
 
 - Key Data Entities:
 
@@ -410,15 +410,11 @@ Goals:
 
 **Frontend:**
 
-- Terminal-based UI: ncurses (python-ncurses library)
+- Web Framework UI: NiceGUI(Python-based UI framework)
 
-- Python Frameworks: urwid (alternative to ncurses for more complex UIs)
+- Styling: Tailwind CSS
 
-- Graphical Options (if needed): PyGame, Tkinter, or Kivy for simple GUIs
-
-- Touchscreen Support: evdev for touch input handling
-
-- Display Management: fbcp (Framebuffer copy) for secondary display support
+- Touchscreen Support: Web Browser Touch Events
 
 **Backend:**
 
@@ -923,42 +919,36 @@ Security Layer:
 **Goal:** Hardware setup and User Authentication
 
 **Tasks:**
-- Amilcar: Set up Raspberry Pi OS and configure database with WAL mode
-- Jose/Kenny: Frontend either NiceGui or urwid
-- Jose/Kenny: Write script for barcode scanner evdev
+- Amilcar: Design MySQL database Schema,and API endpoints
+- Kenny: Frontend using NiceGUI and Tailwinf to build web-based Kiosk interface
+- Jose: Building the Admin Dashboard
 
 **Deliverables:**
-- Working authentication system
-- User dashboard (basic version)
+- User login and dashboard
 
 ---
 
 #### Sprint 2: Core Feature Development
 **Timeline:** Week 7-9
-**Goal:** Book Checkout, Return, Inventory
+**Goal:** Library Workflows and external integrations
 
 **Tasks:**
-- Amilcar: Implement the Library API for metadata
-- Jose/Kenny: Checkout UI
-- Jose/Kenny: Populate database and add in logic for scanner
+- Amilcar: Implement the OpenLibrary API for metadata
+- Kenny: Building manual fallback and search filter
+- Jose/Kenny: Build Book donation workflow and remote hold workflow and UI
 
 **Deliverables:**
-- Functional Checkout/Return flow
+- Functional Checkout/Return flow with metadata fetching
 ---
 
 #### Sprint 3: Feature Completion & Enhancement
 **Timeline:** Week 10-12
-**Goal:** [Complete remaining features and polish]
+**Goal:** Integrate Pi and Scanner with Web App
 
-**User Stories:**
-- US006-US008: [Remaining features]
-- UI/UX improvements
-- Error handling
-
-**Deliverables:**
-- All core features complete
-- Responsive design implementation
-- Improved user experience
+**Tasks:**
+- Amilcar: Setup Raspberry Pi and configure local networking
+- Kenny:  Connect web app to listen to scanner
+- Jose: Script the USB barcode scanner inputs
 
 ---
 
@@ -967,16 +957,7 @@ Security Layer:
 **Goal:** Production-ready application
 
 **Tasks:**
-- User acceptance testing
-- Bug fixes and refinements
-- Performance optimization
-- Final deployment and documentation
-
-**Deliverables:**
-- Fully tested application
-- Production deployment
-- User documentation
-- Presentation materials
+- Team: User Testing, Load Testing and Documentation
 
 ---
 
@@ -996,6 +977,15 @@ Security Layer:
 - **Likelihood:** Low
 - **Mitigation:** Possibly caching book metadata locally in SQL and implement a manual entry fallback.
 
+**Risk 3: Campus IT Approval
+- **Impact:** High
+- **Likelihood:** Low
+- **Mitigation:** Waiting for SSO credentials from IT, team is using a mock authentication system until IT provides credentials then we swap for integration.
+
+**Risk 4: Barcode Error
+- **Impact:** Medium
+- **Likelihood:** High
+- **Mitigation:** The UI has the ability to manually type in ISBNs so if scanner fails students can manually type the ISBN to complete transaction.
 
 
 ## 8. Success Metrics
@@ -1010,8 +1000,8 @@ Security Layer:
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
-- **WAL:** Write-Ahead Logging - SQLite Feature
-- **GPIO:** General Purpose Input/Output - Pins on the Raspberry Pi that can be programmed
+- **ISBN:** NiceGUI: Python-based web-UI
+- **MySQL** Database management system
 
 ### B. References
 
@@ -1019,6 +1009,7 @@ Security Layer:
 - Raspberry Pi Foundation. (2024). Raspberry Pi Documentation. https://www.raspberrypi.com/documentation/
 - Open Library API Documentation. https://openlibrary.org/developers/api
 - Google Books API Documentation. https://developers.google.com/books
+- NiceGUI Documentation: https://nicegui.io/documentation
 
 ### C. Change Log
 | Date | Version | Changes | Author |
