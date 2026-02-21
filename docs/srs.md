@@ -917,7 +917,7 @@ Security Layer:
 **Tasks:**
 - Amilcar: Implement the OpenLibrary API for metadata
 - Kenny: Building manual fallback and search filter
-- Jose/Kenny: Build Book donation workflow and remote hold workflow and UI
+- Jose: Build Book donation workflow and remote hold workflow and UI
 
 **Deliverables:**
 - Functional Checkout/Return flow with metadata fetching
