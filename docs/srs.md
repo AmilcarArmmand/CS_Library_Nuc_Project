@@ -3,9 +3,9 @@
 **Project Name:** CS Library Nuc Project
 
 **Team Members:**
-- Amilcar Armmand - Project Lead, Backend, Database, Testing - armmanda1@southernct.edu
-- Jose Gaspar Marin - Frontend, UI/UX, Testing - gasparmarij1@southernct.edu
-- Kenny Molina - Frontend, Database, Testing - molinak4@southernct.edu
+- Amilcar Armmand - Project Lead, Hardware Integration, Database, - armmanda1@southernct.edu
+- Jose Gaspar Marin - Web Frontend, Backend (Admin and Remote Access) - gasparmarij1@southernct.edu
+- Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
 **Document Version:** Draft v1.3
