@@ -982,7 +982,7 @@ Security Layer:
 **Risk 1: SD Card Corruption
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Implementation of a WAL mode and automated USB backups
+- **Mitigation:** Implementation automated USB backups
 
 **Risk 2: Network Dependencies and Database Outages
 - **Impact:** High
