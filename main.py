@@ -5,7 +5,7 @@ from datetime import datetime, timedelta # NEW: timedelta needed for due date ca
 
 app.add_static_files('/assets', 'assets') # for images
 
-# for scroll bars which I don't understand (and the new starry background/fonts)
+# for scroll bars which I don't understan (and the new starry background/fonts)
 ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
