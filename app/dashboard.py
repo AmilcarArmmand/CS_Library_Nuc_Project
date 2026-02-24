@@ -1,8 +1,8 @@
 from nicegui import ui # import the UI library again
 
-def create(on_checkout_scan, on_checkout_confirm, on_return_scan):
+def create(on_checkout_scan, on_checkout_confirm, on_return_scan, on_search, on_my_books_load):
     # CHANGE 1: Switched to 'scsu-bg' 
-    with ui.column().classes('scsu-bg w-full h-screen items-center pt-8 overflow-y-auto') as container:
+    with ui.column().classes('scsu-bg w-full h-screen items-center pt-28 overflow-y-auto') as container:
         container.visible = False # hide dashboard until signed in
         
         # --- NEW: LOGIC FOR THE "CLEAR STRIP" BUTTONS ---
@@ -22,20 +22,31 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan):
         # these three functions to hide until called upon to switch for buttons
         def show_catalog():
             checkout_workspace.visible, return_workspace.visible = False, False
+            my_books_workspace.visible = False # NEW: also hide my_books workspace
             catalog_workspace.visible = True
             update_nav('catalog') # Update the strip
 
         def show_checkout():
             catalog_workspace.visible, return_workspace.visible = False, False
+            my_books_workspace.visible = False # NEW: also hide my_books workspace
             checkout_workspace.visible = True
             checkout_input.run_method('focus')
             update_nav('checkout') # Update the strip
 
         def show_return():
             catalog_workspace.visible, checkout_workspace.visible = False, False
+            my_books_workspace.visible = False # NEW: also hide my_books workspace
             return_workspace.visible = True
             return_input.run_method('focus')
             update_nav('return') # Update the strip
+
+        # NEW: show My Books workspace and trigger data load from main.py (US006)
+        # NEW: show My Books workspace and trigger data load from main.py (US006)
+        async def show_my_books():
+            catalog_workspace.visible, checkout_workspace.visible, return_workspace.visible = False, False, False
+            my_books_workspace.visible = True
+            update_nav('my_books')
+            await on_my_books_load()
 
         
         # this is the row at the top of buttons sticky keeps it at the top while scrolling or switching
@@ -47,12 +58,16 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan):
             btn_refs['catalog'] = ui.button('BROWSE', icon='grid_view', on_click=show_catalog).classes(base_classes)
             btn_refs['checkout'] = ui.button('CHECKOUT', icon='shopping_cart', on_click=show_checkout).classes(base_classes)
             btn_refs['return'] = ui.button('RETURN', icon='keyboard_return', on_click=show_return).classes(base_classes)
+            # NEW: My Books nav button (US006)
+            btn_refs['my_books'] = ui.button('MY BOOKS', icon='menu_book', on_click=show_my_books).classes(base_classes)
             
             # Divider line
             ui.label('|').classes('text-slate-700 mx-2 text-lg font-light')
             
             search_box = ui.input(placeholder='Search by Title or Author...').classes('w-64 text-xs').props('dark standout rounded-full dense')
             search_box.visible = False
+            # NEW: Wire up on_change so typing filters the catalog in real time (US005)
+            search_box.on('update:model-value', lambda e: on_search(e.args))
             
             def toggle_search():
                 show_catalog() 
@@ -84,10 +99,11 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan):
                 
                 checkout_input = ui.input(placeholder='Scan ISBN...').classes('w-full text-center text-xl mb-2').props('dark standout rounded-full')
                 checkout_input.on('keydown.enter', on_checkout_scan)
-                
                 checkout_cover = ui.image('https://via.placeholder.com/200x300?text=Waiting...').classes('w-48 h-72 shadow-lg rounded-xl object-cover border border-slate-700 mb-4')
                 checkout_title = ui.label('---').classes('text-3xl text-white font-bold leading-tight')
                 checkout_author = ui.label('---').classes('text-xl text-slate-500 italic mt-2')
+                # NEW: Due date label, shown after a book is scanned (US003)
+                checkout_due_date = ui.label('').classes('text-sm text-blue-400 font-bold mt-2 tracking-wide')
 
 
            # card for Cart next to the scan card
@@ -117,12 +133,36 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan):
             return_input = ui.input(placeholder='Scan barcode to return...').classes('w-96 text-center text-xl mb-2').props('dark standout rounded-full')
             return_input.on('keydown.enter', on_return_scan)
             
-            
             with ui.row().classes('w-full items-center gap-16 justify-center'):
                 return_cover = ui.image('https://via.placeholder.com/200x300?text=Drop+Book').classes('w-56 h-80 shadow-lg rounded-xl object-cover border border-slate-700')
                 with ui.column().classes('items-start text-left flex-1'):
                     return_status = ui.label('WAITING FOR SCAN').classes('px-4 py-1.5 rounded-full text-[10px] tracking-widest font-black text-slate-400 bg-slate-800 border border-slate-700 mb-4')
                     return_title = ui.label('---').classes('text-4xl text-white font-bold leading-tight tracking-tight')
 
+        # NEW: My Books workspace - active loans and borrowing history (US006)
+        # NEW: My Books workspace - active loans and borrowing history (US006)
+        with ui.card().classes('w-full max-w-4xl p-10 bg-[#151924]/80 border border-slate-700/50 rounded-[32px] shadow-2xl backdrop-blur-sm max-h-[80vh] overflow-y-auto') as my_books_workspace:
+            my_books_workspace.visible = False
+
+            ui.label('MY BORROWED BOOKS').classes('text-xs tracking-[0.3em] text-blue-500 font-bold mb-6')
+
+            ui.label('Currently Checked Out').classes('text-lg text-white font-bold mb-3')
+            active_loans_container = ui.column().classes('w-full gap-4 mb-8')
+
+            with ui.column().classes('w-full items-center opacity-40') as no_active_loans:
+                ui.icon('check_circle', size='48px').classes('text-green-400 mb-2')
+                ui.label('No books currently checked out').classes('text-slate-300')
+
+            ui.element('div').classes('w-full h-px bg-slate-700/50 my-4')
+            ui.label('Borrowing History').classes('text-lg text-white font-bold mb-3')
+            history_container = ui.column().classes('w-full gap-3')
+
+            with ui.column().classes('w-full items-center opacity-40') as no_history:
+                ui.icon('history', size='48px').classes('text-slate-400 mb-2')
+                ui.label('No borrowing history yet').classes('text-slate-300')
+
     # for main.py to call upon.
-    return container, checkout_input, checkout_cover, checkout_title, checkout_author, cart_container, checkout_btn, return_input, return_cover, return_title, return_status, empty_cart_message, catalog_grid
+    return (container, checkout_input, checkout_cover, checkout_title, checkout_author,
+            cart_container, checkout_btn, return_input, return_cover, return_title,
+            return_status, empty_cart_message, catalog_grid, checkout_due_date,
+            active_loans_container, no_active_loans, history_container, no_history)

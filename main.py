@@ -1,6 +1,7 @@
 from nicegui import app, ui # import UI and APP which has login and dashboard
 import mock_database as db 
 from app import login, dashboard # import the login and dashboard
+from datetime import datetime, timedelta # NEW: timedelta needed for due date calculation (US003)
 
 app.add_static_files('/assets', 'assets') # for images
 
@@ -141,6 +142,20 @@ ui.add_css('''
         -webkit-text-fill-color: white !important;
     }
 
+    /* Pi 800x480 specific fixes */
+    @media (max-height: 500px) {
+        .q-card {
+            padding: 16px !important;
+        }
+    }
+
+    /* Mobile width fixes */
+    @media (max-width: 500px) {
+        .q-card {
+            width: 90vw !important;
+            padding: 20px !important;
+        }
+    }
 
 ''', shared=True)
 
@@ -149,36 +164,36 @@ ui.add_css('''
 async def main_page():
    
     # for the header which is invisible until logged in
-    with ui.header().classes('bg-slate-900/40 backdrop-blur-md border-b border-white/10 shadow-lg rounded-b-2xl h-20 z-50') as app_header:
-        app_header.visible = False
-        
-        # Standard Row inside
-        with ui.row().classes('w-full h-full items-center justify-between px-8'):
-            
-            # --- LEFT: LOGO ---
-            with ui.row().classes('items-center gap-6'):
-                ui.image('/assets/scsu_logo.png').classes('w-28 max-h-10 object-contain brightness-0 invert opacity-90')
-                with ui.row().classes('items-center gap-2'):
-                    ui.label('CS_LIBRARY').classes('text-lg font-black tracking-widest text-white drop-shadow-sm')
-                    ui.label('KIOSK').classes('text-lg font-light tracking-widest text-blue-400 opacity-90')
-                    
-            # --- RIGHT: USER INFO ---
-            with ui.row().classes('items-center gap-4'):
-                ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
-                user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
 
-                # logout button that called do_logout to return to login
-                ui.button(color=None, on_click=lambda: do_logout(), icon='logout').classes(
-                    'ml-6 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-2 backdrop-blur-sm'
-                ).props('flat')
+    with ui.row().classes('fixed top-0 left-0 w-full h-20 items-center justify-between px-8 bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 transition-all rounded-[32px]') as app_header:
+        app_header.visible = False
+
+    # --- LEFT: LOGO ---
+        with ui.row().classes('items-center gap-6'):
+            ui.image('/assets/scsu_logo.png').classes('w-28 max-h-10 object-contain brightness-0 invert opacity-90')
+            with ui.row().classes('items-center gap-2'):
+                ui.label('CS_LIBRARY').classes('text-lg font-black tracking-widest text-white drop-shadow-sm')
+                ui.label('KIOSK').classes('text-lg font-light tracking-widest text-blue-400 opacity-90')
+
+    # --- RIGHT: USER INFO ---
+        with ui.row().classes('items-center gap-4'):
+            ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
+            user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
+
+        # logout button that called do_logout to return to login
+            ui.button(color=None, on_click=lambda: do_logout(), icon='logout').classes(
+            'ml-6 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-2 backdrop-blur-sm'
+            ).props('flat')
 
     # for the cart to hold items until logged out/checked out
     cart_items = []
+    current_user = {}  # NEW: store logged-in user so My Books can fetch their loans (US006)
 
     # Logic function
     async def try_login():
         user = await db.get_user(id_input.value)
         if user and user['active']:
+            current_user.update(user) # NEW: save user info for My Books lookup (US006)
             ui.notify(f"Welcome, {user['name']}", type='positive')
             user_name_label.text = user['name']
             login_cont.visible = False
@@ -203,6 +218,10 @@ async def main_page():
             checkout_cover.source = book['cover']
             checkout_title.text = book['title']
             checkout_author.text = book['author']
+
+            # NEW: Calculate and display due date (14 days from today) on the scanner card (US003)
+            due = datetime.now() + timedelta(days=14)
+            checkout_due_date.text = f'Due: {due.strftime("%B %d, %Y")}'
             
             with cart_container:
                 with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
@@ -210,6 +229,7 @@ async def main_page():
                     with ui.column().classes('gap-0'):
                         ui.label(book['title']).classes('text-white font-bold')
                         ui.label(book['author']).classes('text-xs text-slate-400')
+                        ui.label(f"Due: {due.strftime('%b %d, %Y')}").classes('text-xs text-blue-400 font-bold') # NEW: due date on each cart row (US003)
             
             checkout_btn.text = f'CONFIRM CHECKOUT ({len(cart_items)})'
             checkout_btn.enable()
@@ -227,37 +247,111 @@ async def main_page():
         checkout_btn.classes(remove='bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30', add='bg-white/5 border-white/10 text-slate-500')
         checkout_cover.source = 'https://via.placeholder.com/200x300?text=Waiting...'
         checkout_title.text, checkout_author.text = '---', '---'
+        checkout_due_date.text = '' # NEW: clear due date label on reset (US003)
 
     async def confirm_checkout():
-        # Updates the DB to mark the cart items as checked out
-        await db.checkout_books(cart_items)
-        ui.notify(f'Successfully checked out {len(cart_items)} items!', type='positive')
+    # Updates the DB to mark the cart items as checked out
+        await db.checkout_books(cart_items, current_user['id']) # NEW: pass user ID so a loan record is created (US006)
+        due = datetime.now() + timedelta(days=14) # NEW: calculate due date for confirmation message (US003)
+        ui.notify(f'Successfully checked out {len(cart_items)} item(s)! Return by {due.strftime("%B %d, %Y")}', type='positive') # NEW: due date in confirmation (US003)
         reset_cart_ui()
-        # Reloads the catalog grid so checked out books show up red
+    # Reloads the catalog grid so checked out books show up red
         await load_catalog_books() 
 
     async def scan_return_logic():
         book = await db.get_book(return_input.value)
         return_input.value = ""
         if book:
-            return_cover.source = book['cover']
-            return_title.text = book['title']
-            return_status.text = 'RETURNED SUCCESSFULLY'
-            return_status.classes(remove='bg-slate-800 text-slate-400 border-slate-700', add='bg-blue-500/20 text-blue-400 border-blue-500/50')
-            ui.notify('Book Returned!', type='positive')
-        else:
-            ui.notify('Book not recognized', type='negative')
+            if book['status'] == 'Available':
+                ui.notify('Book is already returned.', type='warning')
+                return
+            
+            success = await db.return_book(book['isbn'])
+            if success:
+                return_cover.source = book['cover']
+                return_title.text = book['title']
+                return_status.text = 'RETURNED SUCCESSFULLY'
+                return_status.classes(remove='bg-slate-800 text-slate-400 border-slate-700', add='bg-blue-500/20 text-blue-400 border-blue-500/50')
+                ui.notify('Book Returned!', type='positive')
+                # Reloads the catalog grid so returned book shows green again
+                await load_catalog_books()
+            else:
+                ui.notify('Book not recognized', type='negative')
+
+    # NEW: Filter catalog_grid to only show books matching the search query (US005)
+    async def handle_search(query: str):
+        query = (query or '').lower().strip()
+        books = await db.get_catalog()
+        catalog_grid.clear()
+        with catalog_grid:
+            for book in books:
+                if query and query not in book['title'].lower() and query not in book['author'].lower():
+                    continue
+                is_avail = book['status'] == 'Available'
+                border = 'border-slate-700/50' if is_avail else 'border-red-500/50'
+                opacity = 'opacity-100' if is_avail else 'opacity-60 grayscale'
+                with ui.card().classes(f'w-48 bg-[#151924]/80 {border} rounded-xl p-3 items-center cursor-pointer hover:scale-105 transition-all duration-300 {opacity}'):
+                    ui.image(book['cover']).classes('w-full h-56 object-cover rounded-lg shadow-lg mb-2')
+                    ui.label(book['title']).classes('text-sm text-white font-bold text-center leading-tight mb-1')
+                    ui.label(book['author']).classes('text-xs text-slate-400 text-center')
+                    if is_avail:
+                        ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
+                    else:
+                        ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
+
+    # NEW: Fetch and render the current user's active loans and borrowing history (US006)
+    async def load_my_books():
+        if not current_user:
+            return
+        loans = await db.get_user_loans(current_user['id'])
+        active = [l for l in loans if not l.get('returned')]
+        history = [l for l in loans if l.get('returned')]
+
+        active_loans_container.clear()
+        no_active_loans.visible = len(active) == 0
+        with active_loans_container:
+            for loan in active:
+                due = loan.get('due_date', 'N/A')
+                overdue = False
+                if isinstance(due, datetime):
+                    overdue = due < datetime.now()
+                    due = due.strftime('%B %d, %Y')
+                due_color = 'text-red-400' if overdue else 'text-blue-400'
+                with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
+                    ui.image(loan.get('cover', '')).classes('w-12 h-16 rounded object-cover')
+                    with ui.column().classes('gap-0 flex-1'):
+                        ui.label(loan['title']).classes('text-white font-bold')
+                        ui.label(loan['author']).classes('text-xs text-slate-400')
+                    ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due}").classes(f'text-xs font-bold {due_color}')
+
+        history_container.clear()
+        no_history.visible = len(history) == 0
+        with history_container:
+            for loan in history:
+                returned_on = loan.get('returned_date', 'N/A')
+                if isinstance(returned_on, datetime):
+                    returned_on = returned_on.strftime('%B %d, %Y')
+                with ui.row().classes('w-full items-center gap-4 bg-white/[0.03] p-3 rounded-xl border border-white/5 opacity-70'):
+                    ui.image(loan.get('cover', '')).classes('w-10 h-14 rounded object-cover')
+                    with ui.column().classes('gap-0 flex-1'):
+                        ui.label(loan['title']).classes('text-white text-sm font-bold')
+                        ui.label(loan['author']).classes('text-xs text-slate-400')
+                    ui.label(f'Returned: {returned_on}').classes('text-xs text-slate-500')
 
     def do_logout():
         login_cont.visible, dash_cont.visible, app_header.visible = True, False, False
         id_input.value = ""
+        current_user.clear() # NEW: clear stored user on logout (US006)
         reset_cart_ui() 
 
     login_cont, id_input = login.create(try_login)
     
     # unpacking variables from dashboard
-    dash_cont, checkout_input, checkout_cover, checkout_title, checkout_author, cart_container, checkout_btn, return_input, return_cover, return_title, return_status, empty_cart_message, catalog_grid = \
-        dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic)
+    (dash_cont, checkout_input, checkout_cover, checkout_title, checkout_author,
+     cart_container, checkout_btn, return_input, return_cover, return_title,
+     return_status, empty_cart_message, catalog_grid, checkout_due_date,
+     active_loans_container, no_active_loans, history_container, no_history) = \
+        dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books)
 
     # Function to build the catalog UI with real books from database
     async def load_catalog_books():
@@ -271,15 +365,15 @@ async def main_page():
                 border = 'border-slate-700/50' if is_avail else 'border-red-500/50'
                 opacity = 'opacity-100' if is_avail else 'opacity-60 grayscale'
                 
-                with ui.card().classes(f'w-56 bg-[#151924]/80 {border} rounded-2xl p-5 items-center cursor-pointer hover:scale-105 transition-all duration-300 {opacity}'):
-                    ui.image(book['cover']).classes('w-full h-64 object-cover rounded-xl shadow-lg mb-4')
-                    ui.label(book['title']).classes('text-lg text-white font-bold text-center leading-tight mb-1')
-                    ui.label(book['author']).classes('text-sm text-slate-400 text-center')
-                    
+                with ui.card().classes(f'w-48 bg-[#151924]/80 {border} rounded-xl p-3 items-center cursor-pointer hover:scale-105 transition-all duration-300 {opacity}'):
+                    ui.image(book['cover']).classes('w-full h-56 object-cover rounded-lg shadow-lg mb-2')
+                    ui.label(book['title']).classes('text-sm text-white font-bold text-center leading-tight mb-1')
+                    ui.label(book['author']).classes('text-xs text-slate-400 text-center')
                     if is_avail:
-                        ui.label('AVAILABLE').classes('text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest')
+                        ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
                     else:
-                        ui.label('CHECKED OUT').classes('text-[10px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest')
+                        ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
+
 
     # Load books immediately on startup
     await load_catalog_books()

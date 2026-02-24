@@ -1,5 +1,6 @@
 import asyncio
 import httpx 
+from datetime import datetime, timedelta # NEW: needed for due dates in loans (US006)
 
 
 USE_LIVE_API = True 
@@ -145,11 +146,54 @@ local_book_cache = {
 }
 
 # --- 2. LOCAL USERS ---
+# NEW: Added 'id' key inside each user dict so current_user['id'] works in main.py (US006)
 local_users = {
-    "12345": {"name": "Kenneth Molina", "active": True, "email": "molinak4@southernct.edu"},
-    "11111": {"name": "Jose Gaspar", "active": True, "email": "gasparmarij1@southernct.edu"},
-    "99999": {"name": "Professor James", "active": True, "email": "james@southernct.edu"}
+    "12345": {"id": "12345", "name": "Kenneth Molina", "active": True, "email": "molinak4@southernct.edu"},
+    "11111": {"id": "11111", "name": "Jose Gaspar", "active": True, "email": "gasparmarij1@southernct.edu"},
+    "99999": {"id": "99999", "name": "Professor James", "active": True, "email": "james@southernct.edu"}
 }
+
+# NEW: Mock loan records for testing the My Books workspace (US006)
+local_loans = [
+    # Active loan - due in the future (healthy)
+    {
+        "user_id": "12345",
+        "title": "Alan Turing: The Enigma",
+        "author": "Andrew Hodges",
+        "cover": "https://covers.openlibrary.org/b/isbn/0671492071-L.jpg",
+        "returned": False,
+        "due_date": datetime.now() + timedelta(days=9),
+    },
+    # Active loan - overdue (due date in the past)
+    {
+        "user_id": "12345",
+        "title": "Joel on Software",
+        "author": "Joel Spolsky",
+        "cover": "https://covers.openlibrary.org/b/isbn/1590593898-L.jpg",
+        "returned": False,
+        "due_date": datetime.now() - timedelta(days=3),
+    },
+    # Completed loan - already returned
+    {
+        "user_id": "12345",
+        "title": "Practical Guide to Linux",
+        "author": "Mark G. Sobell",
+        "cover": "https://covers.openlibrary.org/b/isbn/0131478230-L.jpg",
+        "returned": True,
+        "due_date": datetime.now() - timedelta(days=20),
+        "returned_date": datetime.now() - timedelta(days=22),
+    },
+    # Another completed loan - returned on time
+    {
+        "user_id": "12345",
+        "title": "Kali Linux Network Scanning",
+        "author": "Justin Hutchens",
+        "cover": "https://covers.openlibrary.org/b/isbn/9781783982141-L.jpg",
+        "returned": True,
+        "due_date": datetime.now() - timedelta(days=5),
+        "returned_date": datetime.now() - timedelta(days=7),
+    },
+]
 
 
 async def fetch_from_open_library(isbn):
@@ -203,7 +247,7 @@ async def get_catalog():
     # Return our list of 14 books
     return list(local_book_cache.values())
 
-async def checkout_books(cart_items):
+async def checkout_books(cart_items, user_id):
     """
     Takes a list of books from the cart and flips their status 
     to 'Checked Out' in the database.
@@ -214,5 +258,40 @@ async def checkout_books(cart_items):
         if isbn in local_book_cache:
             local_book_cache[isbn]['status'] = 'Checked Out'
             print(f" [UPDATE] Book {isbn} is now CHECKED OUT.")
+        # NEW: Add a loan record so the book appears in My Books (US006)
+        local_loans.append({
+            "user_id": user_id,
+            "title": book['title'],
+            "author": book['author'],
+            "cover": book['cover'],
+            "returned": False,
+            "due_date": datetime.now() + timedelta(days=14),
+        })
             
     return True
+
+# NEW: Marks a book as returned in both the catalog and the active loan record
+async def return_book(isbn: str):
+    # If the ISBN isn't in our catalog, we can't do anything
+    if isbn not in local_book_cache:
+        return False
+
+    book = local_book_cache[isbn]
+
+    # Flip the book back to Available in the catalog
+    local_book_cache[isbn]['status'] = 'Available'
+    print(f" [UPDATE] Book {isbn} is now AVAILABLE.")
+
+    # Find the matching active loan and mark it as returned
+    for loan in local_loans:
+        if loan['title'] == book['title'] and not loan['returned']:
+            loan['returned'] = True
+            loan['returned_date'] = datetime.now()
+            print(f" [UPDATE] Loan for '{book['title']}' marked as returned.")
+            break
+
+    return True
+
+# NEW: Returns all loan records for a given user_id (US006)
+async def get_user_loans(user_id: str):
+    return [loan for loan in local_loans if loan['user_id'] == user_id]
