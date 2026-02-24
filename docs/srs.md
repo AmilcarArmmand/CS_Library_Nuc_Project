@@ -3,13 +3,13 @@
 **Project Name:** CS Library Nuc Project
 
 **Team Members:**
-- Amilcar Armmand - Project Lead, Backend, Database, Testing - armmanda1@southernct.edu
-- Jose Gaspar Marin - Frontend, UI/UX, Testing - gasparmarij1@southernct.edu
-- Kenny Molina - Frontend, Database, Testing - molinak4@southernct.edu
+- Amilcar Armmand - Project Lead, Hardware Integration, Database, - armmanda1@southernct.edu
+- Jose Gaspar Marin - Web Frontend, Backend (Admin and Remote Access) - gasparmarij1@southernct.edu
+- Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v1.1
-**Last Updated:** 2/12/26
+**Document Version:** Draft v1.3
+**Last Updated:** 2/20/26
 
 ---
 
@@ -124,7 +124,9 @@ Goals:
 
 #### Authentication & User Management
 
-**US001:** As a student, I want to authenticate by scanning my student ID card so that I can use the system without remembering credentials.
+**US001:** As a student, I want to authenticate by scanning my student ID card so that I can use the system without remembering credentials. 
+
+Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
@@ -135,6 +137,8 @@ Goals:
 ---
 
 **US002:** As an administrator, I want to log in with username and password so that I can manage the system settings and data.
+
+Owner: Jose
 
 **Acceptance Criteria:**
 - [ ] Secure admin login screen accessible from main menu
@@ -147,6 +151,8 @@ Goals:
 
 **US003:** As a student, I want to check out a book by scanning its ISBN barcode so that I can borrow it quickly without paperwork.
 
+Owner: Kenny
+
 **Acceptance Criteria:**
 - [ ] Barcode scanner reads ISBN successfully on first try 95% of time
 - [ ] System displays book details (title, author, cover image)
@@ -158,6 +164,8 @@ Goals:
 
 **US004:** As a student, I want to return a book by scanning its barcode so that I can complete returns in seconds.
 
+Owner: Kenny
+
 **Acceptance Criteria:**
 - [ ] System recognizes book as currently checked out
 - [ ] Return transaction recorded with timestamp
@@ -167,6 +175,8 @@ Goals:
 ---
 
 **US005:** As a student, I want to search the library catalog so that I can find books without browsing shelves.
+
+Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Search by title, author, or keyword
@@ -179,6 +189,8 @@ Goals:
 
 **US006:** As a student, I want to view my borrowed books and due dates so that I can manage my returns.
 
+Owner: Kenny
+
 **Acceptance Criteria:**
 - [ ] Display list of currently checked out books
 - [ ] Show due dates with overdue items highlighted
@@ -190,6 +202,8 @@ Goals:
 
 **US007:** As an administrator, I want to add new books to the system so that the catalog stays current.
 
+Owner: Jose
+
 **Acceptance Criteria:**
 - [ ] Manual entry form for books without ISBN
 - [ ] ISBN scan auto-populates metadata from API
@@ -199,6 +213,8 @@ Goals:
 
 
 **US008:** As an administrator, I want to view all checked-out books so that I can track library usage.
+
+Owner: Jose
 
 **Acceptance Criteria:**
 - [ ] Dashboard showing all active checkouts
@@ -210,6 +226,8 @@ Goals:
 
 **US009:** As an administrator, I want to manage user accounts so that I can manage library access.
 
+Owner: Jose
+
 **Acceptance Criteria:**
 
 - [ ] Set borrowing limits per user
@@ -220,6 +238,8 @@ Goals:
 
 **US010:** As an administrator, I want to generate usage reports so that I can make data-driven decisions.
 
+Owner: Jose
+
 **Acceptance Criteria:**
 - [ ] Monthly checkout statistics
 - [ ] Most popular books report
@@ -229,16 +249,14 @@ Goals:
 
 **US011:** As a Book Donor, I want to be able to donate a book using the kiosk by scanning it's ISBN, which should add the book to the CS Lounge Library Database.
 
+Owner: Jose
+
 **Acceptance Criteria:**
  - [ ] Donor scans book ISBN at kiosk
  - [ ] System fills in book metadata from ISBN
  - [ ] Donor can also manually enter details if ISBN is invalid or missing
  - [ ] Confirmation from system that book has been added to the database successfully
  - [ ] Donation is logged with timestamp
-
----
-
-### Should Have (Post-MVP Enhancements)
 
 **US012:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
 
@@ -248,7 +266,13 @@ Goals:
 - [ ] Schedule a pickup date, if pre-existing days are scheduled from other users
 - [ ] Notify the student when the book has been returned, based on scheduled time, for pickup
 
+----
+
+### Should Have (Post-MVP Enhancements)
+
 **US013:** As a student, I want to receive email reminders about due dates so that I don't forget to return books.
+
+Owner: Amilcar
 
 **Acceptance Criteria:**
 
@@ -262,6 +286,8 @@ Goals:
 
 **US014:** As a department chair, I want to access library statistics from a web dashboard so that I can monitor usage remotely.
 
+Owner: Jose
+
 **Acceptance Criteria:**
 - [ ] System must track every action created by the end user (book check ins, book check outs, etc.)
 - [ ] Dashboard is created to view statistics
@@ -269,12 +295,16 @@ Goals:
 
 **US015:** As a student, I want to suggest books for purchase so that the collection meets student needs.
 
+Owner: Jose
+
 **Acceptance Criteria:**
 - [ ] User fills out a form on the page detailing what books can be purchased
 - [ ] System collects every form filled out
 - [ ] Administrators view the form and review it for further consideration
 
 ---
+
+
 
 ## 4. Features & Requirements
 
@@ -320,7 +350,7 @@ Goals:
 
 #### Database & Storage
 
-- Primary Database: SQLite (lightweight, suitable for Raspberry Pi)
+- Primary Database: MySQL
 
 - Key Data Entities:
 
@@ -410,15 +440,11 @@ Goals:
 
 **Frontend:**
 
-- Terminal-based UI: ncurses (python-ncurses library)
+- Web Framework UI: NiceGUI(Python-based UI framework)
 
-- Python Frameworks: urwid (alternative to ncurses for more complex UIs)
+- Styling: Tailwind CSS
 
-- Graphical Options (if needed): PyGame, Tkinter, or Kivy for simple GUIs
-
-- Touchscreen Support: evdev for touch input handling
-
-- Display Management: fbcp (Framebuffer copy) for secondary display support
+- Touchscreen Support: Web Browser Touch Events
 
 **Backend:**
 
@@ -494,11 +520,11 @@ Goals:
 
 **Design Principles:**
 
-- Terminal-First Design: Optimized for 7-inch touchscreen with terminal interface
+- Web-First Design: Responsive web application accessible via the Kiosk touchscreen or any remote browser.
 
 - Keyboard/Touch Navigation: Support for both keyboard shortcuts and touch taps
 
-- High Contrast: Black/white or custom color schemes for readability
+- Modern UI: custom color schemes for readability
 
 - Minimal Information: Display only essential information at each step
 
@@ -528,7 +554,7 @@ Goals:
 
   - Tap screen to focus scanner input
 
-2. Main Menu Screen
+2. Main Catalog
 
   **Purpose:** Central navigation hub
 
@@ -663,24 +689,6 @@ Goals:
   - Generate reports
 
   - Manage system settings
-
-Terminal UI Mockup:
-
-
-```bash
-┌─────────────────────────────────────────┐
-│   🏛️  CS LIBRARY KIOSK v1.0             │
-│   ====================================  │
-│                                         │
-│   Please scan your student ID           │
-│   ████████████████████████████████████  │
-│   [Scanner ready...]                    │
-│                                         │
-│   Press Ctrl+A for Admin Login          │
-│                                         │
-│   Network: ✓   Time: 14:30   Date: 3/12 │
-└─────────────────────────────────────────┘
-```
 
 
 ### 5.3 Database Schema
@@ -821,14 +829,14 @@ Component Diagram:
 
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Application Layer                                │
+│                    Web Application Layer                                │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────────────┐    │
 │  │                 Main Application Service                    │    │
 │  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌─────────┐   │    │
 │  │  │   UI      │  │  Scanner  │  │   DB      │  │   API   │   │    │
 │  │  │ Manager   │  │  Service  │  │  Service  │  │ Client  │   │    │
-│  │  │ (ncurses) │  │           │  │ (SQLite)  │  │         │   │    │
+│  │  │ (NICEGUI) │  │           │  │ (MySQL)   │  │         │   │    │
 │  │  └───────────┘  └───────────┘  └───────────┘  └─────────┘   │    │
 │  └─────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────┘
@@ -837,7 +845,7 @@ Component Diagram:
 │                    Data Layer                                       │
 ├─────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
-│  │   SQLite    │  │   Config    │  │   Log       │                  │
+│  │   MySQL     │  │   Config    │  │   Log       │                  │
 │  │  Database   │  │   Files     │  │   Files     │                  │
 │  └─────────────┘  └─────────────┘  └─────────────┘                  │
 └─────────────────────────────────────────────────────────────────────┘
@@ -862,9 +870,9 @@ Request/Response Flow:
 
         Transaction Service processes checkout/return logic
 
-    UI Update: UI Manager updates terminal display via ncurses
+    UI Update: UI Manager updates terminal display
 
-    Data Persistence: DB Service commits transaction to SQLite
+    Data Persistence: DB Service commits transaction to MySQL
 
     Logging: System logs event to both database and file system
 
@@ -918,47 +926,41 @@ Security Layer:
 
 ### 6.1 Sprint Breakdown (4 Sprints)
 
-#### Sprint 1: Foundation & Authentication
+#### Sprint 1: Foundation & Authentication (Target: Progress Report 1 - March 2)
 **Timeline:** Week 3-6
 **Goal:** Hardware setup and User Authentication
 
 **Tasks:**
-- Amilcar: Set up Raspberry Pi OS and configure database with WAL mode
-- Jose/Kenny: Frontend either NiceGui or urwid
-- Jose/Kenny: Write script for barcode scanner evdev
+- Amilcar: Design MySQL database Schema,and API endpoints
+- Kenny: Frontend using NiceGUI and Tailwinf to build web-based Kiosk interface
+- Jose: Building the Admin Dashboard
 
 **Deliverables:**
-- Working authentication system
-- User dashboard (basic version)
+- User login and dashboard
 
 ---
 
 #### Sprint 2: Core Feature Development
 **Timeline:** Week 7-9
-**Goal:** Book Checkout, Return, Inventory
+**Goal:** Library Workflows and external integrations
 
 **Tasks:**
-- Amilcar: Implement the Library API for metadata
-- Jose/Kenny: Checkout UI
-- Jose/Kenny: Populate database and add in logic for scanner
+- Amilcar: Implement the OpenLibrary API for metadata
+- Kenny: Building manual fallback and search filter
+- Jose: Build Book donation workflow and remote hold workflow and UI
 
 **Deliverables:**
-- Functional Checkout/Return flow
+- Functional Checkout/Return flow with metadata fetching
 ---
 
-#### Sprint 3: Feature Completion & Enhancement
+#### Sprint 3: Feature Completion & Enhancement (Target: Progress Report 2 )
 **Timeline:** Week 10-12
-**Goal:** [Complete remaining features and polish]
+**Goal:** Integrate Pi and Scanner with Web App
 
-**User Stories:**
-- US006-US008: [Remaining features]
-- UI/UX improvements
-- Error handling
-
-**Deliverables:**
-- All core features complete
-- Responsive design implementation
-- Improved user experience
+**Tasks:**
+- Amilcar: Setup Raspberry Pi and configure local networking
+- Kenny:  Connect web app to listen to scanner
+- Jose: Script the USB barcode scanner inputs
 
 ---
 
@@ -967,16 +969,7 @@ Security Layer:
 **Goal:** Production-ready application
 
 **Tasks:**
-- User acceptance testing
-- Bug fixes and refinements
-- Performance optimization
-- Final deployment and documentation
-
-**Deliverables:**
-- Fully tested application
-- Production deployment
-- User documentation
-- Presentation materials
+- Team: User Testing, Load Testing and Documentation
 
 ---
 
@@ -989,14 +982,27 @@ Security Layer:
 **Risk 1: SD Card Corruption
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Implementation of a WAL mode and automated USB backups
+- **Mitigation:** Implementation automated USB backups
 
-**Risk 2: API Rate Limiting
-- **Impact:** Low
+**Risk 2: Network Dependencies and Database Outages
+- **Impact:** High
 - **Likelihood:** Low
-- **Mitigation:** Possibly caching book metadata locally in SQL and implement a manual entry fallback.
+- **Mitigation:** System will locally cache library in MySQL so students can still browse even if network is down
 
+**Risk 3: Campus IT Approval
+- **Impact:** High
+- **Likelihood:** Low
+- **Mitigation:** Waiting for SSO credentials from IT, team is using a mock authentication system until IT provides credentials then we swap for integration.
 
+**Risk 4: Barcode Error
+- **Impact:** Medium
+- **Likelihood:** High
+- **Mitigation:** The UI has the ability to manually type in ISBNs so if scanner fails students can manually type the ISBN to complete transaction.
+
+**Risk 5: Hardware Integration / Delays
+- **Impact:** High
+- **Likelihood:** Low
+- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancements
 
 ## 8. Success Metrics
 
@@ -1010,8 +1016,8 @@ Security Layer:
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
-- **WAL:** Write-Ahead Logging - SQLite Feature
-- **GPIO:** General Purpose Input/Output - Pins on the Raspberry Pi that can be programmed
+- **NiceGUI:** Python-based web-UI
+- **MySQL** Database management system
 
 ### B. References
 
@@ -1019,6 +1025,7 @@ Security Layer:
 - Raspberry Pi Foundation. (2024). Raspberry Pi Documentation. https://www.raspberrypi.com/documentation/
 - Open Library API Documentation. https://openlibrary.org/developers/api
 - Google Books API Documentation. https://developers.google.com/books
+- NiceGUI Documentation: https://nicegui.io/documentation
 
 ### C. Change Log
 | Date | Version | Changes | Author |
