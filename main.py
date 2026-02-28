@@ -378,4 +378,4 @@ async def main_page():
     # Load books immediately on startup
     await load_catalog_books()
 
-ui.run(title="CS Library Kiosk", favicon='favicon1.ico', dark=True)
+ui.run(host='0.0.0.0', port=8080, title="CS Library Kiosk", favicon='favicon1.ico', dark=True)
