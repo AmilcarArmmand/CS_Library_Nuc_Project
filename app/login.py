@@ -61,7 +61,7 @@ def create(on_login_success): # define function called create, for NICEGUI its u
             'justify-content: flex-start !important; align-items: flex-start !important; padding: 3rem !important;'
         ):
 
-            # Fixed Logo: 250px width as requested
+            # Fixed Logo: 250px width
             ui.image('/assets/scsu_logo.png').classes('brightness-0 invert').style(
                 'width: 250px; height: auto; object-fit: contain; opacity: 0.95; filter: brightness(0) invert(1); margin-left: -43px;  margin-top: -60px;'
             )
@@ -70,7 +70,7 @@ def create(on_login_success): # define function called create, for NICEGUI its u
             with ui.element('div').style('display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:left; margin-top: -50px;'):
                 ui.element('div').style('width:40px; height:2px; background:#3b82f6; box-shadow:0 0 12px rgba(59,130,246,0.7); margin: 0 0 16px 0;')
 
-            # Department Label: -25px margin-top as requested
+            # Department Label: -25px margin-top
             ui.label('Department of Computer Science').style(
                 'color:rgba(255,255,255,0.45); font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; margin-top: -25px; margin-bottom: 3rem;'
             )
@@ -86,7 +86,7 @@ def create(on_login_success): # define function called create, for NICEGUI its u
                 'color:rgba(255,255,255,0.2); font-size:0.65rem; position:absolute; bottom:2.5rem; left:2.5rem;'
             )
 
-        # ── RIGHT PANEL ────────────────────────────────────────────────────
+        # right panel
         # reuse the existing scsu-bg starry background
         with ui.element('div').classes('right-panel'):
 
