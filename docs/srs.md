@@ -317,11 +317,11 @@ Owner: Jose
 
 ### 4.1 Core Features
 
-- Touchscreen Kiosk Interface - Responsive, intuitive interface designed for quick transactions with large touch targets and clear visual feedback.
+- Touchscreen Kiosk Interface - Touch-optimized UI with larger touch targets designed to allow a complete checkout in 4 or fewer taps.
 
-- Student ID Authentication - Barcode scanning of student ID cards for instant student identification without manual input.
+- Student ID Authentication - Hardware-level barcode scaning of student ID cards that processes and queries the database.
 
-- Barcode Book Scanning - Quick ISBN scanning for checkout/return with automatic metadata retrieval, using the same scanner as student authentication.
+- Barcode Book Scanning - ISBN scanning integration that reads an retrieves database metadata with each scan
 
 - Real-time Inventory Management - Instant status updates showing book availability, checkout history, and due dates.
 
@@ -447,23 +447,24 @@ Owner: Jose
 
 **Frontend:**
 
-- Web Framework UI: NiceGUI(Python-based UI framework)
+- Web Framework UI: NiceGUI (Python-based UI framework)
 
 - Styling: Tailwind CSS
 
 - Touchscreen Support: Web Browser Touch Events
 
+- Architecture: Web Portal and Kiosk Site
+
 **Backend:**
 
 - Runtime: Python 3.11+ (optimized for Raspberry Pi 5)
 
-- Framework: Custom service architecture with asyncio
+- Framework: FastAPI (NiceGUI)
 
 - Authentication: Custom barcode authentication system
 
 - Validation: Pydantic for data validation
 
-- Web Framework (Optional): FastAPI for admin web interface
 
 **Database:**
 
@@ -472,6 +473,8 @@ Owner: Jose
 - Alternative: PostgreSQL with asyncpg for larger deployments
 
 - Cache Layer: Redis (optional for performance)
+
+- Future Migration: Google Cloud MySQL deployment planned
 
 **Hardware Integration:**
 
@@ -989,7 +992,7 @@ Security Layer:
 **Risk 1: SD Card Corruption
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Implementation automated USB backups
+- **Mitigation:** Raspberry Pi SD cars are prone to failure under heavy loads. We will implement daily automated backups that mirror the database to a USB hard drive.
 
 **Risk 2: Network Dependencies and Database Outages
 - **Impact:** High
@@ -1001,15 +1004,15 @@ Security Layer:
 - **Likelihood:** Low
 - **Mitigation:** Waiting for SSO credentials from IT, team is using a mock authentication system until IT provides credentials then we swap for integration.
 
-**Risk 4: Barcode Error
+**Risk 4: Barcode Error Hardware Failware
 - **Impact:** Medium
 - **Likelihood:** High
-- **Mitigation:** The UI has the ability to manually type in ISBNs so if scanner fails students can manually type the ISBN to complete transaction.
+- **Mitigation:** The Kiosk UI includes the ability for manual text-entry fall back. If the physical USB scanner drops, you could still manual touchscreen typing.
 
 **Risk 5: Hardware Integration / Delays
 - **Impact:** High
 - **Likelihood:** Low
-- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancements
+- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancement. The USB scanner technically acts as keyboard so we could still test the kiosk software on personal laptops/computers without the need for the Pi.
 
 ## 8. Success Metrics
 
@@ -1018,8 +1021,12 @@ Security Layer:
 - Have all available books in CS Library cataloged into the system
 
 ---
+## 9. Testing Strategy
 
-## 9. Appendix
+- Backend database connections, user authentication and hashing, checkout logic
+- The physical kiosk UI will undergo manual integration testing and using USB barcode scanner plugged to Pi with rapid scanning.
+
+## 10. Appendix
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
@@ -1040,6 +1047,8 @@ Security Layer:
 | [1/28] | v1.0 | Initial draft | [Team] |
 | [2/6] | v1.1 | Revision | [Jose] |
 | [2/12] | v1.2 | Revision | [Kenny] |
+| [3/1] | v2.0 | Revision | [Kenny] |
+
 
 ---
 
