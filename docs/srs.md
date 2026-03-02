@@ -130,9 +130,10 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
-- [ ] System validates student is authorized to use library
-- [ ] User profile is created automatically
+- [ ] System validates student is authorized to use library against the database withing 1 second
+- [ ] User profile is created automatically if not present
 - [ ] User is redirected to main dashboard after login
+- [ ] UI will display a notification if clear success or error
 
 ---
 
@@ -144,6 +145,8 @@ Owner: Jose
 - [ ] Secure admin login screen accessible from main menu
 - [ ] Failed login attempts limited to 5 before lockout
 - [ ] Role-based access to different admin functions
+- [ ] Using bcrypt to validate the hashed password
+- [ ] Role-based access to validate user type, admin/stuent before routing to dashboard
 
 ---
 
@@ -155,10 +158,11 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Barcode scanner reads ISBN successfully on first try 95% of time
-- [ ] System displays book details (title, author, cover image)
+- [ ] System displays book details (title, author, cover image) withing 1.5 seconds
 - [ ] Due date automatically set to 14 days from checkout
 - [ ] Transaction recorded with timestamp and user ID
 - [ ] Clear confirmation message with return date
+- [ ] Database updates the book_status to checked out instanly upon confirmation
 
 ---
 
@@ -168,9 +172,10 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] System recognizes book as currently checked out
-- [ ] Return transaction recorded with timestamp
+- [ ] Scanner reads ISBN and queries the database
+- [ ] Database book status updates to available instantly upon scan
 - [ ] Book status updated to "available"
-- [ ] Confirmation message displayed
+- [ ] UI displays confirmation message
 
 ---
 
@@ -180,9 +185,9 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Search by title, author, or keyword
-- [ ] Real-time search results as user types
-- [ ] Results show availability status clearly
-- [ ] Detailed book view accessible from results
+- [ ] UI displays results, displaying 12 books per page to prevent any overload
+- [ ] Status badge outputs available(green) or checked out(red) based on database state
+
 
 
 #### User Account Features
@@ -193,10 +198,11 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Display list of currently checked out books
-- [ ] Show due dates with overdue items highlighted
+- [ ] UI highlights books where due date less than current date in red
 - [ ] Option to renew books (if no holds)
 - [ ] Show borrowing history (last 6 months)
 - [ ] Total books checked out counter
+- [ ] System restricts the renew button if the current date to already past the due date
 
 #### Administration Features
 
@@ -206,6 +212,7 @@ Owner: Jose
 
 **Acceptance Criteria:**
 - [ ] Manual entry form for books without ISBN
+- [ ] Open Library API request fetches and pares metadata with scan
 - [ ] ISBN scan auto-populates metadata from API
 - [ ] Option to categorize books (programming, theory, etc.)
 - [ ] Upload cover images manually if needed
