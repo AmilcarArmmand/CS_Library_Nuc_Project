@@ -1,16 +1,10 @@
-"""
-seed_db.py  —  One-time database seeder for CS Library Kiosk
---------------------------------------------------------------
-Run this ONCE after setting up the project to pre-populate
-the database with all real books from the shelves and the
-three test accounts.
+# Database seeder file.
 
-Usage:
-    python seed_db.py
+# Run this ONCE after setting up the project to pre-populate
+# the database with all real books from the shelves and the
+# three test accounts.
 
-It is safe to re-run — books and users that already exist are
-skipped (no duplicates, no errors).
-"""
+# It is safe to re-run — books and users that already exist are skipped (no duplicates, no errors).
 
 import sqlite3
 import bcrypt
@@ -19,7 +13,8 @@ from pathlib import Path
 DB_PATH = Path(__file__).parent / "cs_library.db"
 
 
-# ── Books from the real shelves ────────────────────────────────────────────────
+# LOCAL BOOK CACHE
+# This cache contains the real books we scanned from Shelves 1-5.
 
 BOOKS = [
     # Shelf 1
@@ -46,15 +41,8 @@ BOOKS = [
 ]
 
 
-# ── Test accounts ──────────────────────────────────────────────────────────────
-# Each tuple: (id, name, email, password)
-#
-# The id here becomes the actual primary key in the database.
-# Use any integer you want — just make sure they don't clash with
-# IDs that might be auto-assigned to real registered users later.
-# The mock database used 12345 / 11111 / 99999, so we keep those.
-#
-# Change the passwords before deploying to production!
+# TEST ACCOUNTS
+# NEW: Added 'id' key inside each user dict so current_user['id'] works in main.py (US006)
 
 TEST_USERS = [
     (12345, "Kenneth Molina",  "molinak4@southernct.edu",    "changeme123"),
@@ -63,8 +51,7 @@ TEST_USERS = [
 ]
 
 
-# ── Seeder ─────────────────────────────────────────────────────────────────────
-
+# SEEDING FUNCTION
 def seed():
     if not DB_PATH.exists():
         print("X  cs_library.db not found.")
