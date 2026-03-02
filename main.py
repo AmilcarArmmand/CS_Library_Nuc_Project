@@ -8,7 +8,7 @@ db.init_db()
 
 app.add_static_files('/assets', 'assets') # for images
 
-# for scroll bars which I don't understan (and the new starry background/fonts)
+# for scroll bars, scrollbar, font, and space background
 ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
@@ -170,14 +170,14 @@ async def main_page():
     with ui.row().classes('fixed top-0 left-0 w-full h-20 items-center justify-between px-8 bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 transition-all rounded-[32px]') as app_header:
         app_header.visible = False
 
-    # --- LEFT: LOGO ---
+    # left logo of header
         with ui.row().classes('items-center gap-6'):
             ui.image('/assets/scsu_logo.png').classes('w-28 max-h-10 object-contain brightness-0 invert opacity-90')
             with ui.row().classes('items-center gap-2'):
                 ui.label('CS_LIBRARY').classes('text-lg font-black tracking-widest text-white drop-shadow-sm')
                 ui.label('KIOSK').classes('text-lg font-light tracking-widest text-blue-400 opacity-90')
 
-    # --- RIGHT: USER INFO ---
+    # right side of header
         with ui.row().classes('items-center gap-4'):
             ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
             user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
@@ -189,7 +189,7 @@ async def main_page():
 
     # for the cart to hold items until logged out/checked out
     cart_items = []
-    current_user = {}  # NEW: store logged-in user so My Books can fetch their loans (US006)
+    current_user = {}  # New: store logged-in user so My Books can fetch their loans (US006)
 
     # LOGIN FUNCTION
     async def try_login():
@@ -197,7 +197,7 @@ async def main_page():
         id_input.value = ''
 
         if user and user['active']:
-            current_user.update(user) # NEW: save user info for My Books lookup (US006)
+            current_user.update(user) # New: save user info for My Books lookup (US006)
             ui.notify(f"Welcome, {user['name']}!", type='positive')
             user_name_label.text = user['name']
             login_cont.visible  = False
@@ -206,7 +206,7 @@ async def main_page():
         else:
             ui.notify('Invalid Student ID.', type='negative')
 
-    # CHECKOUT FUNCTION
+    # checkout function
     async def scan_checkout_logic():
         book = await db.get_book(checkout_input.value)
         checkout_input.value = ''
@@ -264,7 +264,7 @@ async def main_page():
     # Reloads the catalog grid so checked out books show up red
         await load_catalog_books() 
 
-    # RETURN
+    # return function
     async def scan_return_logic():
         book = await db.get_book(return_input.value)
         return_input.value = ''
@@ -287,8 +287,8 @@ async def main_page():
             else:
                 ui.notify('Book not recognized', type='negative')
 
-    # CATALOG SEARCH
-    # NEW: Filter catalog_grid to only show books matching the search query (US005)
+    # Catalog Search
+    # New Filter catalog_grid to only show books matching the search query (US005)
     async def handle_search(query: str):
         query = (query or '').lower().strip()
         books = await db.get_catalog()
@@ -312,8 +312,8 @@ async def main_page():
                     else:
                         ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
 
-    # MY BOOKS
-    # NEW: Fetch and render the current user's active loans and borrowing history (US006)
+    # My books
+    # New: Fetch and render the current user's active loans and borrowing history (US006)
     async def load_my_books():
         loans   = await db.get_user_loans(current_user['id'])
         active  = [l for l in loans if not l.get('returned')]
@@ -350,17 +350,17 @@ async def main_page():
                         ui.label(loan['author']).classes('text-xs text-slate-400')
                     ui.label(f'Returned: {returned_on}').classes('text-xs text-slate-500')
 
-    # LOGOUT FUNCTION
+    # Logout function
     def do_logout():
         login_cont.visible  = True
         dash_cont.visible   = False
         app_header.visible  = False
         id_input.value      = ''
-        current_user.clear() # NEW: clear stored user on logout (US006)
+        current_user.clear() # New: clear stored user on logout (US006)
         reset_cart_ui()
 
     
-    # WIRING (Where all the magic happens!)
+    
     login_cont, id_input = login.create(try_login)
 
     # unpacking variables from dashboard
@@ -370,7 +370,7 @@ async def main_page():
      active_loans_container, no_active_loans, history_container, no_history) = \
         dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books)
 
-    # CATALOG
+    # Catalog
     # Function to build the catalog UI with real books from database
     async def load_catalog_books():
         books = await db.get_catalog()
