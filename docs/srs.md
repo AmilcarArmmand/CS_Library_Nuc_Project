@@ -8,8 +8,8 @@
 - Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v1.3
-**Last Updated:** 2/20/26
+**Document Version:** Draft v2.0
+**Last Updated:** 3/2/26
 
 ---
 
@@ -63,7 +63,7 @@ Organization Context: Full-time student, uses library resources for projects and
 
 Needs:
 
-- Quick access to programming reference books[Another need]
+- Quick access to programming reference books
 - Ability to check availability without searching shelves
 - Simple checkout/return process
 
