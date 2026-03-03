@@ -83,9 +83,9 @@ python3 mock_data.py
 
 | Name | Email | Student ID | Password |
 |---|---|---|---|
-| Kenneth Molina | molinak4@southernct.edu | `12345` | `changeme123` |
-| John Test | user2@example.com | `88888` | `changeme123` |
-| Admin Setup | admin@example.com | `99999` | `changeme123` |
+| Kenneth | molinak4@southernct.edu | `12345`|
+| Jose | user2@example.com | `11111` |
+| Professor | admin@example.com | `99999` |
 
 ---
 
