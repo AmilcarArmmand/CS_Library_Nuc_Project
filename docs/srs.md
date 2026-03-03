@@ -8,8 +8,8 @@
 - Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v1.3
-**Last Updated:** 2/20/26
+**Document Version:** Draft v2.0
+**Last Updated:** 3/2/26
 
 ---
 
@@ -63,7 +63,7 @@ Organization Context: Full-time student, uses library resources for projects and
 
 Needs:
 
-- Quick access to programming reference books[Another need]
+- Quick access to programming reference books
 - Ability to check availability without searching shelves
 - Simple checkout/return process
 
@@ -130,9 +130,10 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
-- [ ] System validates student is authorized to use library
-- [ ] User profile is created automatically
+- [ ] System validates student is authorized to use library against the database withing 1 second
+- [ ] User profile is created automatically if not present
 - [ ] User is redirected to main dashboard after login
+- [ ] UI will display a notification if clear success or error
 
 ---
 
@@ -144,6 +145,8 @@ Owner: Jose
 - [ ] Secure admin login screen accessible from main menu
 - [ ] Failed login attempts limited to 5 before lockout
 - [ ] Role-based access to different admin functions
+- [ ] Using bcrypt to validate the hashed password
+- [ ] Role-based access to validate user type, admin/stuent before routing to dashboard
 
 ---
 
@@ -155,10 +158,11 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Barcode scanner reads ISBN successfully on first try 95% of time
-- [ ] System displays book details (title, author, cover image)
+- [ ] System displays book details (title, author, cover image) withing 1.5 seconds
 - [ ] Due date automatically set to 14 days from checkout
 - [ ] Transaction recorded with timestamp and user ID
 - [ ] Clear confirmation message with return date
+- [ ] Database updates the book_status to checked out instanly upon confirmation
 
 ---
 
@@ -168,9 +172,10 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] System recognizes book as currently checked out
-- [ ] Return transaction recorded with timestamp
+- [ ] Scanner reads ISBN and queries the database
+- [ ] Database book status updates to available instantly upon scan
 - [ ] Book status updated to "available"
-- [ ] Confirmation message displayed
+- [ ] UI displays confirmation message
 
 ---
 
@@ -180,9 +185,9 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Search by title, author, or keyword
-- [ ] Real-time search results as user types
-- [ ] Results show availability status clearly
-- [ ] Detailed book view accessible from results
+- [ ] UI displays results, displaying 12 books per page to prevent any overload
+- [ ] Status badge outputs available(green) or checked out(red) based on database state
+
 
 
 #### User Account Features
@@ -193,10 +198,11 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Display list of currently checked out books
-- [ ] Show due dates with overdue items highlighted
+- [ ] UI highlights books where due date less than current date in red
 - [ ] Option to renew books (if no holds)
 - [ ] Show borrowing history (last 6 months)
 - [ ] Total books checked out counter
+- [ ] System restricts the renew button if the current date to already past the due date
 
 #### Administration Features
 
@@ -206,6 +212,7 @@ Owner: Jose
 
 **Acceptance Criteria:**
 - [ ] Manual entry form for books without ISBN
+- [ ] Open Library API request fetches and pares metadata with scan
 - [ ] ISBN scan auto-populates metadata from API
 - [ ] Option to categorize books (programming, theory, etc.)
 - [ ] Upload cover images manually if needed
@@ -310,11 +317,11 @@ Owner: Jose
 
 ### 4.1 Core Features
 
-- Touchscreen Kiosk Interface - Responsive, intuitive interface designed for quick transactions with large touch targets and clear visual feedback.
+- Touchscreen Kiosk Interface - Touch-optimized UI with larger touch targets designed to allow a complete checkout in 4 or fewer taps.
 
-- Student ID Authentication - Barcode scanning of student ID cards for instant student identification without manual input.
+- Student ID Authentication - Hardware-level barcode scaning of student ID cards that processes and queries the database.
 
-- Barcode Book Scanning - Quick ISBN scanning for checkout/return with automatic metadata retrieval, using the same scanner as student authentication.
+- Barcode Book Scanning - ISBN scanning integration that reads an retrieves database metadata with each scan
 
 - Real-time Inventory Management - Instant status updates showing book availability, checkout history, and due dates.
 
@@ -440,23 +447,24 @@ Owner: Jose
 
 **Frontend:**
 
-- Web Framework UI: NiceGUI(Python-based UI framework)
+- Web Framework UI: NiceGUI (Python-based UI framework)
 
 - Styling: Tailwind CSS
 
 - Touchscreen Support: Web Browser Touch Events
 
+- Architecture: Web Portal and Kiosk Site
+
 **Backend:**
 
 - Runtime: Python 3.11+ (optimized for Raspberry Pi 5)
 
-- Framework: Custom service architecture with asyncio
+- Framework: FastAPI (NiceGUI)
 
 - Authentication: Custom barcode authentication system
 
 - Validation: Pydantic for data validation
 
-- Web Framework (Optional): FastAPI for admin web interface
 
 **Database:**
 
@@ -465,6 +473,8 @@ Owner: Jose
 - Alternative: PostgreSQL with asyncpg for larger deployments
 
 - Cache Layer: Redis (optional for performance)
+
+- Future Migration: Google Cloud MySQL deployment planned
 
 **Hardware Integration:**
 
@@ -982,7 +992,7 @@ Security Layer:
 **Risk 1: SD Card Corruption
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Implementation automated USB backups
+- **Mitigation:** Raspberry Pi SD cars are prone to failure under heavy loads. We will implement daily automated backups that mirror the database to a USB hard drive.
 
 **Risk 2: Network Dependencies and Database Outages
 - **Impact:** High
@@ -994,15 +1004,15 @@ Security Layer:
 - **Likelihood:** Low
 - **Mitigation:** Waiting for SSO credentials from IT, team is using a mock authentication system until IT provides credentials then we swap for integration.
 
-**Risk 4: Barcode Error
+**Risk 4: Barcode Error Hardware Failware
 - **Impact:** Medium
 - **Likelihood:** High
-- **Mitigation:** The UI has the ability to manually type in ISBNs so if scanner fails students can manually type the ISBN to complete transaction.
+- **Mitigation:** The Kiosk UI includes the ability for manual text-entry fall back. If the physical USB scanner drops, you could still manual touchscreen typing.
 
 **Risk 5: Hardware Integration / Delays
 - **Impact:** High
 - **Likelihood:** Low
-- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancements
+- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancement. The USB scanner technically acts as keyboard so we could still test the kiosk software on personal laptops/computers without the need for the Pi.
 
 ## 8. Success Metrics
 
@@ -1011,8 +1021,12 @@ Security Layer:
 - Have all available books in CS Library cataloged into the system
 
 ---
+## 9. Testing Strategy
 
-## 9. Appendix
+- Backend database connections, user authentication and hashing, checkout logic
+- The physical kiosk UI will undergo manual integration testing and using USB barcode scanner plugged to Pi with rapid scanning.
+
+## 10. Appendix
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
@@ -1033,6 +1047,8 @@ Security Layer:
 | [1/28] | v1.0 | Initial draft | [Team] |
 | [2/6] | v1.1 | Revision | [Jose] |
 | [2/12] | v1.2 | Revision | [Kenny] |
+| [3/1] | v2.0 | Revision | [Kenny] |
+
 
 ---
 

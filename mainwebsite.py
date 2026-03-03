@@ -1,14 +1,18 @@
-from nicegui import app, ui # import UI and APP which has login and dashboard
-import database as db 
-from app import login, dashboard # import the login and dashboard
-from datetime import datetime, timedelta # NEW: timedelta needed for due date calculation (US003)
+# WORK IN PROGRESS!
 
-# Initialize the database!
+# TO DO: 
+# Create a separate dashboard with intended features.
+# Assign books to a user.
+
+from nicegui import app, ui
+import database as db
+from app import login_email, dashboard, register
+from datetime import datetime, timedelta
+
 db.init_db()
 
-app.add_static_files('/assets', 'assets') # for images
+app.add_static_files('/assets', 'assets')
 
-# for scroll bars, scrollbar, font, and space background
 ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
@@ -112,7 +116,6 @@ ui.add_css('''
         100% { opacity: 0.4; }
     }
 
-    /* Blue/cyan ambient glow blobs */
     body::before {
         content: '';
         position: fixed;
@@ -132,11 +135,9 @@ ui.add_css('''
     .q-field--standout .q-field__control {
         background: rgba(255, 255, 255, 0.06) !important;
     }
-
     .q-field--standout.q-field--highlighted .q-field__control {
         background: rgba(255, 255, 255, 0.10) !important;
     }
-
     .q-field--standout .q-field__native,
     .q-field--standout .q-field__native::placeholder,
     .q-field--standout input,
@@ -145,77 +146,94 @@ ui.add_css('''
         -webkit-text-fill-color: white !important;
     }
 
-    /* Pi 800x480 specific fixes */
-    @media (max-height: 500px) {
-        .q-card {
-            padding: 16px !important;
-        }
-    }
-
-    /* Mobile width fixes */
-    @media (max-width: 500px) {
-        .q-card {
-            width: 90vw !important;
-            padding: 20px !important;
-        }
-    }
+    @media (max-height: 500px) { .q-card { padding: 16px !important; } }
+    @media (max-width: 500px)  { .q-card { width: 90vw !important; padding: 20px !important; } }
 
 ''', shared=True)
 
-# NICEGUI defining home page of app
+
+@ui.page('/register')
+async def register_page():
+    async def on_register(name: str, email: str, password: str):
+        user = await db.register_user(name, email, password)
+        if user:
+            ui.notify(f"Account created! Welcome, {user['name']}. Please sign in.", type='positive')
+            ui.navigate.to('/')
+        else:
+            ui.notify('That email is already registered. Please sign in.', type='warning')
+
+    register.create(
+        on_register_success=on_register,
+        on_back_to_login=lambda: ui.navigate.to('/'),
+    )
+
+
 @ui.page('/')
 async def main_page():
-   
-    # HEADER SECTION for the header which is invisible until logged in
-    with ui.row().classes('fixed top-0 left-0 w-full h-20 items-center justify-between px-8 bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 transition-all rounded-[32px]') as app_header:
+
+    with ui.row().classes(
+        'fixed top-0 left-0 w-full h-20 items-center justify-between px-8 '
+        'bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl '
+        'z-50 transition-all rounded-[32px]'
+    ) as app_header:
         app_header.visible = False
 
-    # left logo of header
         with ui.row().classes('items-center gap-6'):
-            ui.image('/assets/scsu_logo.png').classes('w-28 max-h-10 object-contain brightness-0 invert opacity-90')
+            ui.image('/assets/scsu_logo.png').classes(
+                'w-28 max-h-10 object-contain brightness-0 invert opacity-90'
+            )
             with ui.row().classes('items-center gap-2'):
-                ui.label('CS_LIBRARY').classes('text-lg font-black tracking-widest text-white drop-shadow-sm')
-                ui.label('KIOSK').classes('text-lg font-light tracking-widest text-blue-400 opacity-90')
+                ui.label('CS_LIBRARY').classes(
+                    'text-lg font-black tracking-widest text-white drop-shadow-sm'
+                )
+                ui.label('KIOSK').classes(
+                    'text-lg font-light tracking-widest text-blue-400 opacity-90'
+                )
 
-    # right side of header
         with ui.row().classes('items-center gap-4'):
-            ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
-            user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
-
-        # logout button that called do_logout to return to login
+            ui.icon('account_circle', size='20px').classes(
+                'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]'
+            )
+            user_name_label = ui.label('Guest').classes(
+                'text-sm font-bold text-slate-200 tracking-wide'
+            )
             ui.button(color=None, on_click=lambda: do_logout(), icon='logout').classes(
-            'ml-6 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-2 backdrop-blur-sm'
+                'ml-6 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 '
+                'border border-red-500/20 transition-all p-2 backdrop-blur-sm'
             ).props('flat')
 
-    # for the cart to hold items until logged out/checked out
-    cart_items = []
-    current_user = {}  # New: store logged-in user so My Books can fetch their loans (US006)
+    cart_items   = []
+    current_user = {}
 
-    # LOGIN FUNCTION
     async def try_login():
-        user = await db.get_user_by_id(id_input.value.strip())
-        id_input.value = ''
+        email    = id_input.value.strip()           # id_input is now the email field
+        password = id_input.password_input.value    # attached in app/login.py
 
+        user = await db.authenticate_user(email, password)
         if user and user['active']:
-            current_user.update(user) # New: save user info for My Books lookup (US006)
-            ui.notify(f"Welcome, {user['name']}!", type='positive')
+            current_user.update(user)
+            ui.notify(f"Welcome, {user['name']}", type='positive')
             user_name_label.text = user['name']
             login_cont.visible  = False
             app_header.visible  = True
             dash_cont.visible   = True
+            # Clear the fields for when the user logs out
+            id_input.value                = ""
+            id_input.password_input.value = ""
         else:
-            ui.notify('Invalid Student ID.', type='negative')
+            ui.notify('Invalid email or password.', type='negative')
+            id_input.password_input.value = ""
 
-    # checkout function
+
     async def scan_checkout_logic():
         book = await db.get_book(checkout_input.value)
-        checkout_input.value = ''
-
+        checkout_input.value = ""
+        
         if book:
             if book['status'] != 'Available':
                 ui.notify('Book is already checked out!', type='warning')
                 return
-
+            
             empty_cart_message.visible = False
             cart_items.append(book)
             checkout_cover.source = book['cover']
@@ -224,7 +242,7 @@ async def main_page():
 
             due = datetime.now() + timedelta(days=14)
             checkout_due_date.text = f'Due: {due.strftime("%B %d, %Y")}'
-
+            
             with cart_container:
                 with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
                     ui.image(book['cover']).classes('w-12 h-16 rounded object-cover')
@@ -232,7 +250,7 @@ async def main_page():
                         ui.label(book['title']).classes('text-white font-bold')
                         ui.label(book['author']).classes('text-xs text-slate-400')
                         ui.label(f"Due: {due.strftime('%b %d, %Y')}").classes('text-xs text-blue-400 font-bold')
-
+            
             checkout_btn.text = f'CONFIRM CHECKOUT ({len(cart_items)})'
             checkout_btn.enable()
             checkout_btn.classes(
@@ -243,31 +261,36 @@ async def main_page():
         else:
             ui.notify('Book not found', type='negative')
 
-
     def reset_cart_ui():
         cart_items.clear()
         cart_container.clear()
         empty_cart_message.visible = True
         checkout_btn.text = 'CONFIRM CHECKOUT (0)'
         checkout_btn.disable()
-        checkout_btn.classes(remove='bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30', add='bg-white/5 border-white/10 text-slate-500')
+        checkout_btn.classes(
+            remove='bg-blue-500/20 border-blue-500/50 text-blue-400 '
+                   'shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30',
+            add='bg-white/5 border-white/10 text-slate-500'
+        )
         checkout_cover.source = 'https://via.placeholder.com/200x300?text=Waiting...'
-        checkout_title.text, checkout_author.text = '---', '---'
-        checkout_due_date.text = '' # NEW: clear due date label on reset (US003)
+        checkout_title.text   = '---'
+        checkout_author.text  = '---'
+        checkout_due_date.text = ''
 
     async def confirm_checkout():
-    # Updates the DB to mark the cart items as checked out
-        await db.checkout_books(cart_items, current_user['id']) # NEW: pass user ID so a loan record is created (US006)
-        due = datetime.now() + timedelta(days=14) # NEW: calculate due date for confirmation message (US003)
-        ui.notify(f'Successfully checked out {len(cart_items)} item(s)! Return by {due.strftime("%B %d, %Y")}', type='positive') # NEW: due date in confirmation (US003)
+        await db.checkout_books(cart_items, current_user['id'])
+        due = datetime.now() + timedelta(days=14)
+        ui.notify(
+            f'Successfully checked out {len(cart_items)} item(s)! '
+            f'Return by {due.strftime("%B %d, %Y")}',
+            type='positive'
+        )
         reset_cart_ui()
-    # Reloads the catalog grid so checked out books show up red
-        await load_catalog_books() 
+        await load_catalog_books()
 
-    # return function
     async def scan_return_logic():
         book = await db.get_book(return_input.value)
-        return_input.value = ''
+        return_input.value = ""
         if book:
             if book['status'] == 'Available':
                 ui.notify('Book is already returned.', type='warning')
@@ -282,13 +305,10 @@ async def main_page():
                     add='bg-blue-500/20 text-blue-400 border-blue-500/50'
                 )
                 ui.notify('Book Returned!', type='positive')
-                # Reloads the catalog grid so returned book shows green again
                 await load_catalog_books()
             else:
                 ui.notify('Book not recognized', type='negative')
 
-    # Catalog Search
-    # New Filter catalog_grid to only show books matching the search query (US005)
     async def handle_search(query: str):
         query = (query or '').lower().strip()
         books = await db.get_catalog()
@@ -312,9 +332,9 @@ async def main_page():
                     else:
                         ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
 
-    # My books
-    # New: Fetch and render the current user's active loans and borrowing history (US006)
     async def load_my_books():
+        if not current_user:
+            return
         loans   = await db.get_user_loans(current_user['id'])
         active  = [l for l in loans if not l.get('returned')]
         history = [l for l in loans if l.get('returned')]
@@ -350,28 +370,23 @@ async def main_page():
                         ui.label(loan['author']).classes('text-xs text-slate-400')
                     ui.label(f'Returned: {returned_on}').classes('text-xs text-slate-500')
 
-    # Logout function
     def do_logout():
         login_cont.visible  = True
         dash_cont.visible   = False
         app_header.visible  = False
-        id_input.value      = ''
-        current_user.clear() # New: clear stored user on logout (US006)
+        id_input.value                = ""
+        id_input.password_input.value = ""
+        current_user.clear()
         reset_cart_ui()
 
-    
-    
-    login_cont, id_input = login.create(try_login)
+    login_cont, id_input = login_email.create(try_login)
 
-    # unpacking variables from dashboard
     (dash_cont, checkout_input, checkout_cover, checkout_title, checkout_author,
      cart_container, checkout_btn, return_input, return_cover, return_title,
      return_status, empty_cart_message, catalog_grid, checkout_due_date,
      active_loans_container, no_active_loans, history_container, no_history) = \
         dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books)
 
-    # Catalog
-    # Function to build the catalog UI with real books from database
     async def load_catalog_books():
         books = await db.get_catalog()
         catalog_grid.clear()
@@ -392,7 +407,7 @@ async def main_page():
                     else:
                         ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
 
-    # Load books immediately on startup
     await load_catalog_books()
+
 
 ui.run(host='0.0.0.0', port=8080, title="CS Library Kiosk", favicon='favicon1.ico', dark=True)
