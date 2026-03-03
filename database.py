@@ -1,7 +1,6 @@
-# The database.
-# New dependency. bcrypt. This is used to hash the passwords. I have added it to the requirements.txt file.
-# Note that the SQLite file (cs_library.db) is automatically created on first run.
-# It will be stored in the same directory as this file.
+# Database module.
+# Uses SQLite with bcrypt for password hashing.
+# The SQLite file (cs_library.db) is created on first run.
 
 import sqlite3
 import httpx
@@ -13,11 +12,11 @@ from typing import Optional
 
 DB_PATH = Path(__file__).parent / "cs_library.db"
 
-# Set False to disable live Open Library lookups (offline/testing mode)
+# set False to disable live Open Library lookups (offline/testing mode)
 USE_LIVE_API = True
 
 
-# HELPERS
+# helpers
 
 def _connect() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -36,7 +35,7 @@ async def _run(fn):
     return await loop.run_in_executor(None, fn)
 
 
-# INITIAL SCHEMA SETUP
+# initial schema setup
 
 def init_db() -> None:
     with _connect() as conn:
@@ -73,11 +72,10 @@ def init_db() -> None:
         conn.commit()
 
 
-# AUTHENTICATION METHOD
+# authentication method
 
 async def register_user(name: str, email: str, student_id: str, password: str) -> Optional[dict]:
-    # Hash the password and insert a new user row.
-    # Returns the user dict on success, or None if the email or student ID is already taken.
+    """Hash the password and insert a new user. Returns user dict or None if email/student_id taken."""
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -95,15 +93,13 @@ async def register_user(name: str, email: str, student_id: str, password: str) -
                 ).fetchone()
                 return _row(row)
         except sqlite3.IntegrityError:
-            return None  # email already exists
+            return None
 
     return await _run(_insert)
 
 
 async def authenticate_user(email: str, password: str) -> Optional[dict]:
-    
-    # Check email + password.
-    # Returns user dict on success (with keys: id, name, email, active), else None.
+    """Check email + password. Returns user dict on success, else None."""
 
     def _check():
         with _connect() as conn:
@@ -122,9 +118,7 @@ async def authenticate_user(email: str, password: str) -> Optional[dict]:
 
 
 async def get_user_by_id(student_id_input: str) -> Optional[dict]:
-    
-    # Look up a user by their student_id (used by the student ID scanner login).
-    # Returns user dict with keys: id, name, email, student_id, active — or None if not found.
+    """Look up a user by their student_id for scanner login."""
     def _fetch():
         with _connect() as conn:
             row = conn.execute(
@@ -140,9 +134,7 @@ async def get_user_by_id(student_id_input: str) -> Optional[dict]:
 # BOOKS
 
 async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
-    # Hit the Open Library Books API for a single ISBN.
-    # On success, saves the result to the local DB so future lookups are instant.
-    # Returns a book dict or None if not found / network error.
+    """Fetch book metadata from Open Library and cache it locally."""
 
     url = (
         f"https://openlibrary.org/api/books"
@@ -178,7 +170,7 @@ async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
             "shelf":  "",
         }
 
-        # Persist to the DB so the next scan is instant
+
         def _save():
             try:
                 with _connect() as conn:
@@ -206,18 +198,12 @@ async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
         print(f" [API] Error looking up ISBN {isbn}: {e}")
         return None
 
-# Fetch a single book by ISBN.
-async def get_book(isbn: str) -> Optional[dict]:
-    
-    # Lookup order:
-    # 1. Local SQLite DB  (instant)
-    # 2. Open Library API (if USE_LIVE_API is True and book not in DB)
-    # Results are saved to DB automatically for next time
 
-    # Returns a book dict or None.
+async def get_book(isbn: str) -> Optional[dict]:
+    """Fetch a single book by ISBN. Checks local DB first, then Open Library."""
     isbn = isbn.strip()
 
-    # 1. Check the local DB first
+
     def _fetch():
         with _connect() as conn:
             row = conn.execute(
@@ -231,7 +217,7 @@ async def get_book(isbn: str) -> Optional[dict]:
         print(f" [DB] Found ISBN {isbn} in local database.")
         return book
 
-    # 2. Fall back to Open Library
+
     if USE_LIVE_API:
         print(f" [MISS] ISBN {isbn} not in DB — querying Open Library...")
         return await _fetch_from_open_library(isbn)
@@ -267,11 +253,10 @@ async def add_book(isbn: str, title: str, author: str, cover: str = "") -> bool:
 
 
 
-# CHECK OUT / RETURN SYSTEM
+# check out / return system
 
 async def checkout_books(books: list, user_id: int) -> None:
-    # Mark each book as 'Checked Out' and create a loan record.
-    # Default Due date: 14 days from now. Change as needed.
+    """Mark each book as 'Checked Out' and create a loan record. Due in 14 days."""
 
     due = datetime.now() + timedelta(days=14)
 
@@ -292,9 +277,7 @@ async def checkout_books(books: list, user_id: int) -> None:
 
 
 async def return_book(isbn: str) -> bool:
-
-    # Mark a book as Available and close its open loan.
-    # Returns True if a loan was found and closed, False otherwise.
+    """Mark a book as Available and close its open loan."""
 
     def _return():
         now = datetime.now()
@@ -325,7 +308,7 @@ async def renew_book(loan_id: int) -> bool:
         now = datetime.now()
         new_due_date = now + timedelta(days=14)
         with _connect() as conn:
-            # First, check if the loan exists and is active (not returned)
+
             loan = conn.execute(
                 "SELECT id FROM loans WHERE id = ? AND returned = 0",
                 (loan_id,)
@@ -344,13 +327,10 @@ async def renew_book(loan_id: int) -> bool:
     return await _run(_renew)
 
 
-# MY BOOKS
+# my books
 
 async def get_user_loans(user_id: int) -> list:
-
-    # Return all loans for a user, joined with book info.
-    # Each dict has: title, author, cover, due_date (datetime),
-    # returned (bool), returned_date (datetime | None).
+    """Return all loans for a user, joined with book info."""
 
     def _fetch():
         with _connect() as conn:

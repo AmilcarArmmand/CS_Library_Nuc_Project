@@ -1,16 +1,12 @@
 # Account registration page for CS Library Kiosk.
 
-# Served by main.py at the /register route.
-# On success calls on_register_success(name, email, password).
-
 from nicegui import ui
 from datetime import datetime
 
 
 def create(on_register_success, on_back_to_login):
 
-    # on_register_success : async callable(name, email, student_id, password)
-    # on_back_to_login    : callable  (typically navigates to '/')
+
 
     ui.add_head_html('''
     <style>
@@ -47,7 +43,7 @@ def create(on_register_success, on_back_to_login):
 
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
-        # ── LEFT PANEL ─────────────────────────────────────────────────────
+        # left panel
         with ui.element('div').classes('left-panel stripe-texture'):
             ui.image('/assets/scsu_logo.png').classes('brightness-0 invert').style(
                 'width:250px; height:auto; object-fit:contain; opacity:0.95; '
@@ -88,7 +84,7 @@ def create(on_register_success, on_back_to_login):
                 'position:absolute; bottom:2.5rem; left:2.5rem;'
             )
 
-        # ── RIGHT PANEL ────────────────────────────────────────────────────
+        # right panel
         with ui.element('div').classes('right-panel'):
             with ui.column().classes('w-[400px] gap-0'):
 
@@ -105,7 +101,7 @@ def create(on_register_success, on_back_to_login):
                     'color:rgba(148,163,184,1); font-size:0.75rem; letter-spacing:0.01em;'
                 )
 
-                # ── FULL NAME ─────────────────────────────────────────────
+                # full name
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('person', size='14px').classes('text-blue-400')
@@ -114,7 +110,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='Jane Doe'
                     ).classes('w-full').props('dark standout autofocus')
 
-                # ── EMAIL ─────────────────────────────────────────────────
+                # email
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('email', size='14px').classes('text-blue-400')
@@ -123,7 +119,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='you@example.com'
                     ).classes('w-full').props('dark standout type=email')
 
-                # ── STUDENT ID ────────────────────────────────────────────
+                # student ID
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('badge', size='14px').classes('text-blue-400')
@@ -132,7 +128,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='e.g., 12345678'
                     ).classes('w-full').props('dark standout')
 
-                # ── PASSWORD ──────────────────────────────────────────────
+                # password
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('lock', size='14px').classes('text-blue-400')
@@ -141,7 +137,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='Choose a strong password'
                     ).classes('w-full').props('dark standout type=password')
 
-                # ── CONFIRM PASSWORD ──────────────────────────────────────
+                # confirm password
                 with ui.column().classes('w-full gap-1 mb-3'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('lock_reset', size='14px').classes('text-blue-400')
@@ -155,7 +151,7 @@ def create(on_register_success, on_back_to_login):
                     'color:#f87171; font-size:0.72rem; min-height:1rem; margin-bottom:0.4rem;'
                 )
 
-                # ── SUBMIT ────────────────────────────────────────────────
+                # submit
                 async def _handle_register():
                     name    = name_input.value.strip()
                     email   = email_input.value.strip()
@@ -191,14 +187,14 @@ def create(on_register_success, on_back_to_login):
                     'transition-all duration-300 mb-3'
                 ).props('flat')
 
-                # ── BACK TO LOGIN ─────────────────────────────────────────
+                # back to login
                 with ui.row().classes('w-full justify-center mb-4'):
                     ui.label('Already have an account? ').style(
                         'color:rgba(148,163,184,0.7); font-size:0.75rem;'
                     )
                     ui.label('Sign in').classes('back-link').on('click', on_back_to_login)
 
-                # ── CLOCK ─────────────────────────────────────────────────
+                # clock
                 with ui.row().classes('w-full items-center gap-3 pt-5 opacity-60').style(
                     'border-top: 1px solid rgba(51,65,85,0.6);'
                 ):

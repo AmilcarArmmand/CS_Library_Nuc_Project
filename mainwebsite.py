@@ -1,9 +1,5 @@
 # WORK IN PROGRESS!
 
-# TO DO: 
-# Create a separate dashboard with intended features.
-# Assign books to a user.
-
 from nicegui import app, ui
 import database as db
 from app import login_email, dashboard, register
@@ -206,8 +202,8 @@ async def main_page():
     current_user = {}
 
     async def try_login():
-        email    = id_input.value.strip()           # id_input is now the email field
-        password = id_input.password_input.value    # attached in app/login.py
+        email    = id_input.value.strip()
+        password = id_input.password_input.value
 
         user = await db.authenticate_user(email, password)
         if user and user['active']:
@@ -217,7 +213,7 @@ async def main_page():
             login_cont.visible  = False
             app_header.visible  = True
             dash_cont.visible   = True
-            # Clear the fields for when the user logs out
+
             id_input.value                = ""
             id_input.password_input.value = ""
         else:
@@ -312,7 +308,7 @@ async def main_page():
     async def handle_search(query: str):
         nonlocal current_search_query, current_page
         current_search_query = (query or '').lower().strip()
-        current_page = 1  # Reset to page 1 on new search
+        current_page = 1
         await load_catalog_books()
 
     async def load_my_books():
@@ -324,7 +320,7 @@ async def main_page():
 
         active_loans_container.clear()
         
-        # Add total books checked out counter
+
         with active_loans_container:
             ui.label(f'Total Books Checked Out: {len(active)}').classes('text-sm text-blue-400 font-bold mb-2')
             
@@ -347,7 +343,7 @@ async def main_page():
                         ui.label(loan['author']).classes('text-xs text-slate-400')
                         ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due_str}").classes(f'text-xs font-bold {due_color}')
                     
-                    # RENEW BUTTON logic
+
                     async def _renew(l_id=loan['id']):
                         success = await db.renew_book(l_id)
                         if success:
@@ -356,7 +352,7 @@ async def main_page():
                         else:
                             ui.notify('Could not renew book.', type='negative')
                     
-                    # Only allow renew if not overdue
+
                     renew_btn = ui.button('RENEW', on_click=_renew).classes(
                         'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-all'
                     ).props('flat rounded')
@@ -414,7 +410,7 @@ async def main_page():
     async def load_catalog_books():
         books = await db.get_catalog()
         
-        # Filter books based on search query
+
         if current_search_query:
             filtered_books = [b for b in books if current_search_query in b['title'].lower() or current_search_query in b['author'].lower()]
         else:
@@ -423,12 +419,12 @@ async def main_page():
         total_books = len(filtered_books)
         total_pages = max(1, (total_books + items_per_page - 1) // items_per_page)
         
-        # Pagination logic
+
         start_idx = (current_page - 1) * items_per_page
         end_idx = start_idx + items_per_page
         page_books = filtered_books[start_idx:end_idx]
 
-        # Update pagination UI controls
+
         page_label.text = f'Page {current_page} of {total_pages}'
         
         if current_page <= 1:
