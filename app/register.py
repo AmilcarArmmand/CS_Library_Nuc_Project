@@ -9,7 +9,7 @@ from datetime import datetime
 
 def create(on_register_success, on_back_to_login):
 
-    # on_register_success : async callable(name, email, password)
+    # on_register_success : async callable(name, email, student_id, password)
     # on_back_to_login    : callable  (typically navigates to '/')
 
     ui.add_head_html('''
@@ -55,7 +55,7 @@ def create(on_register_success, on_back_to_login):
             )
             with ui.element('div').style(
                 'display:flex; flex-direction:column; align-items:flex-start; '
-                'gap:4px; text-align:left; margin-top:-50px;'
+                'gap:4px; text-align:left; margin-top:-30px;'
             ):
                 ui.element('div').style(
                     'width:40px; height:2px; background:#3b82f6; '
@@ -64,7 +64,7 @@ def create(on_register_success, on_back_to_login):
             ui.label('Department of Computer Science').style(
                 'color:rgba(255,255,255,0.45); font-size:0.7rem; '
                 'letter-spacing:0.14em; text-transform:uppercase; '
-                'margin-top:-25px; margin-bottom:3rem;'
+                'margin-top: -5px; margin-bottom:3rem;'
             )
             with ui.element('div').style(
                 'display:flex; flex-direction:column; gap:2px; '
@@ -123,6 +123,15 @@ def create(on_register_success, on_back_to_login):
                         placeholder='you@example.com'
                     ).classes('w-full').props('dark standout type=email')
 
+                # ── STUDENT ID ────────────────────────────────────────────
+                with ui.column().classes('w-full gap-1 mb-4'):
+                    with ui.row().classes('items-center gap-2 mb-1'):
+                        ui.icon('badge', size='14px').classes('text-blue-400')
+                        ui.label('Student ID').classes('text-xs font-semibold text-white')
+                    student_id_input = ui.input(
+                        placeholder='e.g., 12345678'
+                    ).classes('w-full').props('dark standout')
+
                 # ── PASSWORD ──────────────────────────────────────────────
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
@@ -150,10 +159,11 @@ def create(on_register_success, on_back_to_login):
                 async def _handle_register():
                     name    = name_input.value.strip()
                     email   = email_input.value.strip()
+                    student_id = student_id_input.value.strip()
                     pwd     = password_input.value
                     confirm = confirm_input.value
 
-                    if not name or not email or not pwd:
+                    if not name or not email or not student_id or not pwd:
                         error_label.text = 'All fields are required.'
                         return
                     if pwd != confirm:
@@ -164,7 +174,7 @@ def create(on_register_success, on_back_to_login):
                         return
 
                     error_label.text = ''
-                    await on_register_success(name, email, pwd)
+                    await on_register_success(name, email, student_id, pwd)
 
                 confirm_input.on('keydown.enter', _handle_register)
 

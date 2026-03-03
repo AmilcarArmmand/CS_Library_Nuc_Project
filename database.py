@@ -43,6 +43,7 @@ def init_db() -> None:
         conn.executescript('''
             CREATE TABLE IF NOT EXISTS users (
                 id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id    TEXT    NOT NULL UNIQUE,
                 name          TEXT    NOT NULL,
                 email         TEXT    NOT NULL UNIQUE COLLATE NOCASE,
                 password_hash TEXT    NOT NULL,
@@ -74,9 +75,9 @@ def init_db() -> None:
 
 # AUTHENTICATION METHOD
 
-async def register_user(name: str, email: str, password: str) -> Optional[dict]:
+async def register_user(name: str, email: str, student_id: str, password: str) -> Optional[dict]:
     # Hash the password and insert a new user row.
-    # Returns the user dict on success, or None if the email is already taken.
+    # Returns the user dict on success, or None if the email or student ID is already taken.
 
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
@@ -84,12 +85,12 @@ async def register_user(name: str, email: str, password: str) -> Optional[dict]:
         try:
             with _connect() as conn:
                 cur = conn.execute(
-                    "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-                    (name.strip(), email.strip().lower(), pw_hash),
+                    "INSERT INTO users (name, email, student_id, password_hash) VALUES (?, ?, ?, ?)",
+                    (name.strip(), email.strip().lower(), student_id.strip(), pw_hash),
                 )
                 conn.commit()
                 row = conn.execute(
-                    "SELECT id, name, email, active FROM users WHERE id = ?",
+                    "SELECT id, name, email, student_id, active FROM users WHERE id = ?",
                     (cur.lastrowid,)
                 ).fetchone()
                 return _row(row)
@@ -113,30 +114,26 @@ async def authenticate_user(email: str, password: str) -> Optional[dict]:
         if row is None:
             return None
         if bcrypt.checkpw(password.encode(), row["password_hash"].encode()):
-            return {"id": row["id"], "name": row["name"],
+            return {"id": row["id"], "name": row["name"], "student_id": row["student_id"],
                     "email": row["email"], "active": bool(row["active"])}
         return None
 
     return await _run(_check)
 
 
-async def get_user_by_id(user_id) -> Optional[dict]:
+async def get_user_by_id(student_id_input: str) -> Optional[dict]:
     
-    # Look up a user by their numeric ID (used by the student ID scanner login).
-    # Accepts int or string — the barcode scanner returns a string.
-    # Returns user dict with keys: id, name, email, active — or None if not found.
+    # Look up a user by their student_id (used by the student ID scanner login).
+    # Returns user dict with keys: id, name, email, student_id, active — or None if not found.
     def _fetch():
         with _connect() as conn:
             row = conn.execute(
-                "SELECT id, name, email, active FROM users WHERE id = ?",
-                (int(user_id),)
+                "SELECT id, name, email, student_id, active FROM users WHERE student_id = ?",
+                (str(student_id_input).strip(),)
             ).fetchone()
         return _row(row)
 
-    try:
-        return await _run(_fetch)
-    except (ValueError, TypeError):
-        return None  # user_id wasn't a valid integer
+    return await _run(_fetch)
 
 
 
@@ -320,6 +317,31 @@ async def return_book(isbn: str) -> bool:
         return True
 
     return await _run(_return)
+
+
+async def renew_book(loan_id: int) -> bool:
+    """Extend the due date of an active loan by 14 days from today."""
+    def _renew():
+        now = datetime.now()
+        new_due_date = now + timedelta(days=14)
+        with _connect() as conn:
+            # First, check if the loan exists and is active (not returned)
+            loan = conn.execute(
+                "SELECT id FROM loans WHERE id = ? AND returned = 0",
+                (loan_id,)
+            ).fetchone()
+            
+            if loan is None:
+                return False
+                
+            conn.execute(
+                "UPDATE loans SET due_date = ? WHERE id = ?",
+                (new_due_date, loan_id)
+            )
+            conn.commit()
+        return True
+
+    return await _run(_renew)
 
 
 # MY BOOKS

@@ -95,7 +95,7 @@ def seed():
     for user_id, name, email, password in TEST_USERS:
         # Skip if this ID or email already exists
         existing = conn.execute(
-            "SELECT id FROM users WHERE id = ? OR email = ? COLLATE NOCASE",
+            "SELECT id FROM users WHERE student_id = ? OR email = ? COLLATE NOCASE",
             (user_id, email),
         ).fetchone()
         if existing:
@@ -104,9 +104,9 @@ def seed():
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         conn.execute(
-            "INSERT INTO users (id, name, email, password_hash, active) "
+            "INSERT INTO users (student_id, name, email, password_hash, active) "
             "VALUES (?, ?, ?, ?, 1)",
-            (user_id, name, email.lower(), pw_hash),
+            (str(user_id), name, email.lower(), pw_hash),
         )
         users_added += 1
 

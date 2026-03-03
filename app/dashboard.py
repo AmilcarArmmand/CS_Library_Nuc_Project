@@ -1,6 +1,6 @@
 from nicegui import ui # import the UI library again
 
-def create(on_checkout_scan, on_checkout_confirm, on_return_scan, on_search, on_my_books_load):
+def create(on_checkout_scan, on_checkout_confirm, on_return_scan, on_search, on_my_books_load, on_next_page, on_prev_page):
     # CHANGE 1: Switched to 'scsu-bg' 
     with ui.column().classes('scsu-bg w-full h-screen items-center pt-28 overflow-y-auto') as container:
         container.visible = False # hide dashboard until signed in
@@ -87,6 +87,18 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan, on_search, on_
             # Instead of the 'for i in range(8)' loop, we just make an empty row.
             # We name it 'catalog_grid' so main.py can fill it with real books later.
             catalog_grid = ui.row().classes('w-full justify-center gap-8 flex-wrap')
+            
+            # Pagination controls
+            with ui.row().classes('w-full mt-8 items-center justify-center gap-6') as pagination_container:
+                prev_btn = ui.button('PREV PAGE', on_click=on_prev_page, icon='chevron_left').classes(
+                    'bg-slate-800 text-slate-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-slate-700 transition-all'
+                ).props('flat rounded')
+                
+                page_label = ui.label('Page 1').classes('text-sm text-white font-bold tracking-widest')
+                
+                next_btn = ui.button('NEXT PAGE', on_click=on_next_page, icon='chevron_right').classes(
+                    'bg-slate-800 text-slate-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-slate-700 transition-all flex-row-reverse'
+                ).props('flat rounded')
 
        
        # Checkout cart button is press, this is the two cards with card and scanner
@@ -165,4 +177,5 @@ def create(on_checkout_scan, on_checkout_confirm, on_return_scan, on_search, on_
     return (container, checkout_input, checkout_cover, checkout_title, checkout_author,
             cart_container, checkout_btn, return_input, return_cover, return_title,
             return_status, empty_cart_message, catalog_grid, checkout_due_date,
-            active_loans_container, no_active_loans, history_container, no_history)
+            active_loans_container, no_active_loans, history_container, no_history,
+            prev_btn, next_btn, page_label)

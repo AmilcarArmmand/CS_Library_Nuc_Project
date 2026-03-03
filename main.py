@@ -290,36 +290,27 @@ async def main_page():
     # Catalog Search
     # New Filter catalog_grid to only show books matching the search query (US005)
     async def handle_search(query: str):
-        query = (query or '').lower().strip()
-        books = await db.get_catalog()
-        catalog_grid.clear()
-        with catalog_grid:
-            for book in books:
-                if query and query not in book['title'].lower() and query not in book['author'].lower():
-                    continue
-                is_avail = book['status'] == 'Available'
-                border   = 'border-slate-700/50' if is_avail else 'border-red-500/50'
-                opacity  = 'opacity-100' if is_avail else 'opacity-60 grayscale'
-                with ui.card().classes(
-                    f'w-48 bg-[#151924]/80 {border} rounded-xl p-3 items-center '
-                    f'cursor-pointer hover:scale-105 transition-all duration-300 {opacity}'
-                ):
-                    ui.image(book['cover']).classes('w-full h-56 object-cover rounded-lg shadow-lg mb-2')
-                    ui.label(book['title']).classes('text-sm text-white font-bold text-center leading-tight mb-1')
-                    ui.label(book['author']).classes('text-xs text-slate-400 text-center')
-                    if is_avail:
-                        ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
-                    else:
-                        ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
+        nonlocal current_search_query, current_page
+        current_search_query = (query or '').lower().strip()
+        current_page = 1  # Reset to page 1 on new search
+        await load_catalog_books()
 
     # My books
     # New: Fetch and render the current user's active loans and borrowing history (US006)
     async def load_my_books():
+        if not current_user:
+            return
+            
         loans   = await db.get_user_loans(current_user['id'])
         active  = [l for l in loans if not l.get('returned')]
         history = [l for l in loans if l.get('returned')]
 
         active_loans_container.clear()
+        
+        # Add total books checked out counter
+        with active_loans_container:
+            ui.label(f'Total Books Checked Out: {len(active)}').classes('text-sm text-blue-400 font-bold mb-2')
+            
         no_active_loans.visible = len(active) == 0
         with active_loans_container:
             for loan in active:
@@ -327,14 +318,35 @@ async def main_page():
                 overdue = False
                 if isinstance(due, datetime):
                     overdue = due < datetime.now()
-                    due     = due.strftime('%B %d, %Y')
+                    due_str = due.strftime('%B %d, %Y')
+                else:
+                    due_str = due
+                
                 due_color = 'text-red-400' if overdue else 'text-blue-400'
+                
                 with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
                     ui.image(loan.get('cover', '')).classes('w-12 h-16 rounded object-cover')
                     with ui.column().classes('gap-0 flex-1'):
                         ui.label(loan['title']).classes('text-white font-bold')
                         ui.label(loan['author']).classes('text-xs text-slate-400')
-                    ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due}").classes(f'text-xs font-bold {due_color}')
+                        ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due_str}").classes(f'text-xs font-bold {due_color}')
+                    
+                    # RENEW BUTTON logic
+                    async def _renew(l_id=loan['id']):
+                        success = await db.renew_book(l_id)
+                        if success:
+                            ui.notify('Book renewed successfully for 14 more days!', type='positive')
+                            await load_my_books()
+                        else:
+                            ui.notify('Could not renew book.', type='negative')
+                    
+                    # Only allow renew if not overdue
+                    renew_btn = ui.button('RENEW', on_click=_renew).classes(
+                        'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-all'
+                    ).props('flat rounded')
+                    if overdue:
+                        renew_btn.disable()
+                        renew_btn.classes(remove='bg-blue-600/20 text-blue-400 hover:bg-blue-500/30', add='bg-slate-800 text-slate-500')
 
         history_container.clear()
         no_history.visible = len(history) == 0
@@ -364,19 +376,67 @@ async def main_page():
     login_cont, id_input = login.create(try_login)
 
     # unpacking variables from dashboard
+    current_page = 1
+    items_per_page = 12
+    current_search_query = ''
+
+    async def next_page():
+        nonlocal current_page
+        current_page += 1
+        await load_catalog_books()
+
+    async def prev_page():
+        nonlocal current_page
+        if current_page > 1:
+            current_page -= 1
+            await load_catalog_books()
+
     (dash_cont, checkout_input, checkout_cover, checkout_title, checkout_author,
      cart_container, checkout_btn, return_input, return_cover, return_title,
      return_status, empty_cart_message, catalog_grid, checkout_due_date,
-     active_loans_container, no_active_loans, history_container, no_history) = \
-        dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books)
+     active_loans_container, no_active_loans, history_container, no_history,
+     prev_btn, next_btn, page_label) = \
+        dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books, next_page, prev_page)
 
     # Catalog
     # Function to build the catalog UI with real books from database
     async def load_catalog_books():
         books = await db.get_catalog()
+        
+        # Filter books based on search query
+        if current_search_query:
+            filtered_books = [b for b in books if current_search_query in b['title'].lower() or current_search_query in b['author'].lower()]
+        else:
+            filtered_books = books
+            
+        total_books = len(filtered_books)
+        total_pages = max(1, (total_books + items_per_page - 1) // items_per_page)
+        
+        # Pagination logic
+        start_idx = (current_page - 1) * items_per_page
+        end_idx = start_idx + items_per_page
+        page_books = filtered_books[start_idx:end_idx]
+
+        # Update pagination UI controls
+        page_label.text = f'Page {current_page} of {total_pages}'
+        
+        if current_page <= 1:
+            prev_btn.disable()
+            prev_btn.classes(remove='bg-slate-800 text-slate-400 hover:bg-slate-700', add='bg-slate-900 text-slate-600')
+        else:
+            prev_btn.enable()
+            prev_btn.classes(remove='bg-slate-900 text-slate-600', add='bg-slate-800 text-slate-400 hover:bg-slate-700')
+            
+        if current_page >= total_pages:
+            next_btn.disable()
+            next_btn.classes(remove='bg-slate-800 text-slate-400 hover:bg-slate-700', add='bg-slate-900 text-slate-600')
+        else:
+            next_btn.enable()
+            next_btn.classes(remove='bg-slate-900 text-slate-600', add='bg-slate-800 text-slate-400 hover:bg-slate-700')
+
         catalog_grid.clear()
         with catalog_grid:
-            for book in books:
+            for book in page_books:
                 is_avail = book['status'] == 'Available'
                 border   = 'border-slate-700/50' if is_avail else 'border-red-500/50'
                 opacity  = 'opacity-100' if is_avail else 'opacity-60 grayscale'
