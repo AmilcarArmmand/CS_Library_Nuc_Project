@@ -97,6 +97,10 @@ Once the dependencies are installed and the database is seeded, start the Python
 python3 main.py
 ```
 
+```bash
+python3 mainwebsite.py
+```
+
 The terminal will launch the NiceGUI server. You can access the application by navigating to:
 **[http://localhost:8080](http://localhost:8080)**
 
