@@ -54,50 +54,40 @@ def create(on_login_success):
     </style>
     ''')
 
+    # creating the outer two-panel container
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
         # ── LEFT PANEL ─────────────────────────────────────────────────────
-        with ui.element('div').classes('left-panel stripe-texture'):
+        # justify-content: flex-start and align-items: flex-start moves everything top-left
+        with ui.element('div').classes('left-panel stripe-texture').style(
+            'justify-content: flex-start !important; align-items: flex-start !important; padding: 3rem !important;'
+        ):
+
+            # Fixed Logo: 250px width as requested
             ui.image('/assets/scsu_logo.png').classes('brightness-0 invert').style(
-                'width:250px; height:auto; object-fit:contain; opacity:0.95; '
-                'filter:brightness(0) invert(1); margin-left:-43px; margin-top:-60px;'
+                'width: 250px; height: auto; object-fit: contain; opacity: 0.95; filter: brightness(0) invert(1); margin-left: -43px;  margin-top: -60px;'
             )
-            with ui.element('div').style(
-                'display:flex; flex-direction:column; align-items:flex-start; '
-                'gap:4px; text-align:left; margin-top:-50px;'
-            ):
-                ui.element('div').style(
-                    'width:40px; height:2px; background:#3b82f6; '
-                    'box-shadow:0 0 12px rgba(59,130,246,0.7); margin:0 0 16px 0;'
-                )
+
+            # Fixed Underline: -50px margin-top to pull it tight to the 250px logo
+            with ui.element('div').style('display:flex; flex-direction:column; align-items:flex-start; gap:4px; text-align:left; margin-top: -30px;'):
+                ui.element('div').style('width:40px; height:2px; background:#3b82f6; box-shadow:0 0 12px rgba(59,130,246,0.7); margin: 0 0 16px 0;')
+
+            # Department Label: -25px margin-top as requested
             ui.label('Department of Computer Science').style(
-                'color:rgba(255,255,255,0.45); font-size:0.7rem; '
-                'letter-spacing:0.14em; text-transform:uppercase; '
-                'margin-top:-25px; margin-bottom:3rem;'
+                'color:rgba(255,255,255,0.45); font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; margin-top: -10px; margin-bottom: 3rem;'
             )
-            with ui.element('div').style(
-                'display:flex; flex-direction:column; gap:2px; '
-                'text-align:left; margin-top:100px;'
-            ):
-                ui.label('CS Library').style(
-                    'font-size:2.6rem; color:white; font-weight:700; '
-                    'letter-spacing:-0.02em; line-height:1;'
-                )
-                ui.label('Sign-in Portal').style(
-                    'font-size:2.6rem; color:rgba(255,255,255,0.5); '
-                    'font-weight:700; letter-spacing:-0.02em; line-height:1;'
-                )
-                ui.label(
-                    'Sign-in to access the catalog of CS Books, checkout, return, etc.'
-                ).style(
-                    'color:rgba(255,255,255,0.45); font-size:0.7rem; '
-                    'letter-spacing:0.14em; text-transform:uppercase; '
-                    'max-width:250px; line-height:1.7; margin-top:10px;'
-                )
+            
+            # Titles: Left-aligned to match the logo group
+            with ui.element('div').style('display:flex; flex-direction:column; gap:2px; text-align:left; margin-top: 100px;'):
+                ui.label('CS Library').style('font-size:2.6rem; color:white; font-weight:700; letter-spacing:-0.02em; line-height:1;')
+                ui.label('Sign-in Portal').style('font-size:2.6rem; color:rgba(255,255,255,0.5); font-weight:700; letter-spacing:-0.02em; line-height:1;')
+                ui.label('Sign-in to access the catalog of CS Books, checkout, return, etc.').style('color:rgba(255,255,255,0.45); font-size:0.7rem; letter-spacing:0.14em; text-transform:uppercase; max-width: 250px; line-height: 1.7; margin-top: 10px;')
+                
+            # Fixed Footer: Pinned to bottom-left
             ui.label('© 2026 SCSU Capstone').style(
-                'color:rgba(255,255,255,0.2); font-size:0.65rem; '
-                'position:absolute; bottom:2.5rem; left:2.5rem;'
+                'color:rgba(255,255,255,0.2); font-size:0.65rem; position:absolute; bottom:2.5rem; left:2.5rem;'
             )
+
 
         # ── RIGHT PANEL ────────────────────────────────────────────────────
         with ui.element('div').classes('right-panel'):
