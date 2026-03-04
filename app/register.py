@@ -1,4 +1,4 @@
-# Account registration page for CS Library Kiosk.
+
 
 from nicegui import ui
 from datetime import datetime
@@ -38,12 +38,31 @@ def create(on_register_success, on_back_to_login):
         }
         .back-link { color:#3b82f6; cursor:pointer; text-decoration:underline; font-size:0.75rem; }
         .back-link:hover { color:#60a5fa; }
+
+        @media (max-width: 768px) {
+            .left-panel {
+                display: none !important;
+            }
+            .login-outer {
+                flex-direction: column !important;
+                overflow: auto !important;
+            }
+            .right-panel {
+                width: 100% !important;
+                min-height: 100vh !important;
+                padding: 2rem 1.5rem !important;
+            }
+            .right-panel .w-\[400px\] {
+                width: 100% !important;
+                max-width: 360px !important;
+            }
+        }
     </style>
     ''')
 
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
-        # left panel
+
         with ui.element('div').classes('left-panel stripe-texture'):
             ui.image('/assets/scsu_logo.png').classes('brightness-0 invert').style(
                 'width:250px; height:auto; object-fit:contain; opacity:0.95; '
@@ -84,7 +103,7 @@ def create(on_register_success, on_back_to_login):
                 'position:absolute; bottom:2.5rem; left:2.5rem;'
             )
 
-        # right panel
+
         with ui.element('div').classes('right-panel'):
             with ui.column().classes('w-[400px] gap-0'):
 
@@ -101,7 +120,7 @@ def create(on_register_success, on_back_to_login):
                     'color:rgba(148,163,184,1); font-size:0.75rem; letter-spacing:0.01em;'
                 )
 
-                # full name
+
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('person', size='14px').classes('text-blue-400')
@@ -110,7 +129,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='Jane Doe'
                     ).classes('w-full').props('dark standout autofocus')
 
-                # email
+
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('email', size='14px').classes('text-blue-400')
@@ -119,7 +138,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='you@example.com'
                     ).classes('w-full').props('dark standout type=email')
 
-                # student ID
+
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('badge', size='14px').classes('text-blue-400')
@@ -128,7 +147,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='e.g., 12345678'
                     ).classes('w-full').props('dark standout')
 
-                # password
+
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('lock', size='14px').classes('text-blue-400')
@@ -137,7 +156,7 @@ def create(on_register_success, on_back_to_login):
                         placeholder='Choose a strong password'
                     ).classes('w-full').props('dark standout type=password')
 
-                # confirm password
+
                 with ui.column().classes('w-full gap-1 mb-3'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('lock_reset', size='14px').classes('text-blue-400')
@@ -146,12 +165,12 @@ def create(on_register_success, on_back_to_login):
                         placeholder='Repeat your password'
                     ).classes('w-full').props('dark standout type=password')
 
-                # Error label
+
                 error_label = ui.label('').style(
                     'color:#f87171; font-size:0.72rem; min-height:1rem; margin-bottom:0.4rem;'
                 )
 
-                # submit
+
                 async def _handle_register():
                     name    = name_input.value.strip()
                     email   = email_input.value.strip()
@@ -187,14 +206,14 @@ def create(on_register_success, on_back_to_login):
                     'transition-all duration-300 mb-3'
                 ).props('flat')
 
-                # back to login
+
                 with ui.row().classes('w-full justify-center mb-4'):
                     ui.label('Already have an account? ').style(
                         'color:rgba(148,163,184,0.7); font-size:0.75rem;'
                     )
                     ui.label('Sign in').classes('back-link').on('click', on_back_to_login)
 
-                # clock
+
                 with ui.row().classes('w-full items-center gap-3 pt-5 opacity-60').style(
                     'border-top: 1px solid rgba(51,65,85,0.6);'
                 ):

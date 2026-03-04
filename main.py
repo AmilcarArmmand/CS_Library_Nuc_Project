@@ -28,6 +28,8 @@ ui.add_css('''
         max-width: none !important; 
     }
 
+    html { overflow-x: hidden; }
+
     body, .scsu-bg {
         background-color: #020617;
         position: relative;
@@ -72,7 +74,7 @@ ui.add_css('''
             800px 420px #fff, 850px 350px #fff, 580px 460px #fff,
             760px 520px #fff, 820px 300px #fff, 690px 270px #fff,
             740px 600px #fff, 660px 320px #fff, 780px 480px #fff;
-        animation: twinkle 8s infinite alternate;
+        animation: twinkle 8s infinite alternate, drift 60s linear infinite;
         z-index: 0;
         pointer-events: none;
     }
@@ -85,42 +87,98 @@ ui.add_css('''
         height: 2px;
         background: transparent;
         box-shadow:
-            200px 500px rgba(255,255,255,0.4),
-            750px 200px rgba(255,255,255,0.3),
-            1300px 650px rgba(255,255,255,0.5),
-            450px 350px rgba(255,255,255,0.4),
+            200px 500px rgba(255,255,255,0.5),
+            750px 200px rgba(255,255,255,0.4),
+            1300px 650px rgba(255,255,255,0.6),
+            450px 350px rgba(255,255,255,0.5),
             1700px 200px rgba(255,255,255,0.3),
-            600px 750px rgba(255,255,255,0.4),
-            1050px 450px rgba(255,255,255,0.5),
-            300px 150px rgba(255,255,255,0.3),
-            1500px 550px rgba(255,255,255,0.4),
+            600px 750px rgba(255,255,255,0.5),
+            1050px 450px rgba(255,255,255,0.6),
+            300px 150px rgba(255,255,255,0.4),
+            1500px 550px rgba(255,255,255,0.5),
             900px 850px rgba(255,255,255,0.3),
             1800px 400px rgba(255,255,255,0.5),
             100px 600px rgba(255,255,255,0.4),
-            1250px 100px rgba(255,255,255,0.3),
+            1250px 100px rgba(255,255,255,0.6),
             680px 500px rgba(255,255,255,0.5),
-            1600px 750px rgba(255,255,255,0.4);
-        animation: twinkle 12s infinite alternate-reverse;
+            1600px 750px rgba(255,255,255,0.4),
+            50px 200px rgba(200,220,255,0.6),
+            1400px 80px rgba(200,220,255,0.5),
+            550px 600px rgba(200,220,255,0.7),
+            1150px 320px rgba(200,220,255,0.4),
+            850px 50px rgba(200,220,255,0.5);
+        animation: twinkle2 10s infinite alternate-reverse, drift 45s linear infinite reverse;
+        z-index: 0;
+        pointer-events: none;
+    }
+
+    .star-layer-3 {
+        position: fixed;
+        top: 0; left: 0;
+        width: 3px;
+        height: 3px;
+        background: transparent;
+        border-radius: 50%;
+        box-shadow:
+            400px 100px rgba(180,200,255,0.7),
+            950px 300px rgba(180,200,255,0.5),
+            1550px 500px rgba(180,200,255,0.8),
+            250px 800px rgba(180,200,255,0.6),
+            1300px 200px rgba(180,200,255,0.5),
+            700px 700px rgba(200,220,255,0.7),
+            1750px 600px rgba(180,200,255,0.4),
+            100px 400px rgba(200,220,255,0.6),
+            1100px 750px rgba(180,200,255,0.7),
+            500px 250px rgba(200,220,255,0.5);
+        animation: twinkle3 14s infinite alternate, drift 80s linear infinite;
         z-index: 0;
         pointer-events: none;
     }
 
     @keyframes twinkle {
-        0%   { opacity: 0.3; }
-        50%  { opacity: 0.8; }
-        100% { opacity: 0.4; }
+        0%   { opacity: 0.4; }
+        25%  { opacity: 0.7; }
+        50%  { opacity: 0.9; }
+        75%  { opacity: 0.5; }
+        100% { opacity: 0.6; }
     }
 
+    @keyframes twinkle2 {
+        0%   { opacity: 0.3; }
+        33%  { opacity: 0.8; }
+        66%  { opacity: 0.5; }
+        100% { opacity: 0.9; }
+    }
+
+    @keyframes twinkle3 {
+        0%   { opacity: 0.5; }
+        50%  { opacity: 1.0; }
+        100% { opacity: 0.3; }
+    }
+
+    @keyframes drift {
+        from { transform: translateY(0px); }
+        to   { transform: translateY(-200px); }
+    }
 
     body::before {
         content: '';
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
         background:
-            radial-gradient(circle at 15% 50%, rgba(29, 78, 216, 0.12), transparent 30%),
-            radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.10), transparent 30%);
+            radial-gradient(ellipse at 15% 50%, rgba(29, 78, 216, 0.15), transparent 35%),
+            radial-gradient(ellipse at 85% 30%, rgba(6, 182, 212, 0.12), transparent 35%),
+            radial-gradient(ellipse at 50% 80%, rgba(88, 28, 135, 0.08), transparent 40%),
+            radial-gradient(ellipse at 70% 10%, rgba(59, 130, 246, 0.06), transparent 30%);
         z-index: 0;
         pointer-events: none;
+        animation: nebulaPulse 20s ease-in-out infinite alternate;
+    }
+
+    @keyframes nebulaPulse {
+        0%   { opacity: 0.8; }
+        50%  { opacity: 1.0; }
+        100% { opacity: 0.7; }
     }
 
     ::-webkit-scrollbar { width: 8px; }
@@ -153,9 +211,66 @@ ui.add_css('''
 
 
     @media (max-width: 500px) {
-        .q-card {
+        .q-card:not(.catalog-grid .q-card) {
             width: 90vw !important;
             padding: 20px !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        html {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+        }
+        body {
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            overflow: visible !important;
+        }
+        .nicegui-content {
+            overflow: visible !important;
+        }
+
+        .app-header {
+            height: 3rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            border-radius: 0 !important;
+            background: rgba(2, 6, 23, 0.88) !important;
+            backdrop-filter: blur(30px) saturate(1.6) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(1.6) !important;
+            border-bottom: 1px solid rgba(59,130,246,0.12) !important;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.3) !important;
+        }
+
+        .app-header .header-logo {
+            width: 4.5rem !important;
+            max-height: 1.25rem !important;
+        }
+
+        .app-header .header-title-cs {
+            font-size: 0.65rem !important;
+        }
+
+        .app-header .header-title-kiosk {
+            font-size: 0.65rem !important;
+        }
+
+        .app-header .header-user-name {
+            font-size: 0.65rem !important;
+        }
+
+        .app-header .header-user-icon {
+            font-size: 14px !important;
+        }
+
+        .app-header .header-logout-btn {
+            padding: 3px !important;
+            margin-left: 0.4rem !important;
+        }
+
+        .app-header .header-logout-btn .q-icon {
+            font-size: 16px !important;
         }
     }
 
@@ -164,27 +279,30 @@ ui.add_css('''
 
 @ui.page('/')
 async def main_page():
-   
 
-    with ui.row().classes('fixed top-0 left-0 w-full h-20 items-center justify-between px-8 bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 transition-all rounded-[32px]') as app_header:
+    ui.add_body_html('''
+    <div class="star-layer-3"></div>
+    ''')
+
+    with ui.row().classes('app-header fixed top-0 left-0 w-full h-20 items-center justify-between px-8 bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl z-50 transition-all rounded-[32px]') as app_header:
         app_header.visible = False
 
 
-        with ui.row().classes('items-center gap-6'):
-            ui.image('/assets/scsu_logo.png').classes('w-28 max-h-10 object-contain brightness-0 invert opacity-90')
-            with ui.row().classes('items-center gap-2'):
-                ui.label('CS_LIBRARY').classes('text-lg font-black tracking-widest text-white drop-shadow-sm')
-                ui.label('KIOSK').classes('text-lg font-light tracking-widest text-blue-400 opacity-90')
-
-
         with ui.row().classes('items-center gap-4'):
-            ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
-            user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
+            ui.image('/assets/scsu_logo.png').classes('header-logo w-20 max-h-8 object-contain brightness-0 invert opacity-90')
+            with ui.row().classes('items-center gap-1.5'):
+                ui.label('CS_LIBRARY').classes('header-title-cs text-sm font-black tracking-widest text-white drop-shadow-sm')
+                ui.label('KIOSK').classes('header-title-kiosk text-sm font-light tracking-widest text-blue-400 opacity-90')
+
+
+        with ui.row().classes('items-center gap-3'):
+            ui.icon('account_circle', size='18px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
+            user_name_label = ui.label('Guest').classes('text-xs font-bold text-slate-200 tracking-wide')
 
 
             ui.button(color=None, on_click=lambda: do_logout(), icon='logout').classes(
-            'ml-6 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-2 backdrop-blur-sm'
-            ).props('flat')
+            'ml-4 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-1.5 backdrop-blur-sm'
+            ).props('flat size=sm')
 
     cart_items = []
     current_user = {}
@@ -388,43 +506,89 @@ async def main_page():
      cart_container, checkout_btn, return_input, return_cover, return_title,
      return_status, empty_cart_message, catalog_grid, checkout_due_date,
      active_loans_container, no_active_loans, history_container, no_history,
-     prev_btn, next_btn, page_label) = \
+     pagination_container) = \
         dashboard.create(scan_checkout_logic, confirm_checkout, scan_return_logic, handle_search, load_my_books, next_page, prev_page)
+
+
+    async def go_to_page(page_num):
+        nonlocal current_page
+        current_page = page_num
+        await load_catalog_books()
+
+
+    def _build_pagination(total_pages):
+        pagination_container.clear()
+
+
+        circle = (
+            'w-9 h-9 min-w-0 min-h-0 p-0 rounded-full text-xs font-semibold '
+            'transition-all duration-200 border '
+        )
+        active_style = circle + 'bg-blue-500/20 text-white border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.35)]'
+        normal_style = circle + 'bg-white/[0.04] text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
+        disabled_style = circle + 'bg-transparent text-slate-600 border-white/5 opacity-40'
+        arrow_style = circle + 'bg-white/[0.04] text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
+
+        with pagination_container:
+
+            prev = ui.button(icon='img:/assets/ph-caret-left.svg', on_click=lambda: go_to_page(current_page - 1), color=None).classes(
+                arrow_style if current_page > 1 else disabled_style
+            ).props('flat dense')
+            if current_page <= 1:
+                prev.disable()
+
+
+            pages_to_show = []
+            if total_pages <= 7:
+                pages_to_show = list(range(1, total_pages + 1))
+            else:
+                pages_to_show = [1]
+                if current_page > 3:
+                    pages_to_show.append('...')
+                start = max(2, current_page - 1)
+                end = min(total_pages - 1, current_page + 1)
+                for p in range(start, end + 1):
+                    if p not in pages_to_show:
+                        pages_to_show.append(p)
+                if current_page < total_pages - 2:
+                    pages_to_show.append('...')
+                if total_pages not in pages_to_show:
+                    pages_to_show.append(total_pages)
+
+            for p in pages_to_show:
+                if p == '...':
+                    ui.label('···').classes('w-9 h-9 flex items-center justify-center text-slate-500 text-sm font-bold')
+                else:
+                    page_num = p
+                    style = active_style if page_num == current_page else normal_style
+                    ui.button(str(page_num), on_click=lambda pn=page_num: go_to_page(pn), color=None).classes(
+                        style
+                    ).props('flat dense')
+
+
+            nxt = ui.button(icon='img:/assets/ph-caret-right.svg', on_click=lambda: go_to_page(current_page + 1), color=None).classes(
+                arrow_style if current_page < total_pages else disabled_style
+            ).props('flat dense')
+            if current_page >= total_pages:
+                nxt.disable()
 
 
     async def load_catalog_books():
         books = await db.get_catalog()
-        
 
         if current_search_query:
             filtered_books = [b for b in books if current_search_query in b['title'].lower() or current_search_query in b['author'].lower()]
         else:
             filtered_books = books
-            
+
         total_books = len(filtered_books)
         total_pages = max(1, (total_books + items_per_page - 1) // items_per_page)
-        
 
         start_idx = (current_page - 1) * items_per_page
         end_idx = start_idx + items_per_page
         page_books = filtered_books[start_idx:end_idx]
 
-
-        page_label.text = f'Page {current_page} of {total_pages}'
-        
-        if current_page <= 1:
-            prev_btn.disable()
-            prev_btn.classes(remove='bg-slate-800 text-slate-400 hover:bg-slate-700', add='bg-slate-900 text-slate-600')
-        else:
-            prev_btn.enable()
-            prev_btn.classes(remove='bg-slate-900 text-slate-600', add='bg-slate-800 text-slate-400 hover:bg-slate-700')
-            
-        if current_page >= total_pages:
-            next_btn.disable()
-            next_btn.classes(remove='bg-slate-800 text-slate-400 hover:bg-slate-700', add='bg-slate-900 text-slate-600')
-        else:
-            next_btn.enable()
-            next_btn.classes(remove='bg-slate-900 text-slate-600', add='bg-slate-800 text-slate-400 hover:bg-slate-700')
+        _build_pagination(total_pages)
 
         catalog_grid.clear()
         with catalog_grid:
@@ -433,16 +597,21 @@ async def main_page():
                 border   = 'border-slate-700/50' if is_avail else 'border-red-500/50'
                 opacity  = 'opacity-100' if is_avail else 'opacity-60 grayscale'
                 with ui.card().classes(
-                    f'w-48 bg-[#151924]/80 {border} rounded-xl p-3 items-center '
-                    f'cursor-pointer hover:scale-105 transition-all duration-300 {opacity}'
-                ):
-                    ui.image(book['cover']).classes('w-full h-56 object-cover rounded-lg shadow-lg mb-2')
-                    ui.label(book['title']).classes('text-sm text-white font-bold text-center leading-tight mb-1')
-                    ui.label(book['author']).classes('text-xs text-slate-400 text-center')
-                    if is_avail:
-                        ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
-                    else:
-                        ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-1 font-bold tracking-widest')
+                    f'bg-[#151924]/80 {border} rounded-2xl overflow-hidden '
+                    f'cursor-pointer hover:scale-[1.03] transition-all duration-300 {opacity}'
+                ).style('padding: 0; position: relative;'):
+                    ui.image(book['cover']).classes('card-cover w-full h-72 object-cover')
+                    with ui.element('div').style(
+                        'position: absolute; bottom: 0; left: 0; right: 0; '
+                        'background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.9) 100%); '
+                        'padding: 2rem 0.75rem 0.75rem;'
+                    ):
+                        ui.label(book['title']).classes('text-sm text-white font-bold leading-snug mb-1')
+                        ui.label(book['author']).classes('text-xs text-slate-300')
+                        if is_avail:
+                            ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest inline-block')
+                        else:
+                            ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest inline-block')
 
 
     await load_catalog_books()

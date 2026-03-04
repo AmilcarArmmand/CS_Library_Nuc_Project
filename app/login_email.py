@@ -51,13 +51,31 @@ def create(on_login_success):
             font-size: 0.75rem;
         }
         .reg-link:hover { color: #60a5fa; }
+
+        @media (max-width: 768px) {
+            .left-panel {
+                display: none !important;
+            }
+            .login-outer {
+                flex-direction: column !important;
+            }
+            .right-panel {
+                width: 100% !important;
+                min-height: 100vh !important;
+                padding: 2rem 1.5rem !important;
+            }
+            .right-panel .w-\[400px\] {
+                width: 100% !important;
+                max-width: 360px !important;
+            }
+        }
     </style>
     ''')
 
 
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
-        # Left panel
+
         with ui.element('div').classes('left-panel stripe-texture').style(
             'justify-content: flex-start !important; align-items: flex-start !important; padding: 3rem !important;'
         ):
@@ -88,17 +106,17 @@ def create(on_login_success):
             )
 
 
-        # right panel
+
         with ui.element('div').classes('right-panel'):
             with ui.column().classes('w-[400px] gap-0'):
 
-                # Heading
+
                 with ui.column().classes('gap-0 mb-3'):
                     ui.label('Welcome Back').classes(
                         'text-white font-black leading-none'
                     ).style('font-size:3rem; letter-spacing:-0.03em;')
 
-                # Accent bar
+
                 ui.element('div').classes('mb-5').style(
                     'width:40px; height:2px; background:#3b82f6; '
                     'box-shadow:0 0 16px rgba(59,130,246,0.8);'
@@ -108,7 +126,7 @@ def create(on_login_success):
                     'color:rgba(148,163,184,1); font-size:0.75rem; letter-spacing:0.01em;'
                 )
 
-                # email
+
                 with ui.column().classes('w-full gap-1 mb-4'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('email', size='14px').classes('text-blue-400')
@@ -117,7 +135,7 @@ def create(on_login_success):
                         placeholder='you@example.com'
                     ).classes('w-full').props('dark standout autofocus type=email')
 
-                # password
+
                 with ui.column().classes('w-full gap-1 mb-5'):
                     with ui.row().classes('items-center gap-2 mb-1'):
                         ui.icon('lock', size='14px').classes('text-blue-400')
@@ -130,7 +148,7 @@ def create(on_login_success):
 
                 email_input.on('keydown.enter', lambda: password_input.run_method('focus'))
 
-                # sign in button
+
                 ui.button(
                     'Sign In',
                     on_click=on_login_success,
@@ -144,7 +162,7 @@ def create(on_login_success):
                     'transition-all duration-300 mb-4'
                 ).props('flat')
 
-                # register link
+
                 with ui.row().classes('w-full justify-center mb-5'):
                     ui.label("Don't have an account? ").style(
                         'color:rgba(148,163,184,0.7); font-size:0.75rem;'
@@ -153,7 +171,7 @@ def create(on_login_success):
                         'click', lambda: ui.navigate.to('/register')
                     )
 
-                # clock
+
                 with ui.row().classes('w-full items-center gap-3 pt-5 opacity-60').style(
                     'border-top: 1px solid rgba(51,65,85,0.6);'
                 ):

@@ -49,13 +49,39 @@ def create(on_login_success):
             align-items: center !important;
             justify-content: center !important;
         }
+
+        @media (max-width: 768px) {
+            .left-panel {
+                display: none !important;
+            }
+            .login-outer {
+                flex-direction: column !important;
+            }
+            .right-panel {
+                width: 100% !important;
+                min-height: 100vh !important;
+                padding: 2rem 1.25rem !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            .right-panel .w-\[400px\] {
+                width: 90vw !important;
+                max-width: 360px !important;
+            }
+            .login-welcome-text {
+                font-size: 1.8rem !important;
+            }
+            .login-subtitle {
+                font-size: 0.7rem !important;
+            }
+        }
     </style>
     ''')
 
 
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
-        # Left panel
+
         with ui.element('div').classes('left-panel stripe-texture').style(
             'justify-content: flex-start !important; align-items: flex-start !important; padding: 3rem !important;'
         ):
@@ -85,7 +111,7 @@ def create(on_login_success):
                 'color:rgba(255,255,255,0.2); font-size:0.65rem; position:absolute; bottom:2.5rem; left:2.5rem;'
             )
 
-        # Right panel
+
         with ui.element('div').classes('right-panel'):
 
 
@@ -93,7 +119,7 @@ def create(on_login_success):
 
 
                 with ui.column().classes('gap-0 mb-3'):
-                    ui.label('Welcome Back').classes('text-white font-black leading-none').style('font-size:3rem; letter-spacing:-0.03em;')
+                    ui.label('Welcome Back').classes('login-welcome-text text-white font-black leading-none').style('font-size:3rem; letter-spacing:-0.03em;')
                     ui.label('').classes('text-white font-black leading-none').style('font-size:3rem; letter-spacing:-0.03em;')
 
 
