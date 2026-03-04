@@ -75,9 +75,9 @@ Before running the application for the first time, you must populate the databas
 
 Run the seeder file:
 ```bash
-python3 mock_data.py
+python3 app/mocks/mock_data.py
 ```
-*Note: This creates the `cs_library.db` file in your project directory.
+*Note: This creates the `cs_library.db` file in the `data/` directory.
 
 ### Test Accounts Available:
 
@@ -89,16 +89,18 @@ python3 mock_data.py
 
 ---
 
-## Running the Kiosk
+## Running the Application
 
-Once the dependencies are installed and the database is seeded, start the Python server:
+There are two versions of the application you can run:
 
+### Kiosk Application (Full Features checkout/return)
 ```bash
-python3 main.py
+python3 kiosk_app.py
 ```
 
+### Web Application (Browse Only)
 ```bash
-python3 mainwebsite.py
+python3 web_app.py
 ```
 
 The terminal will launch the NiceGUI server. You can access the application by navigating to:
