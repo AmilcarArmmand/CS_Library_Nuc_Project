@@ -7,7 +7,7 @@ import sqlite3
 import bcrypt
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "cs_library.db"
+DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cs_library.db"
 
 
 # LOCAL BOOK CACHE

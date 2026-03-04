@@ -10,7 +10,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 
-DB_PATH = Path(__file__).parent / "cs_library.db"
+DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cs_library.db"
 
 # set False to disable live Open Library lookups (offline/testing mode)
 USE_LIVE_API = True
