@@ -41,7 +41,7 @@ This project allows students to browse the library catalog, check out books, vie
 ### 1. Clone the Repository
 Open a terminal and clone the repository, then navigate into the directory:
 ```bash
-git clone <repository-url>
+git clone (https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git)
 cd cs-library-kiosk
 ```
 
@@ -83,9 +83,9 @@ python3 mock_data.py
 
 | Name | Email | Student ID | Password |
 |---|---|---|---|
-| Kenneth Molina | molinak4@southernct.edu | `12345` | `changeme123` |
-| John Test | user2@example.com | `88888` | `changeme123` |
-| Admin Setup | admin@example.com | `99999` | `changeme123` |
+| Kenneth | molinak4@southernct.edu | `12345`|
+| Jose | user2@example.com | `11111` |
+| Professor | admin@example.com | `99999` |
 
 ---
 
@@ -95,6 +95,10 @@ Once the dependencies are installed and the database is seeded, start the Python
 
 ```bash
 python3 main.py
+```
+
+```bash
+python3 mainwebsite.py
 ```
 
 The terminal will launch the NiceGUI server. You can access the application by navigating to:
