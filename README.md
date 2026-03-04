@@ -41,7 +41,7 @@ This project allows students to browse the library catalog, check out books, vie
 ### 1. Clone the Repository
 Open a terminal and clone the repository, then navigate into the directory:
 ```bash
-git clone <repository-url>
+git clone (https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git)
 cd cs-library-kiosk
 ```
 
