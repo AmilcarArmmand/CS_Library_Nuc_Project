@@ -62,12 +62,10 @@ def create(on_register_success, on_back_to_login):
 
 
         with ui.element('div').classes('left-panel stripe-texture justify-start items-start p-12'):
-            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[250px] h-auto object-contain opacity-95 -ml-11 -mt-14')
-            with ui.column().classes('items-start gap-1 text-left -mt-8'):
-                ui.element('div').classes('w-10 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)] mb-4')
-            ui.label('Department of Computer Science').classes(
-                'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase -mt-1 mb-12'
-            )
+            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[260px] h-auto object-contain opacity-95 -ml-11 -mt-6')
+            with ui.column().classes('items-start gap-3 w-full -mt-6 mb-12'):
+                ui.element('div').classes('w-16 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)]')
+                ui.label('Department of Computer Science').classes('text-white/45 text-[0.65rem] tracking-[0.15em] uppercase font-bold')
             with ui.column().classes('gap-0.5 text-left mt-24'):
                 ui.label('CS Library').classes('text-[2.6rem] text-white font-bold tracking-tighter leading-none')
                 ui.label('Registration').classes('text-[2.6rem] text-white/50 font-bold tracking-tighter leading-none')
@@ -169,11 +167,8 @@ def create(on_register_success, on_back_to_login):
                     icon='person_add',
                     color=None,
                 ).classes(
-                    'w-full h-11 text-sm font-bold rounded-xl text-white '
-                    'bg-blue-600/20 border border-blue-500/30 '
-                    'hover:bg-blue-600/40 hover:border-blue-400 '
-                    'hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] '
-                    'transition-colors duration-300 mb-3'
+                    'w-full max-w-sm h-14 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-full font-bold '
+                    'hover:bg-blue-600/40 hover:border-blue-400 hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] transition-colors duration-300 mb-4'
                 ).props('flat')
 
 

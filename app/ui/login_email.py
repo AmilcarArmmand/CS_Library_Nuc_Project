@@ -37,6 +37,7 @@ def create(on_login_success):
             position: relative !important;
             flex-shrink: 0 !important;
         }
+
         .right-panel {
             flex: 1 !important;
             height: 100% !important;
@@ -58,6 +59,7 @@ def create(on_login_success):
             }
             .login-outer {
                 flex-direction: column !important;
+                overflow: auto !important;
             }
             .right-panel {
                 width: 100% !important;
@@ -67,6 +69,9 @@ def create(on_login_success):
             .right-panel .w-\[400px\] {
                 width: 100% !important;
                 max-width: 360px !important;
+            }
+            .login-welcome-text {
+                font-size: 1.8rem !important;
             }
         }
     </style>
@@ -79,16 +84,10 @@ def create(on_login_success):
         with ui.element('div').classes('left-panel stripe-texture justify-start items-start p-12'):
 
 
-            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[250px] h-auto object-contain opacity-95 -ml-11 -mt-14')
-
-
-            with ui.column().classes('items-start gap-1 text-left -mt-8'):
-                ui.element('div').classes('w-10 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)] mb-4')
-
-
-            ui.label('Department of Computer Science').classes(
-                'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase -mt-6 mb-12'
-            )
+            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[260px] h-auto object-contain opacity-95 -ml-11 -mt-6')
+            with ui.column().classes('items-start gap-3 w-full -mt-6 mb-12'):
+                ui.element('div').classes('w-16 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)]')
+                ui.label('Department of Computer Science').classes('text-white/45 text-[0.65rem] tracking-[0.15em] uppercase font-bold')
             
 
             with ui.column().classes('gap-0.5 text-left mt-24'):
@@ -109,7 +108,7 @@ def create(on_login_success):
 
                 with ui.column().classes('gap-0 mb-3'):
                     ui.label('Welcome Back').classes(
-                        'text-[3rem] tracking-[-0.03em] text-white font-black leading-none'
+                        'login-welcome-text text-[3rem] tracking-[-0.03em] text-white font-black leading-none'
                     )
 
 
@@ -140,10 +139,10 @@ def create(on_login_success):
                 email_input.on('keydown.enter', lambda: password_input.run_method('focus'))
 
 
-                submit_btn = ui.button('SIGN IN', on_click=on_login_success, color=None).classes(
-                    'w-full h-14 bg-white/5 border border-white/10 text-slate-500 rounded-2xl font-bold '
-                    'transition-colors duration-300 mb-4'
-                ).props('unelevated')
+                ui.button('Sign In', on_click=on_login_success, icon='login', color=None).classes(
+                    'w-full max-w-sm h-14 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-full font-bold '
+                    'hover:bg-blue-600/40 hover:border-blue-400 hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] transition-colors duration-300 mb-4'
+                ).props('flat')
 
 
                 with ui.row().classes('w-full justify-center mb-5'):

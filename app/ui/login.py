@@ -33,12 +33,11 @@ def create(on_login_success):
             background-color: #0a1f44 !important;
             display: flex !important;
             flex-direction: column !important;
-            align-items: center !important;
+            align-items: flex-start !important;
             justify-content: flex-start !important;
-            padding-top: 15vh !important;
+            padding: 3rem !important;
             position: relative !important;
             flex-shrink: 0 !important;
-            gap: 1.5rem !important;
         }
 
         .right-panel {
@@ -55,16 +54,15 @@ def create(on_login_success):
             }
             .login-outer {
                 flex-direction: column !important;
+                overflow: auto !important;
             }
             .right-panel {
                 width: 100% !important;
                 min-height: 100vh !important;
-                padding: 2rem 1.25rem !important;
-                align-items: center !important;
-                justify-content: center !important;
+                padding: 2rem 1.5rem !important;
             }
             .right-panel .w-\[400px\] {
-                width: 90vw !important;
+                width: 100% !important;
                 max-width: 360px !important;
             }
             .login-welcome-text {
@@ -84,16 +82,10 @@ def create(on_login_success):
         with ui.element('div').classes('left-panel stripe-texture justify-start items-start p-12'):
 
 
-            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[250px] h-auto object-contain opacity-95 -ml-11 -mt-14')
-
-
-            with ui.column().classes('items-start gap-1 text-left -mt-12'):
-                ui.element('div').classes('w-10 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)] mb-4')
-
-
-            ui.label('Department of Computer Science').classes(
-                'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase -mt-6 mb-12'
-            )
+            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[260px] h-auto object-contain opacity-95 -ml-11 -mt-6')
+            with ui.column().classes('items-start gap-3 w-full -mt-6 mb-12'):
+                ui.element('div').classes('w-16 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)]')
+                ui.label('Department of Computer Science').classes('text-white/45 text-[0.65rem] tracking-[0.15em] uppercase font-bold')
             
 
             with ui.column().classes('gap-0.5 text-left mt-24'):
