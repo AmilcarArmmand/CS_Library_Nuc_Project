@@ -234,14 +234,14 @@ async def main_page():
 
         with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4'):
             ui.image('/assets/scsu_logo.png').classes(
-                'w-12 sm:w-20 max-h-8 object-contain brightness-0 invert opacity-90 shrink-0'
+                'w-16 sm:w-28 max-h-12 object-contain brightness-0 invert opacity-90 shrink-0'
             )
             with ui.row().classes('items-center flex-nowrap gap-1 sm:gap-1.5'):
                 ui.label('CS_LIBRARY').classes(
-                    'text-[10px] sm:text-md font-black tracking-widest text-white drop-shadow-sm truncate'
+                    'text-xs sm:text-xl font-black tracking-widest text-white drop-shadow-sm truncate'
                 )
                 ui.label('KIOSK').classes(
-                    'text-[10px] sm:text-md font-light tracking-widest text-blue-400 opacity-90 shrink-0'
+                    'text-xs sm:text-xl font-light tracking-widest text-blue-400 opacity-90 shrink-0'
                 )
 
         with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-3 shrink-0'):
@@ -465,14 +465,14 @@ async def main_page():
                     with ui.element('div').classes(
                         'absolute bottom-0 left-0 right-0 '
                         'bg-gradient-to-b from-transparent via-slate-900/70 to-slate-900/95 '
-                        'p-5 sm:p-4 pt-16 flex flex-col justify-end'
+                        'p-3 md:p-4 pt-10 md:pt-16 flex flex-col justify-end'
                     ):
-                        ui.label(book['title']).classes('text-base md:text-lg text-white font-bold leading-snug mb-1 md:mb-2 line-clamp-2')
-                        ui.label(book['author']).classes('text-sm text-slate-300 mb-1 line-clamp-1')
+                        ui.label(book['title']).classes('text-sm md:text-lg text-white font-bold leading-snug md:leading-snug mb-0.5 md:mb-2 line-clamp-2')
+                        ui.label(book['author']).classes('text-[11px] md:text-sm text-slate-300 mb-0.5 md:mb-1 line-clamp-1')
                         if is_avail:
-                            ui.label('AVAILABLE').classes('text-[10px] md:text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
+                            ui.label('AVAILABLE').classes('text-[9px] md:text-xs bg-green-500/20 text-green-400 px-2 md:px-3 py-1 md:py-1.5 rounded-full mt-1 md:mt-2 font-bold tracking-wider inline-block w-max')
                         else:
-                            ui.label('CHECKED OUT').classes('text-[10px] md:text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
+                            ui.label('CHECKED OUT').classes('text-[9px] md:text-xs bg-red-500/20 text-red-400 px-2 md:px-3 py-1 md:py-1.5 rounded-full mt-1 md:mt-2 font-bold tracking-wider inline-block w-max')
 
     await load_catalog_books()
 

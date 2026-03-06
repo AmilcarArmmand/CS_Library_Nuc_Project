@@ -60,14 +60,14 @@ class DashboardUI:
                 .dash-nav .q-btn .q-btn__content { flex-direction: column !important; gap: 2px !important; }
                 .dash-nav .q-btn .q-icon { font-size: 20px !important; margin: 0 !important; }
                 .nav-search-box {
-                    position: absolute !important; bottom: calc(100% + 0.6rem) !important;
-                    left: 0.75rem !important; right: 0.75rem !important; width: auto !important; z-index: 210 !important;
+                    position: absolute !important; bottom: calc(100% + 1rem) !important;
+                    left: 1.5rem !important; right: 1.5rem !important; width: auto !important; z-index: 210 !important;
                 }
-                .nav-search-box .q-field__control {
-                    background: rgba(2, 6, 23, 0.95) !important; backdrop-filter: blur(30px) !important;
-                    border: 1px solid rgba(59,130,246,0.5) !important;
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(59,130,246,0.2) !important;
-                    border-radius: 1rem !important;
+                .nav-search-box .q-field__control, .nav-search-box.q-field--standout .q-field__control {
+                    background: #0f172a !important; backdrop-filter: blur(30px) !important;
+                    border: 1px solid rgba(59,130,246,0.8) !important;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.8) !important;
+                    border-radius: 9999px !important;
                 }
                 .catalog-grid .q-card { animation: mobileCardIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
                 .catalog-grid .q-card:active { transform: scale(0.98) !important; }
@@ -123,17 +123,18 @@ class DashboardUI:
 
     def _build_navigation(self):
         with ui.row().classes(
-            'dash-nav flex-nowrap fixed bottom-0 left-0 right-0 w-full md:w-auto md:sticky md:top-4 md:bottom-auto '
-            'items-center gap-1 p-1 md:p-1.5 rounded-t-3xl md:rounded-full bg-slate-900/90 md:bg-slate-900/40 '
-            'border-t md:border border-white/10 md:border-white/5 backdrop-blur-[40px] md:backdrop-blur-2xl '
-            'shadow-[0_-8px_32px_rgba(0,0,0,0.4)] md:shadow-2xl z-[200] '
-            'pb-[calc(0.5rem+env(safe-area-inset-bottom,0.5rem))] md:pb-1.5 pt-2.5 md:pt-1.5 px-2 md:px-1.5 '
-            'justify-around md:justify-center transition-[transform,opacity] mb-0 md:mb-8'
+            'dash-nav flex-nowrap fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] md:bottom-auto '
+            'left-4 right-4 md:left-auto md:right-auto md:sticky md:top-4 w-auto md:w-auto '
+            'items-center gap-1 p-1 md:p-1.5 rounded-full bg-slate-900/50 md:bg-slate-900/40 '
+            'border border-white/10 md:border-white/5 backdrop-blur-2xl '
+            'shadow-[0_8px_32px_rgba(0,0,0,0.5)] md:shadow-2xl z-[200] '
+            'justify-around md:justify-center transition-[transform,opacity] mb-0 md:mb-8 mx-auto max-w-[420px] md:max-w-none'
         ):
             base_classes = (
-                'flex-1 md:flex-none rounded-2xl md:rounded-full px-1 md:px-6 py-2 min-h-[52px] md:min-h-0 '
+                'group flex-1 md:flex-none rounded-full px-1 md:px-6 py-2 min-h-[52px] md:min-h-0 '
                 'text-[10px] md:text-xs font-bold tracking-[0.05em] md:tracking-widest '
-                'transition-colors duration-300 border border-transparent min-w-0 '
+                'transition-all duration-200 ease-out active:scale-[0.92] hover:bg-white/10 '
+                'border border-transparent hover:border-white/10 hover:shadow-[0_0_20px_rgba(255,255,255,0.05)] '
                 'flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 touch-manipulation'
             )
             
@@ -160,9 +161,9 @@ class DashboardUI:
 
     def _build_catalog_workspace(self):
         with ui.column().classes('workspace-col w-full max-w-7xl items-center pb-20 px-0 md:px-6') as self.catalog_workspace:
-            ui.label('Current Collection').classes('catalog-title text-xl text-balance md:text-2xl text-white font-bold mb-6 md:mb-8 tracking-wide w-full text-left px-8 md:px-0')
+            ui.label('Current Collection').classes('catalog-title text-xl text-balance md:text-2xl text-white font-bold mb-4 md:mb-8 tracking-wide w-full text-left px-6 md:px-0')
             
-            self.catalog_grid = ui.element('div').classes('catalog-grid w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 sm:gap-5 px-8 md:px-0')
+            self.catalog_grid = ui.element('div').classes('catalog-grid w-full grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 px-4 md:px-0')
             
             self.pagination_container = ui.row().classes('pagination-row w-full mt-10 items-center justify-center gap-2 px-4 flex-wrap w-full')
 
@@ -170,18 +171,18 @@ class DashboardUI:
         with ui.row().classes('checkout-row w-full max-w-6xl gap-6 pb-20 justify-center flex-col md:flex-row px-4 md:px-0 flex-nowrap min-w-0') as self.checkout_workspace:
             self.checkout_workspace.visible = False
 
-            with ui.card().classes('w-full md:flex-1 p-6 md:p-8 items-center text-center bg-[#151924]/80 border border-slate-700/50 rounded-3xl shadow-2xl backdrop-blur-md animate-[mobileSlideUp_0.4s_ease-out] md:animate-none min-w-0'):
-                ui.label('SCAN TO ADD TO CART').classes('text-xs md:text-sm text-balance tracking-[0.3em] text-blue-500 font-bold mb-4 md:mb-6')
+            with ui.card().classes('w-full md:flex-1 p-6 md:p-8 items-center text-center bg-gradient-to-br from-[#1e293b]/90 to-[#0f172a]/95 border border-slate-700/50 border-t-slate-500/30 border-l-slate-500/30 rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] animate-[mobileSlideUp_0.4s_ease-out] md:animate-none min-w-0'):
+                ui.label('SCAN TO ADD TO CART').classes('text-xs md:text-sm tracking-[0.3em] font-black mb-4 md:mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 drop-shadow-[0_2px_10px_rgba(56,189,248,0.4)] text-balance')
 
-                self.checkout_input = ui.input(placeholder='Scan ISBN…').classes('w-full text-center text-lg md:text-xl mb-4').props('dark standout rounded-full')
+                self.checkout_input = ui.input(placeholder='Scan ISBN…').classes('w-full text-center text-lg md:text-xl mb-4 transition-all duration-300 focus-within:ring-4 focus-within:ring-blue-500/40 focus-within:scale-[1.02] shadow-[0_0_15px_rgba(59,130,246,0.15)]').props('dark standout rounded-full')
                 self.checkout_input.on('keydown.enter', self.on_checkout_scan)
                 self.checkout_cover = ui.image('https://via.placeholder.com/200x300?text=Waiting…').classes('checkout-cover-img w-32 md:w-40 h-48 md:h-60 shadow-xl rounded-xl object-cover border border-slate-600 mb-4')
                 self.checkout_title = ui.label('---').classes('checkout-title-text text-xl md:text-2xl text-balance text-white font-bold leading-tight px-2 w-full truncate')
                 self.checkout_author = ui.label('---').classes('checkout-author-text text-sm md:text-base text-slate-400 italic mt-1 w-full truncate')
                 self.checkout_due_date = ui.label('').classes('text-sm md:text-base text-blue-400 font-bold mt-2 tracking-wide w-full truncate')
 
-            with ui.card().classes('w-full md:flex-1 p-6 md:p-8 flex flex-col bg-[#151924]/80 border border-slate-700/50 rounded-3xl shadow-2xl backdrop-blur-md h-[400px] md:h-[500px] animate-[mobileSlideUp_0.5s_ease-out] md:animate-none'):
-                ui.label('YOUR CART').classes('text-xs md:text-sm text-balance tracking-[0.3em] text-slate-500 font-bold mb-4')
+            with ui.card().classes('w-full md:flex-1 p-6 md:p-8 flex flex-col bg-gradient-to-br from-[#1e293b]/90 to-[#0f172a]/95 border border-slate-700/50 border-t-slate-500/30 border-l-slate-500/30 rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] h-[400px] md:h-[500px] animate-[mobileSlideUp_0.5s_ease-out] md:animate-none'):
+                ui.label('YOUR CART').classes('text-xs md:text-sm tracking-[0.3em] font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 drop-shadow-[0_2px_10px_rgba(56,189,248,0.4)] text-balance')
 
                 with ui.column().classes('w-full flex-1 items-center justify-center') as self.empty_cart_message:
                     ui.image('/assets/ph-shopping-cart.svg').classes('w-12 h-12 md:w-16 md:h-16 brightness-0 invert opacity-30 mb-3')
@@ -196,12 +197,12 @@ class DashboardUI:
                 self.checkout_btn.disable()
 
     def _build_return_workspace(self):
-        with ui.card().classes('return-workspace-card min-w-0 w-full max-w-4xl p-8 md:p-12 mx-4 md:mx-0 items-center text-center bg-[#151924]/80 border border-slate-700/50 rounded-3xl shadow-2xl backdrop-blur-md animate-[mobileSlideUp_0.4s_ease-out] md:animate-none') as self.return_workspace:
+        with ui.card().classes('return-workspace-card min-w-0 w-full max-w-4xl p-8 md:p-12 mx-4 md:mx-0 items-center text-center bg-gradient-to-br from-[#1e293b]/90 to-[#0f172a]/95 border border-slate-700/50 border-t-slate-500/30 border-l-slate-500/30 rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] animate-[mobileSlideUp_0.4s_ease-out] md:animate-none') as self.return_workspace:
             self.return_workspace.visible = False
 
-            ui.label('QUICK RETURN').classes('text-xs md:text-sm text-balance tracking-[0.3em] text-blue-500 font-bold mb-6 md:mb-8')
+            ui.label('QUICK RETURN').classes('text-xs md:text-sm tracking-[0.3em] font-black mb-6 md:mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 drop-shadow-[0_2px_10px_rgba(56,189,248,0.4)] text-balance')
 
-            self.return_input = ui.input(placeholder='Scan barcode…').classes('return-input w-full md:w-2/3 text-center text-lg md:text-2xl mb-6').props('dark standout rounded-full')
+            self.return_input = ui.input(placeholder='Scan barcode…').classes('return-input w-full md:w-2/3 text-center text-lg md:text-2xl mb-6 transition-all duration-300 focus-within:ring-4 focus-within:ring-blue-500/40 focus-within:scale-[1.02] shadow-[0_0_15px_rgba(59,130,246,0.15)]').props('dark standout rounded-full')
             self.return_input.on('keydown.enter', self.on_return_scan)
 
             with ui.row().classes('return-layout min-w-0 w-full flex-col md:flex-row items-center gap-8 md:gap-16 justify-center'):
@@ -211,10 +212,10 @@ class DashboardUI:
                     self.return_title = ui.label('---').classes('return-title-text w-full truncate text-2xl md:text-4xl text-balance text-white font-bold leading-tight md:leading-tight tracking-tight')
 
     def _build_my_books_workspace(self):
-        with ui.card().classes('my-books-card w-full mx-4 md:mx-0 max-w-4xl p-6 md:p-10 bg-[#151924]/80 border border-slate-700/50 rounded-3xl shadow-2xl backdrop-blur-md max-h-[75vh] md:max-h-[85vh] overflow-y-auto animate-[mobileSlideUp_0.4s_ease-out] md:animate-none min-w-0') as self.my_books_workspace:
+        with ui.card().classes('my-books-card w-full mx-4 md:mx-0 max-w-4xl p-6 md:p-10 bg-gradient-to-br from-[#1e293b]/90 to-[#0f172a]/95 border border-slate-700/50 border-t-slate-500/30 border-l-slate-500/30 rounded-3xl shadow-[0_20px_40px_-15px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] max-h-[75vh] md:max-h-[85vh] overflow-y-auto animate-[mobileSlideUp_0.4s_ease-out] md:animate-none min-w-0') as self.my_books_workspace:
             self.my_books_workspace.visible = False
 
-            ui.label('MY BORROWED BOOKS').classes('text-xs text-balance md:text-sm tracking-[0.3em] text-blue-500 font-bold mb-6 md:mb-8 w-full text-center md:text-left')
+            ui.label('MY BORROWED BOOKS').classes('text-xs md:text-sm tracking-[0.3em] font-black mb-6 md:mb-8 w-full text-center md:text-left text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 drop-shadow-[0_2px_10px_rgba(56,189,248,0.4)] text-balance')
 
             ui.label('Currently Checked Out').classes('text-base md:text-lg text-white font-bold mb-4')
             self.active_loans_container = ui.column().classes('w-full gap-4 mb-8 min-w-0')
