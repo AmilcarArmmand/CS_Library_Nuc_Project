@@ -5,3 +5,6 @@ venv/
 .DS_Store
 *.db
 !data/cs_library.db
+
+.agents/
+skills-lock.json

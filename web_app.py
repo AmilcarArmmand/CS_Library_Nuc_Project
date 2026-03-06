@@ -199,14 +199,6 @@ ui.add_css('''
         -webkit-text-fill-color: white !important;
     }
 
-    @media (max-height: 500px) { .q-card { padding: 16px !important; } }
-
-    @media (max-width: 768px) {
-        .q-card { width: auto !important; padding: 16px !important; }
-
-        .nicegui-content { padding: 0 !important; }
-    }
-
 ''', shared=True)
 
 
@@ -233,31 +225,31 @@ async def main_page():
     <div class="star-layer-3"></div>
     ''')
     with ui.row().classes(
-        'dash-header fixed top-0 left-0 w-full h-20 items-center justify-between px-8 '
-        'bg-slate-900/40 border-b border-white/10 backdrop-blur-2xl shadow-2xl '
-        'z-50 transition-all rounded-[32px]'
+        'dash-header fixed top-0 left-0 w-full min-h-[5.5rem] md:min-h-[5rem] h-auto flex-nowrap items-center justify-between '
+        'px-4 sm:px-8 pt-[max(1rem,env(safe-area-inset-top))] md:pt-0 pb-3 md:pb-0 '
+        'bg-[#0a0f1c]/80 md:bg-slate-900/40 border-b border-white/10 backdrop-blur-[40px] shadow-2xl '
+        'z-50 transition-[transform,opacity] rounded-none md:rounded-b-[32px]'
     ) as app_header:
         app_header.visible = False
 
-        with ui.row().classes('items-center gap-4'):
+        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4'):
             ui.image('/assets/scsu_logo.png').classes(
-                'w-20 max-h-8 object-contain brightness-0 invert opacity-90'
+                'w-12 sm:w-20 max-h-8 object-contain brightness-0 invert opacity-90 shrink-0'
             )
-            with ui.row().classes('items-center gap-1.5'):
+            with ui.row().classes('items-center flex-nowrap gap-1 sm:gap-1.5'):
                 ui.label('CS_LIBRARY').classes(
-                    'text-md font-black tracking-widest text-white drop-shadow-sm'
+                    'text-[10px] sm:text-md font-black tracking-widest text-white drop-shadow-sm truncate'
                 )
                 ui.label('KIOSK').classes(
-                    'text-md font-light tracking-widest text-blue-400 opacity-90'
+                    'text-[10px] sm:text-md font-light tracking-widest text-blue-400 opacity-90 shrink-0'
                 )
 
-        with ui.row().classes('items-center gap-3'):
+        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-3 shrink-0'):
             ui.icon('account_circle', size='20px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
-            user_name_label = ui.label('Guest').classes('text-sm font-bold text-slate-200 tracking-wide')
-
+            user_name_label = ui.label('Guest').classes('text-xs sm:text-sm font-bold text-slate-200 tracking-wide truncate max-w-[80px] sm:max-w-none')
 
             ui.button(color=None, on_click=lambda: do_logout(), icon='logout').classes(
-            'ml-4 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-all p-1.5 backdrop-blur-sm'
+            'ml-1 sm:ml-4 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-colors p-1.5 backdrop-blur-sm shrink-0'
             ).props('flat size=small')
 
     current_user = {}
@@ -273,7 +265,7 @@ async def main_page():
             user_name_label.text = user['name']
             login_cont.visible  = False
             app_header.visible  = True
-            dash_cont.visible   = True
+            dash.container.visible = True
 
             id_input.value                = ""
             id_input.password_input.value = ""
@@ -296,14 +288,14 @@ async def main_page():
         active  = [l for l in loans if not l.get('returned')]
         history = [l for l in loans if l.get('returned')]
 
-        active_loans_container.clear()
+        dash.active_loans_container.clear()
         
 
-        with active_loans_container:
+        with dash.active_loans_container:
             ui.label(f'Total Books Checked Out: {len(active)}').classes('text-sm text-blue-400 font-bold mb-2')
             
-        no_active_loans.visible = len(active) == 0
-        with active_loans_container:
+        dash.no_active_loans.visible = len(active) == 0
+        with dash.active_loans_container:
             for loan in active:
                 due     = loan.get('due_date', 'N/A')
                 overdue = False
@@ -332,15 +324,15 @@ async def main_page():
                     
 
                     renew_btn = ui.button('RENEW', on_click=_renew).classes(
-                        'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-all'
+                        'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-colors'
                     ).props('flat rounded')
                     if overdue:
                         renew_btn.disable()
                         renew_btn.classes(remove='bg-blue-600/20 text-blue-400 hover:bg-blue-500/30', add='bg-slate-800 text-slate-500')
 
-        history_container.clear()
-        no_history.visible = len(history) == 0
-        with history_container:
+        dash.history_container.clear()
+        dash.no_history.visible = len(history) == 0
+        with dash.history_container:
             for loan in history:
                 returned_on = loan.get('returned_date', 'N/A')
                 if isinstance(returned_on, datetime):
@@ -354,7 +346,7 @@ async def main_page():
 
     def do_logout():
         login_cont.visible  = True
-        dash_cont.visible   = False
+        dash.container.visible   = False
         app_header.visible  = False
         id_input.value                = ""
         id_input.password_input.value = ""
@@ -377,12 +369,13 @@ async def main_page():
             current_page -= 1
             await load_catalog_books()
 
-    (dash_cont, _co_in, _co_cov, _co_ti, _co_au,
-     _cart, _co_btn, _ret_in, _ret_cov, _ret_ti,
-     _ret_st, _empty, catalog_grid, _co_due,
-     active_loans_container, no_active_loans, history_container, no_history,
-     pagination_container) = \
-        dashboard.create(None, None, None, handle_search, load_my_books, next_page, prev_page, browse_only=True)
+    dash = dashboard.DashboardUI(
+        on_search=handle_search, 
+        on_my_books_load=load_my_books, 
+        on_next_page=next_page, 
+        on_prev_page=prev_page, 
+        browse_only=True
+    )
 
     async def go_to_page(page_num):
         nonlocal current_page
@@ -390,18 +383,18 @@ async def main_page():
         await load_catalog_books()
 
     def _build_pagination(total_pages):
-        pagination_container.clear()
+        dash.pagination_container.clear()
 
         circle = (
             'w-9 h-9 min-w-0 min-h-0 p-0 rounded-full text-xs font-semibold '
-            'transition-all duration-200 border '
+            'transition-colors duration-200 border '
         )
         active_style = circle + 'bg-blue-500/20 text-white border-blue-500/50 shadow-[0_0_12px_rgba(59,130,246,0.35)]'
         normal_style = circle + 'bg-white/[0.04] text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
         disabled_style = circle + 'bg-transparent text-slate-600 border-white/5 opacity-40'
         arrow_style = circle + 'bg-white/[0.04] text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
 
-        with pagination_container:
+        with dash.pagination_container:
             prev = ui.button(icon='img:/assets/ph-caret-left.svg', on_click=lambda: go_to_page(current_page - 1), color=None).classes(
                 arrow_style if current_page > 1 else disabled_style
             ).props('flat dense')
@@ -458,28 +451,28 @@ async def main_page():
 
         _build_pagination(total_pages)
 
-        catalog_grid.clear()
-        with catalog_grid:
+        dash.catalog_grid.clear()
+        with dash.catalog_grid:
             for book in page_books:
                 is_avail = book['status'] == 'Available'
                 border   = 'border-slate-700/50' if is_avail else 'border-red-500/50'
                 opacity  = 'opacity-100' if is_avail else 'opacity-60 grayscale'
                 with ui.card().classes(
-                    f'bg-[#151924]/80 {border} rounded-2xl overflow-hidden '
-                    f'cursor-pointer hover:scale-[1.03] transition-all duration-300 {opacity}'
-                ).style('padding: 0; position: relative;'):
-                    ui.image(book['cover']).classes('card-cover w-full h-72 object-cover')
-                    with ui.element('div').style(
-                        'position: absolute; bottom: 0; left: 0; right: 0; '
-                        'background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.9) 100%); '
-                        'padding: 2rem 0.75rem 0.75rem;'
+                    f'bg-[#151924]/80 {border} rounded-2xl overflow-hidden p-0 relative '
+                    f'cursor-pointer hover:scale-[1.03] transition-[transform,opacity] duration-300 {opacity}'
+                ):
+                    ui.image(book['cover']).classes('card-cover w-full h-auto aspect-[3/4] md:h-72 md:aspect-auto object-cover')
+                    with ui.element('div').classes(
+                        'absolute bottom-0 left-0 right-0 '
+                        'bg-gradient-to-b from-transparent via-slate-900/70 to-slate-900/95 '
+                        'p-5 sm:p-4 pt-16 flex flex-col justify-end'
                     ):
-                        ui.label(book['title']).classes('text-sm text-white font-bold leading-snug mb-1')
-                        ui.label(book['author']).classes('text-xs text-slate-300')
+                        ui.label(book['title']).classes('text-base md:text-lg text-white font-bold leading-snug mb-1 md:mb-2 line-clamp-2')
+                        ui.label(book['author']).classes('text-sm text-slate-300 mb-1 line-clamp-1')
                         if is_avail:
-                            ui.label('AVAILABLE').classes('text-[9px] bg-green-500/20 text-green-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest inline-block')
+                            ui.label('AVAILABLE').classes('text-[10px] md:text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
                         else:
-                            ui.label('CHECKED OUT').classes('text-[9px] bg-red-500/20 text-red-400 px-2 py-1 rounded-full mt-2 font-bold tracking-widest inline-block')
+                            ui.label('CHECKED OUT').classes('text-[10px] md:text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
 
     await load_catalog_books()
 

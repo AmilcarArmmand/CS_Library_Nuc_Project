@@ -1,5 +1,3 @@
-
-
 from nicegui import ui
 from datetime import datetime
 
@@ -8,7 +6,7 @@ def create(on_register_success, on_back_to_login):
 
 
 
-    ui.add_head_html('''
+    ui.add_head_html(r'''
     <style>
         .stripe-texture {
             background-image: repeating-linear-gradient(
@@ -63,44 +61,21 @@ def create(on_register_success, on_back_to_login):
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
 
-        with ui.element('div').classes('left-panel stripe-texture'):
-            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert').style(
-                'width:250px; height:auto; object-fit:contain; opacity:0.95; '
-                'filter:brightness(0) invert(1); margin-left:-43px; margin-top:-60px;'
+        with ui.element('div').classes('left-panel stripe-texture justify-start items-start p-12'):
+            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[250px] h-auto object-contain opacity-95 -ml-11 -mt-14')
+            with ui.column().classes('items-start gap-1 text-left -mt-8'):
+                ui.element('div').classes('w-10 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)] mb-4')
+            ui.label('Department of Computer Science').classes(
+                'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase -mt-1 mb-12'
             )
-            with ui.element('div').style(
-                'display:flex; flex-direction:column; align-items:flex-start; '
-                'gap:4px; text-align:left; margin-top:-30px;'
-            ):
-                ui.element('div').style(
-                    'width:40px; height:2px; background:#3b82f6; '
-                    'box-shadow:0 0 12px rgba(59,130,246,0.7); margin:0 0 16px 0;'
+            with ui.column().classes('gap-0.5 text-left mt-24'):
+                ui.label('CS Library').classes('text-[2.6rem] text-white font-bold tracking-tighter leading-none')
+                ui.label('Registration').classes('text-[2.6rem] text-white/50 font-bold tracking-tighter leading-none')
+                ui.label('Create an account to access the CS Library catalog.').classes(
+                    'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase max-w-[250px] leading-relaxed mt-2.5'
                 )
-            ui.label('Department of Computer Science').style(
-                'color:rgba(255,255,255,0.45); font-size:0.7rem; '
-                'letter-spacing:0.14em; text-transform:uppercase; '
-                'margin-top: -5px; margin-bottom:3rem;'
-            )
-            with ui.element('div').style(
-                'display:flex; flex-direction:column; gap:2px; '
-                'text-align:left; margin-top:100px;'
-            ):
-                ui.label('CS Library').style(
-                    'font-size:2.6rem; color:white; font-weight:700; '
-                    'letter-spacing:-0.02em; line-height:1;'
-                )
-                ui.label('Registration').style(
-                    'font-size:2.6rem; color:rgba(255,255,255,0.5); '
-                    'font-weight:700; letter-spacing:-0.02em; line-height:1;'
-                )
-                ui.label('Create an account to access the CS Library catalog.').style(
-                    'color:rgba(255,255,255,0.45); font-size:0.7rem; '
-                    'letter-spacing:0.14em; text-transform:uppercase; '
-                    'max-width:250px; line-height:1.7; margin-top:10px;'
-                )
-            ui.label('© 2026 SCSU Capstone').style(
-                'color:rgba(255,255,255,0.2); font-size:0.65rem; '
-                'position:absolute; bottom:2.5rem; left:2.5rem;'
+            ui.label('© 2026 SCSU Capstone').classes(
+                'text-white/20 text-[0.65rem] absolute bottom-10 left-10'
             )
 
 
@@ -109,16 +84,11 @@ def create(on_register_success, on_back_to_login):
 
                 with ui.column().classes('gap-0 mb-3'):
                     ui.label('Create Account').classes(
-                        'text-white font-black leading-none'
-                    ).style('font-size:3rem; letter-spacing:-0.03em;')
+                        'text-[3rem] tracking-[-0.03em] text-white font-black leading-none'
+                    )
 
-                ui.element('div').classes('mb-5').style(
-                    'width:40px; height:2px; background:#3b82f6; '
-                    'box-shadow:0 0 16px rgba(59,130,246,0.8);'
-                )
-                ui.label('Fill in your details to get started').classes('mb-6').style(
-                    'color:rgba(148,163,184,1); font-size:0.75rem; letter-spacing:0.01em;'
-                )
+                ui.element('div').classes('mb-5 w-10 h-0.5 bg-blue-500 shadow-[0_0_16px_rgba(59,130,246,0.8)]')
+                ui.label('Fill in your details to get started').classes('mb-6 text-slate-400 text-xs tracking-wide')
 
 
                 with ui.column().classes('w-full gap-1 mb-4'):
@@ -166,8 +136,8 @@ def create(on_register_success, on_back_to_login):
                     ).classes('w-full').props('dark standout type=password')
 
 
-                error_label = ui.label('').style(
-                    'color:#f87171; font-size:0.72rem; min-height:1rem; margin-bottom:0.4rem;'
+                error_label = ui.label('').classes(
+                    'text-red-400 text-xs min-h-[1rem] mb-1.5'
                 )
 
 
@@ -203,20 +173,16 @@ def create(on_register_success, on_back_to_login):
                     'bg-blue-600/20 border border-blue-500/30 '
                     'hover:bg-blue-600/40 hover:border-blue-400 '
                     'hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] '
-                    'transition-all duration-300 mb-3'
+                    'transition-colors duration-300 mb-3'
                 ).props('flat')
 
 
                 with ui.row().classes('w-full justify-center mb-4'):
-                    ui.label('Already have an account? ').style(
-                        'color:rgba(148,163,184,0.7); font-size:0.75rem;'
-                    )
+                    ui.label('Already have an account? ').classes('text-white/60 text-xs')
                     ui.label('Sign in').classes('back-link').on('click', on_back_to_login)
 
 
-                with ui.row().classes('w-full items-center gap-3 pt-5 opacity-60').style(
-                    'border-top: 1px solid rgba(51,65,85,0.6);'
-                ):
+                with ui.row().classes('w-full items-center gap-3 pt-5 opacity-60 border-t border-slate-700/60'):
                     ui.icon('schedule', size='14px').classes('text-slate-400')
                     time_label = ui.label().classes(
                         'text-xs font-bold tracking-[0.2em] uppercase text-slate-400'
