@@ -8,26 +8,29 @@ def create(on_register_success, on_back_to_login):
 
     ui.add_head_html(r'''
     <style>
-        .stripe-texture {
-            background-image: repeating-linear-gradient(
-                -45deg,
-                transparent,
-                transparent 8px,
-                rgba(255,255,255,0.015) 8px,
-                rgba(255,255,255,0.015) 16px
-            );
-        }
         .login-outer {
             display: flex !important; flex-direction: row !important;
             width: 100vw !important; height: 100vh !important;
             overflow: hidden !important; margin: 0 !important; padding: 0 !important;
         }
-        .left-panel {
-            width: 42% !important; min-width: 42% !important;
-            height: 100% !important; background-color: #0a1f44 !important;
-            display: flex !important; flex-direction: column !important;
-            align-items: flex-start !important; justify-content: flex-start !important;
-            padding: 3rem !important; position: relative !important; flex-shrink: 0 !important;
+        .dark-stripe-bg {
+            background-color: #020617;
+            background-image: 
+                repeating-linear-gradient(
+                    -45deg,
+                    transparent,
+                    transparent 8px,
+                    rgba(255,255,255,0.015) 8px,
+                    rgba(255,255,255,0.015) 16px
+                ),
+                radial-gradient(ellipse at 15% 20%, rgba(37, 99, 235, 0.4) 0%, transparent 60%);
+            position: relative;
+            overflow: hidden;
+            width: 45% !important;
+            min-width: 45% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex-shrink: 0 !important;
         }
         .right-panel {
             flex: 1 !important; height: 100% !important;
@@ -38,7 +41,7 @@ def create(on_register_success, on_back_to_login):
         .back-link:hover { color:#60a5fa; }
 
         @media (max-width: 768px) {
-            .left-panel {
+            .dark-stripe-bg {
                 display: none !important;
             }
             .login-outer {
@@ -61,19 +64,26 @@ def create(on_register_success, on_back_to_login):
     with ui.element('div').classes('login-outer scsu-bg') as container:
 
 
-        with ui.element('div').classes('left-panel stripe-texture justify-start items-start p-12'):
-            ui.image('/assets/scsu_logo.png').classes('brightness-0 invert w-[260px] h-auto object-contain opacity-95 -ml-11 -mt-6')
-            with ui.column().classes('items-start gap-3 w-full -mt-6 mb-12'):
-                ui.element('div').classes('w-16 h-0.5 bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)]')
-                ui.label('Department of Computer Science').classes('text-white/45 text-[0.65rem] tracking-[0.15em] uppercase font-bold')
-            with ui.column().classes('gap-0.5 text-left mt-24'):
-                ui.label('CS Library').classes('text-[2.6rem] text-white font-bold tracking-tighter leading-none')
-                ui.label('Registration').classes('text-[2.6rem] text-white/50 font-bold tracking-tighter leading-none')
-                ui.label('Create an account to access the CS Library catalog.').classes(
-                    'text-white/45 text-[0.7rem] tracking-[0.14em] uppercase max-w-[250px] leading-relaxed mt-2.5'
+        with ui.element('div').classes('dark-stripe-bg'):
+
+            with ui.column().classes('absolute top-6 left-8 gap-2 z-10 items-start'):
+                ui.image('/assets/scsu_logo.png').classes(
+                    'brightness-0 invert w-[200px] h-auto object-contain'
                 )
+                ui.element('div').classes('w-12 h-[3px] bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.7)] ml-8 -mt-8')
+                ui.label('DEPARTMENT OF COMPUTER SCIENCE').classes(
+                    'text-slate-400/80 text-[0.65rem] tracking-[0.15em] font-bold uppercase ml-8 -mt-0'
+                )
+
+            with ui.column().classes('absolute top-1/2 left-12 md:left-16 -translate-y-1/2 gap-2 z-10'):
+                ui.label('CS Library').classes('text-[3.5rem] tracking-tighter text-white font-black leading-[0.85] drop-shadow-md')
+                ui.label('Web Portal.').classes('text-[3.5rem] tracking-tighter text-slate-400 font-black leading-[0.85]')
+                ui.label('CREATE AN ACCOUNT TO ACCESS THE CS LIBRARY CATALOG.').classes(
+                    'text-slate-400/60 text-[0.65rem] tracking-[0.15em] uppercase max-w-[280px] leading-relaxed mt-6 font-bold'
+                )
+
             ui.label('© 2026 SCSU Capstone').classes(
-                'text-white/20 text-[0.65rem] absolute bottom-10 left-10'
+                'absolute bottom-8 left-12 md:bottom-12 md:left-16 text-slate-500/40 text-[0.6rem] z-10 tracking-wider'
             )
 
 
