@@ -1,11 +1,33 @@
 from nicegui import app, ui
 from app.core import database as db 
 from app.ui import login, dashboard
+import asyncio
 from datetime import datetime, timedelta
 
 db.init_db()
 
 app.add_static_files('/assets', 'assets')
+
+_cover_cache_warmup_started = False
+
+
+def _start_cover_cache_warmup_once() -> None:
+    global _cover_cache_warmup_started
+    if _cover_cache_warmup_started:
+        return
+    _cover_cache_warmup_started = True
+
+    async def _warm() -> None:
+        try:
+            stats = await db.warm_cover_cache()
+            print(
+                "[COVER CACHE] total={total} cached={cached} downloaded={downloaded} "
+                "failed={failed} skipped={skipped}".format(**stats)
+            )
+        except Exception as e:
+            print(f"[COVER CACHE] warmup failed: {e}")
+
+    asyncio.create_task(_warm())
 
 
 ui.add_css('''
@@ -202,11 +224,45 @@ ui.add_css('''
         -webkit-text-fill-color: white !important;
     }
 
+    @media (max-height: 500px) and (min-width: 700px) {
+        .app-header {
+            min-height: 3.85rem !important;
+            padding-top: max(0.3rem, env(safe-area-inset-top)) !important;
+            padding-bottom: 0.25rem !important;
+            border-radius: 0 !important;
+        }
+        .header-logo {
+            width: 2.8rem !important;
+            max-height: 1.65rem !important;
+        }
+        .header-title-cs,
+        .header-title-kiosk {
+            font-size: 0.68rem !important;
+            letter-spacing: 0.07em !important;
+        }
+        .scsu-bg::before,
+        .scsu-bg::after,
+        .star-layer-3,
+        body::before {
+            animation: none !important;
+        }
+        .scsu-bg::before,
+        .scsu-bg::after {
+            opacity: 0.45 !important;
+        }
+        .star-layer-3,
+        body::before {
+            opacity: 0.35 !important;
+        }
+    }
+
 ''', shared=True)
 
 
 @ui.page('/')
 async def main_page():
+
+    _start_cover_cache_warmup_once()
 
     ui.add_body_html('''
     <div class="star-layer-3"></div>
@@ -216,12 +272,11 @@ async def main_page():
         app_header.visible = False
 
 
-        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4'):
+        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4 shrink-0'):
             ui.image('/assets/scsu_logo.png').classes('header-logo w-12 sm:w-20 max-h-8 object-contain brightness-0 invert opacity-90 shrink-0')
             with ui.row().classes('items-center flex-nowrap gap-1 sm:gap-1.5'):
                 ui.label('CS_LIBRARY').classes('header-title-cs text-[10px] sm:text-sm font-black tracking-widest text-white drop-shadow-sm truncate')
                 ui.label('KIOSK').classes('header-title-kiosk text-[10px] sm:text-sm font-light tracking-widest text-blue-400 opacity-90 shrink-0')
-
 
         with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-3 shrink-0'):
             ui.icon('account_circle', size='18px').classes('text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]')
@@ -234,6 +289,15 @@ async def main_page():
 
     cart_items = []
     current_user = {}
+    themed_row_card = (
+        'w-full items-center gap-4 bg-[#151924]/84 p-4 rounded-xl border border-slate-700/55 '
+        'shadow-[0_16px_30px_-20px_rgba(2,6,23,0.95),0_0_0_1px_rgba(59,130,246,0.09),inset_0_1px_0_rgba(255,255,255,0.05)] '
+        'backdrop-blur-lg'
+    )
+    themed_history_row_card = (
+        'w-full items-center gap-4 bg-[#151924]/68 p-3 rounded-xl border border-slate-700/45 opacity-85 '
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+    )
 
 
     async def try_login():
@@ -270,7 +334,7 @@ async def main_page():
             dash.checkout_due_date.text = f'Due: {due.strftime("%B %d, %Y")}'
 
             with dash.cart_container:
-                with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
+                with ui.row().classes(themed_row_card):
                     ui.image(book['cover']).classes('w-12 h-16 rounded object-cover')
                     with ui.column().classes('gap-0'):
                         ui.label(book['title']).classes('text-white font-bold')
@@ -335,6 +399,12 @@ async def main_page():
         current_page = 1
         await load_catalog_books()
 
+    async def handle_status_filter(filter_key: str):
+        nonlocal current_status_filter, current_page
+        current_status_filter = (filter_key or 'all').strip()
+        current_page = 1
+        await load_catalog_books()
+
 
     async def load_my_books():
         if not current_user:
@@ -363,7 +433,7 @@ async def main_page():
                 
                 due_color = 'text-red-400' if overdue else 'text-blue-400'
                 
-                with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
+                with ui.row().classes(themed_row_card):
                     ui.image(loan.get('cover', '')).classes('w-12 h-16 rounded object-cover')
                     with ui.column().classes('gap-0 flex-1'):
                         ui.label(loan['title']).classes('text-white font-bold')
@@ -394,7 +464,7 @@ async def main_page():
                 returned_on = loan.get('returned_date', 'N/A')
                 if isinstance(returned_on, datetime):
                     returned_on = returned_on.strftime('%B %d, %Y')
-                with ui.row().classes('w-full items-center gap-4 bg-white/[0.03] p-3 rounded-xl border border-white/5 opacity-70'):
+                with ui.row().classes(themed_history_row_card):
                     ui.image(loan.get('cover', '')).classes('w-10 h-14 rounded object-cover')
                     with ui.column().classes('gap-0 flex-1'):
                         ui.label(loan['title']).classes('text-white text-sm font-bold')
@@ -418,6 +488,7 @@ async def main_page():
     current_page = 1
     items_per_page = 12
     current_search_query = ''
+    current_status_filter = 'all'
 
     async def next_page():
         nonlocal current_page
@@ -434,7 +505,8 @@ async def main_page():
         on_checkout_scan=scan_checkout_logic, 
         on_checkout_confirm=confirm_checkout, 
         on_return_scan=scan_return_logic, 
-        on_search=handle_search, 
+        on_search=handle_search,
+        on_catalog_filter=handle_status_filter,
         on_my_books_load=load_my_books, 
         on_next_page=next_page, 
         on_prev_page=prev_page
@@ -443,13 +515,12 @@ async def main_page():
 
     async def go_to_page(page_num):
         nonlocal current_page
-        current_page = page_num
+        current_page = max(1, page_num)
         await load_catalog_books()
 
 
     def _build_pagination(total_pages):
         dash.pagination_container.clear()
-
 
         circle = (
             'w-9 h-9 min-w-0 min-h-0 p-0 rounded-full text-xs font-semibold '
@@ -461,13 +532,11 @@ async def main_page():
         arrow_style = circle + 'bg-white/[0.04] text-slate-400 border-white/10 hover:bg-white/10 hover:text-white'
 
         with dash.pagination_container:
-
             prev = ui.button(icon='img:/assets/ph-caret-left.svg', on_click=lambda: go_to_page(current_page - 1), color=None).classes(
                 arrow_style if current_page > 1 else disabled_style
             ).props('flat dense')
             if current_page <= 1:
                 prev.disable()
-
 
             pages_to_show = []
             if total_pages <= 7:
@@ -496,7 +565,6 @@ async def main_page():
                         style
                     ).props('flat dense')
 
-
             nxt = ui.button(icon='img:/assets/ph-caret-right.svg', on_click=lambda: go_to_page(current_page + 1), color=None).classes(
                 arrow_style if current_page < total_pages else disabled_style
             ).props('flat dense')
@@ -505,15 +573,30 @@ async def main_page():
 
 
     async def load_catalog_books():
+        nonlocal current_page
         books = await db.get_catalog()
 
         if current_search_query:
-            filtered_books = [b for b in books if current_search_query in b['title'].lower() or current_search_query in b['author'].lower()]
+            query = current_search_query
+            filtered_books = [
+                book for book in books
+                if query in book['title'].lower()
+                or query in book['author'].lower()
+                or query in (book.get('isbn') or '').lower()
+            ]
         else:
             filtered_books = books
 
+        if current_status_filter == 'available':
+            filtered_books = [book for book in filtered_books if book.get('status') == 'Available']
+        elif current_status_filter == 'checked_out':
+            filtered_books = [book for book in filtered_books if book.get('status') != 'Available']
+
         total_books = len(filtered_books)
         total_pages = max(1, (total_books + items_per_page - 1) // items_per_page)
+
+        if current_page > total_pages:
+            current_page = total_pages
 
         start_idx = (current_page - 1) * items_per_page
         end_idx = start_idx + items_per_page
@@ -531,7 +614,7 @@ async def main_page():
                     f'bg-[#151924]/80 {border} rounded-2xl overflow-hidden p-0 relative '
                     f'cursor-pointer hover:scale-[1.03] transition-[transform,opacity] duration-300 {opacity}'
                 ):
-                    ui.image(book['cover']).classes('card-cover w-full h-auto aspect-[3/4] md:h-72 md:aspect-auto object-cover')
+                    ui.image(book['cover']).classes('card-cover w-full h-auto aspect-[3/4] md:h-72 md:aspect-auto object-cover').props('loading=lazy')
                     with ui.element('div').classes(
                         'absolute bottom-0 left-0 right-0 '
                         'bg-gradient-to-b from-transparent via-slate-900/70 to-slate-900/95 '
@@ -539,10 +622,14 @@ async def main_page():
                     ):
                         ui.label(book['title']).classes('text-base md:text-lg text-white font-bold leading-snug mb-1 md:mb-2 line-clamp-2')
                         ui.label(book['author']).classes('text-sm text-slate-300 mb-1 line-clamp-1')
+                        ui.label(f"ISBN {book.get('isbn', '')}").classes('text-[10px] text-slate-400 mb-1 tracking-wide')
                         if is_avail:
                             ui.label('AVAILABLE').classes('text-[10px] md:text-xs bg-green-500/20 text-green-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
                         else:
                             ui.label('CHECKED OUT').classes('text-[10px] md:text-xs bg-red-500/20 text-red-400 px-3 py-1.5 rounded-full mt-2 font-bold tracking-widest inline-block')
+
+        dash.set_catalog_filter(current_status_filter, trigger=False)
+        dash.set_catalog_summary(len(page_books), total_books, current_page, total_pages)
 
 
     await load_catalog_books()

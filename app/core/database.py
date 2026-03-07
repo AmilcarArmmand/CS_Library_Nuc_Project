@@ -6,11 +6,15 @@ import sqlite3
 import httpx
 import bcrypt
 import asyncio
+import re
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cs_library.db"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DB_PATH = PROJECT_ROOT / "data" / "cs_library.db"
+ASSETS_DIR = PROJECT_ROOT / "assets"
+COVER_CACHE_DIR = ASSETS_DIR / "covers"
 
 # set False to disable live Open Library lookups (offline/testing mode)
 USE_LIVE_API = True
@@ -27,6 +31,124 @@ def _connect() -> sqlite3.Connection:
 
 def _row(row) -> Optional[dict]:
     return dict(row) if row else None
+
+
+def _normalize_cover_url(cover: str, isbn: str = "") -> str:
+    """Normalize remote cover URLs for faster card rendering."""
+    url = (cover or "").strip()
+    if url.startswith("/assets/"):
+        if isbn and not _cover_cache_file(isbn).exists():
+            return f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+        return url
+    if not url and isbn:
+        return f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+
+    if "covers.openlibrary.org" in url:
+        url = re.sub(r"-(?:L|S)(\.[A-Za-z0-9]+)$", r"-M\1", url)
+
+    return url
+
+
+def _cover_cache_name(isbn: str) -> str:
+    safe = re.sub(r"[^0-9A-Za-zXx-]", "", (isbn or "").strip())
+    return f"{safe or 'unknown'}.jpg"
+
+
+def _cover_cache_file(isbn: str) -> Path:
+    return COVER_CACHE_DIR / _cover_cache_name(isbn)
+
+
+def _cover_asset_path(isbn: str) -> str:
+    return f"/assets/covers/{_cover_cache_name(isbn)}"
+
+
+def _resolve_cover_for_output(cover: str, isbn: str = "") -> str:
+    url = _normalize_cover_url(cover, isbn)
+    if isbn and _cover_cache_file(isbn).exists():
+        return _cover_asset_path(isbn)
+    return url
+
+
+def _write_bytes_atomic(path: Path, content: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_bytes(content)
+    tmp.replace(path)
+
+
+async def _download_cover(url: str, isbn: str, client: httpx.AsyncClient) -> bool:
+    if not isbn:
+        return False
+    dest = _cover_cache_file(isbn)
+    if dest.exists():
+        return True
+    if not url.startswith(("http://", "https://")):
+        return False
+
+    try:
+        response = await client.get(url)
+    except Exception:
+        return False
+
+    if response.status_code != 200 or not response.content:
+        return False
+
+    content_type = (response.headers.get("content-type") or "").lower()
+    if content_type and not content_type.startswith("image/"):
+        return False
+
+    try:
+        await asyncio.to_thread(_write_bytes_atomic, dest, response.content)
+    except Exception:
+        return False
+
+    return True
+
+
+async def warm_cover_cache(max_concurrency: int = 6) -> dict:
+    """Best-effort cover cache warmup to reduce runtime card image latency."""
+
+    def _fetch():
+        with _connect() as conn:
+            rows = conn.execute("SELECT isbn, cover FROM books").fetchall()
+        return [dict(r) for r in rows]
+
+    rows = await _run(_fetch)
+    if not rows:
+        return {"total": 0, "cached": 0, "downloaded": 0, "failed": 0, "skipped": 0}
+
+    COVER_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    semaphore = asyncio.Semaphore(max(1, int(max_concurrency)))
+    stats = {"total": len(rows), "cached": 0, "downloaded": 0, "failed": 0, "skipped": 0}
+
+    headers = {"User-Agent": "SCSU_CS_Library_Kiosk/1.0 (cover-cache)"}
+    async with httpx.AsyncClient(timeout=8.0, follow_redirects=True, headers=headers) as client:
+
+        async def _worker(book: dict) -> None:
+            isbn = (book.get("isbn") or "").strip()
+            if not isbn:
+                stats["skipped"] += 1
+                return
+
+            if _cover_cache_file(isbn).exists():
+                stats["cached"] += 1
+                return
+
+            url = _normalize_cover_url(book.get("cover", ""), isbn)
+            if not url.startswith(("http://", "https://")):
+                stats["skipped"] += 1
+                return
+
+            async with semaphore:
+                ok = await _download_cover(url, isbn, client)
+            if ok:
+                stats["downloaded"] += 1
+            else:
+                stats["failed"] += 1
+
+        await asyncio.gather(*(_worker(row) for row in rows))
+
+    return stats
 
 
 async def _run(fn):
@@ -158,14 +280,17 @@ async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
             return None
 
         book_data = data[key]
+        cover_data = book_data.get("cover") or {}
         book = {
             "isbn":   isbn,
             "title":  book_data.get("title", "Unknown Title"),
             "author": (book_data.get("authors") or [{"name": "Unknown"}])[0]["name"],
-            "cover":  book_data.get("cover", {}).get(
-                          "large",
-                          f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
-                      ),
+            "cover":  _normalize_cover_url(
+                cover_data.get("medium")
+                or cover_data.get("large")
+                or f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg",
+                isbn,
+            ),
             "status": "Available",
             "shelf":  "",
         }
@@ -189,6 +314,7 @@ async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
         await loop.run_in_executor(None, _save)
 
         print(f" [API] Fetched and cached '{book['title']}' from Open Library.")
+        book["cover"] = _resolve_cover_for_output(book["cover"], isbn)
         return book
 
     except httpx.TimeoutException:
@@ -214,6 +340,7 @@ async def get_book(isbn: str) -> Optional[dict]:
     book = await _run(_fetch)
 
     if book:
+        book["cover"] = _resolve_cover_for_output(book.get("cover", ""), isbn)
         print(f" [DB] Found ISBN {isbn} in local database.")
         return book
 
@@ -230,19 +357,24 @@ async def get_catalog() -> list:
     def _fetch():
         with _connect() as conn:
             rows = conn.execute("SELECT * FROM books ORDER BY title").fetchall()
-        return [dict(r) for r in rows]
+        books = [dict(r) for r in rows]
+        for book in books:
+            book["cover"] = _resolve_cover_for_output(book.get("cover", ""), book.get("isbn", ""))
+        return books
 
     return await _run(_fetch)
 
 
 async def add_book(isbn: str, title: str, author: str, cover: str = "") -> bool:
     """Insert a new book. Returns True on success, False if the ISBN already exists."""
+    normalized_cover = _normalize_cover_url(cover, isbn)
+
     def _insert():
         try:
             with _connect() as conn:
                 conn.execute(
                     "INSERT INTO books (isbn, title, author, cover) VALUES (?, ?, ?, ?)",
-                    (isbn, title, author, cover),
+                    (isbn, title, author, normalized_cover),
                 )
                 conn.commit()
             return True
@@ -337,7 +469,7 @@ async def get_user_loans(user_id: int) -> list:
             rows = conn.execute('''
                 SELECT
                     l.id, l.returned, l.due_date, l.returned_date,
-                    b.title, b.author, b.cover
+                    b.isbn, b.title, b.author, b.cover
                 FROM loans l
                 JOIN books b ON l.isbn = b.isbn
                 WHERE l.user_id = ?
@@ -355,6 +487,7 @@ async def get_user_loans(user_id: int) -> list:
                     except ValueError:
                         pass
             d["returned"] = bool(d["returned"])
+            d["cover"] = _resolve_cover_for_output(d.get("cover", ""), d.get("isbn", ""))
             result.append(d)
         return result
 

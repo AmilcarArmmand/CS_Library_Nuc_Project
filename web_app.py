@@ -1,11 +1,33 @@
 from nicegui import app, ui
 from app.core import database as db
 from app.ui import login_email, dashboard, register
+import asyncio
 from datetime import datetime
 
 db.init_db()
 
 app.add_static_files('/assets', 'assets')
+
+_cover_cache_warmup_started = False
+
+
+def _start_cover_cache_warmup_once() -> None:
+    global _cover_cache_warmup_started
+    if _cover_cache_warmup_started:
+        return
+    _cover_cache_warmup_started = True
+
+    async def _warm() -> None:
+        try:
+            stats = await db.warm_cover_cache()
+            print(
+                "[COVER CACHE] total={total} cached={cached} downloaded={downloaded} "
+                "failed={failed} skipped={skipped}".format(**stats)
+            )
+        except Exception as e:
+            print(f"[COVER CACHE] warmup failed: {e}")
+
+    asyncio.create_task(_warm())
 
 ui.add_css('''
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
@@ -220,6 +242,7 @@ async def register_page():
 
 @ui.page('/')
 async def main_page():
+    _start_cover_cache_warmup_once()
 
     ui.add_body_html('''
     <div class="star-layer-3"></div>
@@ -232,7 +255,7 @@ async def main_page():
     ) as app_header:
         app_header.visible = False
 
-        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4'):
+        with ui.row().classes('items-center flex-nowrap gap-2 sm:gap-4 shrink-0'):
             ui.image('/assets/scsu_logo.png').classes(
                 'w-16 sm:w-28 max-h-12 object-contain brightness-0 invert opacity-90 shrink-0'
             )
@@ -253,6 +276,15 @@ async def main_page():
             ).props('flat size=small')
 
     current_user = {}
+    themed_row_card = (
+        'w-full items-center gap-4 bg-[#151924]/84 p-4 rounded-xl border border-slate-700/55 '
+        'shadow-[0_16px_30px_-20px_rgba(2,6,23,0.95),0_0_0_1px_rgba(59,130,246,0.09),inset_0_1px_0_rgba(255,255,255,0.05)] '
+        'backdrop-blur-lg'
+    )
+    themed_history_row_card = (
+        'w-full items-center gap-4 bg-[#151924]/68 p-3 rounded-xl border border-slate-700/45 opacity-85 '
+        'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+    )
 
     async def try_login():
         email    = id_input.value.strip()
@@ -281,6 +313,12 @@ async def main_page():
         current_page = 1
         await load_catalog_books()
 
+    async def handle_status_filter(filter_key: str):
+        nonlocal current_status_filter, current_page
+        current_status_filter = (filter_key or 'all').strip()
+        current_page = 1
+        await load_catalog_books()
+
     async def load_my_books():
         if not current_user:
             return
@@ -306,7 +344,7 @@ async def main_page():
                     due_str = due
                 due_color = 'text-red-400' if overdue else 'text-blue-400'
                 
-                with ui.row().classes('w-full items-center gap-4 bg-white/5 p-4 rounded-xl border border-white/10'):
+                with ui.row().classes(themed_row_card):
                     ui.image(loan.get('cover', '')).classes('w-12 h-16 rounded object-cover')
                     with ui.column().classes('gap-0 flex-1'):
                         ui.label(loan['title']).classes('text-white font-bold')
@@ -337,7 +375,7 @@ async def main_page():
                 returned_on = loan.get('returned_date', 'N/A')
                 if isinstance(returned_on, datetime):
                     returned_on = returned_on.strftime('%B %d, %Y')
-                with ui.row().classes('w-full items-center gap-4 bg-white/[0.03] p-3 rounded-xl border border-white/5 opacity-70'):
+                with ui.row().classes(themed_history_row_card):
                     ui.image(loan.get('cover', '')).classes('w-10 h-14 rounded object-cover')
                     with ui.column().classes('gap-0 flex-1'):
                         ui.label(loan['title']).classes('text-white text-sm font-bold')
@@ -357,6 +395,7 @@ async def main_page():
     current_page = 1
     items_per_page = 12
     current_search_query = ''
+    current_status_filter = 'all'
 
     async def next_page():
         nonlocal current_page
@@ -370,16 +409,17 @@ async def main_page():
             await load_catalog_books()
 
     dash = dashboard.DashboardUI(
-        on_search=handle_search, 
-        on_my_books_load=load_my_books, 
-        on_next_page=next_page, 
-        on_prev_page=prev_page, 
+        on_search=handle_search,
+        on_catalog_filter=handle_status_filter,
+        on_my_books_load=load_my_books,
+        on_next_page=next_page,
+        on_prev_page=prev_page,
         browse_only=True
     )
 
     async def go_to_page(page_num):
         nonlocal current_page
-        current_page = page_num
+        current_page = max(1, page_num)
         await load_catalog_books()
 
     def _build_pagination(total_pages):
@@ -435,15 +475,30 @@ async def main_page():
                 nxt.disable()
 
     async def load_catalog_books():
+        nonlocal current_page
         books = await db.get_catalog()
 
         if current_search_query:
-            filtered_books = [b for b in books if current_search_query in b['title'].lower() or current_search_query in b['author'].lower()]
+            query = current_search_query
+            filtered_books = [
+                book for book in books
+                if query in book['title'].lower()
+                or query in book['author'].lower()
+                or query in (book.get('isbn') or '').lower()
+            ]
         else:
             filtered_books = books
 
+        if current_status_filter == 'available':
+            filtered_books = [book for book in filtered_books if book.get('status') == 'Available']
+        elif current_status_filter == 'checked_out':
+            filtered_books = [book for book in filtered_books if book.get('status') != 'Available']
+
         total_books = len(filtered_books)
         total_pages = max(1, (total_books + items_per_page - 1) // items_per_page)
+
+        if current_page > total_pages:
+            current_page = total_pages
 
         start_idx = (current_page - 1) * items_per_page
         end_idx = start_idx + items_per_page
@@ -461,7 +516,7 @@ async def main_page():
                     f'bg-[#151924]/80 {border} rounded-2xl overflow-hidden p-0 relative '
                     f'cursor-pointer hover:scale-[1.03] transition-[transform,opacity] duration-300 {opacity}'
                 ):
-                    ui.image(book['cover']).classes('card-cover w-full h-auto aspect-[3/4] md:h-72 md:aspect-auto object-cover')
+                    ui.image(book['cover']).classes('card-cover w-full h-auto aspect-[3/4] md:h-72 md:aspect-auto object-cover').props('loading=lazy')
                     with ui.element('div').classes(
                         'absolute bottom-0 left-0 right-0 '
                         'bg-gradient-to-b from-transparent via-slate-900/70 to-slate-900/95 '
@@ -469,10 +524,14 @@ async def main_page():
                     ):
                         ui.label(book['title']).classes('text-sm md:text-lg text-white font-bold leading-snug md:leading-snug mb-0.5 md:mb-2 line-clamp-2')
                         ui.label(book['author']).classes('text-[11px] md:text-sm text-slate-300 mb-0.5 md:mb-1 line-clamp-1')
+                        ui.label(f"ISBN {book.get('isbn', '')}").classes('text-[10px] text-slate-400 mb-1 tracking-wide')
                         if is_avail:
                             ui.label('AVAILABLE').classes('text-[9px] md:text-xs bg-green-500/20 text-green-400 px-2 md:px-3 py-1 md:py-1.5 rounded-full mt-1 md:mt-2 font-bold tracking-wider inline-block w-max')
                         else:
                             ui.label('CHECKED OUT').classes('text-[9px] md:text-xs bg-red-500/20 text-red-400 px-2 md:px-3 py-1 md:py-1.5 rounded-full mt-1 md:mt-2 font-bold tracking-wider inline-block w-max')
+
+        dash.set_catalog_filter(current_status_filter, trigger=False)
+        dash.set_catalog_summary(len(page_books), total_books, current_page, total_pages)
 
     await load_catalog_books()
 
