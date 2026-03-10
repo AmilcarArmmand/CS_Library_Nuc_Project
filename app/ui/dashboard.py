@@ -15,7 +15,7 @@ class DashboardUI:
         'drop-shadow-[0_2px_8px_rgba(30,64,175,0.35)] text-balance'
     )
 
-    def __init__(self, on_checkout_scan=None, on_checkout_confirm=None, on_return_scan=None, on_search=None, on_catalog_filter=None, on_my_books_load=None, on_next_page=None, on_prev_page=None, browse_only=False):
+    def __init__(self, on_checkout_scan=None, on_checkout_confirm=None, on_return_scan=None, on_search=None, on_catalog_filter=None, on_my_books_load=None, on_next_page=None, on_prev_page=None, on_view_change=None, browse_only=False):
         self.on_checkout_scan = on_checkout_scan or (lambda e: None)
         self.on_checkout_confirm = on_checkout_confirm or (lambda: None)
         self.on_return_scan = on_return_scan or (lambda e: None)
@@ -24,6 +24,7 @@ class DashboardUI:
         self.on_my_books_load = on_my_books_load or (lambda: None)
         self.on_next_page = on_next_page or (lambda: None)
         self.on_prev_page = on_prev_page or (lambda: None)
+        self.on_view_change = on_view_change or (lambda view: None)
         self.browse_only = browse_only
 
         self.btn_refs = {}
@@ -53,6 +54,9 @@ class DashboardUI:
         result = callback(*args)
         if inspect.isawaitable(result):
             background_tasks.create(result)
+
+    def _set_active_view(self, view_key: str) -> None:
+        self._dispatch(self.on_view_change, view_key)
         
     def _build_head_html(self):
         ui.add_head_html('''
@@ -169,6 +173,7 @@ class DashboardUI:
         self.my_books_workspace.visible = False
         self.catalog_workspace.visible = True
         self.update_nav('catalog')
+        self._set_active_view('catalog')
 
     def show_checkout(self):
         self.catalog_workspace.visible, self.return_workspace.visible = False, False
@@ -176,6 +181,7 @@ class DashboardUI:
         self.checkout_workspace.visible = True
         self.checkout_input.run_method('focus')
         self.update_nav('checkout')
+        self._set_active_view('checkout')
 
     def show_return(self):
         self.catalog_workspace.visible, self.checkout_workspace.visible = False, False
@@ -183,6 +189,7 @@ class DashboardUI:
         self.return_workspace.visible = True
         self.return_input.run_method('focus')
         self.update_nav('return')
+        self._set_active_view('return')
 
     async def show_my_books(self):
         self.catalog_workspace.visible = False
@@ -190,7 +197,14 @@ class DashboardUI:
             self.checkout_workspace.visible, self.return_workspace.visible = False, False
         self.my_books_workspace.visible = True
         self.update_nav('my_books')
+        self._set_active_view('my_books')
         await self.on_my_books_load()
+
+    def set_search_query(self, query: str) -> None:
+        self.search_box.value = query or ''
+
+    def set_search_visible(self, visible: bool) -> None:
+        self.search_box.visible = bool(visible)
 
     def _build_navigation(self):
         with ui.row().classes(

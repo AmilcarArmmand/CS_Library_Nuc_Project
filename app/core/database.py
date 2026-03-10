@@ -252,6 +252,20 @@ async def get_user_by_id(student_id_input: str) -> Optional[dict]:
     return await _run(_fetch)
 
 
+async def get_user_by_account_id(user_id: int) -> Optional[dict]:
+    """Look up a user by their primary key for session restoration."""
+
+    def _fetch():
+        with _connect() as conn:
+            row = conn.execute(
+                "SELECT id, name, email, student_id, active FROM users WHERE id = ?",
+                (int(user_id),)
+            ).fetchone()
+        return _row(row)
+
+    return await _run(_fetch)
+
+
 
 # BOOKS
 
@@ -387,25 +401,47 @@ async def add_book(isbn: str, title: str, author: str, cover: str = "") -> bool:
 
 # check out / return system
 
-async def checkout_books(books: list, user_id: int) -> None:
-    """Mark each book as 'Checked Out' and create a loan record. Due in 14 days."""
+async def checkout_books(books: list, user_id: int) -> int:
+    """Mark available books as checked out and create loan records. Returns the number successfully checked out."""
 
     due = datetime.now() + timedelta(days=14)
 
-    def _checkout():
+    def _checkout() -> int:
+        checked_out = 0
+        seen_isbns = set()
+
         with _connect() as conn:
             for book in books:
-                conn.execute(
-                    "UPDATE books SET status = 'Checked Out' WHERE isbn = ?",
-                    (book["isbn"],)
+                isbn = str(book.get("isbn") or "").strip()
+                if not isbn or isbn in seen_isbns:
+                    continue
+                seen_isbns.add(isbn)
+
+                row = conn.execute(
+                    "SELECT status FROM books WHERE isbn = ?",
+                    (isbn,),
+                ).fetchone()
+                if row is None or row["status"] != "Available":
+                    continue
+
+                updated = conn.execute(
+                    "UPDATE books SET status = 'Checked Out' WHERE isbn = ? AND status = 'Available'",
+                    (isbn,),
                 )
+                if updated.rowcount != 1:
+                    continue
+
                 conn.execute(
                     "INSERT INTO loans (user_id, isbn, due_date) VALUES (?, ?, ?)",
-                    (user_id, book["isbn"], due)
+                    (user_id, isbn, due)
                 )
+                checked_out += 1
+
             conn.commit()
 
-    await _run(_checkout)
+        return checked_out
+
+    return await _run(_checkout)
 
 
 async def return_book(isbn: str) -> bool:

@@ -148,7 +148,6 @@ def create(on_login_success):
                     def update_time():
                         time_label.text = datetime.now().strftime('%a, %b %d | %I:%M %p')
 
-                    ui.timer(1.0, update_time)
                     update_time()
 
     email_input.password_input = password_input

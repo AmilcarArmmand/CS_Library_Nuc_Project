@@ -220,7 +220,6 @@ def create(on_login_success):
                         now = datetime.now()
                         time_label.text = now.strftime('%a, %b %d | %I:%M %p')
 
-                    ui.timer(1.0, update_time)
                     update_time()
 
     return container, id_input

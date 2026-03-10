@@ -196,7 +196,6 @@ def create(on_register_success, on_back_to_login):
                     def update_time():
                         time_label.text = datetime.now().strftime('%a, %b %d | %I:%M %p')
 
-                    ui.timer(1.0, update_time)
                     update_time()
 
     return container

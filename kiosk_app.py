@@ -1,5 +1,6 @@
 from nicegui import app, ui
-from app.core import database as db 
+from app.core import database as db
+from app.core import session_state
 from app.ui import login, dashboard
 import asyncio
 from datetime import datetime, timedelta
@@ -7,6 +8,10 @@ from datetime import datetime, timedelta
 db.init_db()
 
 app.add_static_files('/assets', 'assets')
+
+KIOSK_SESSION_USER_KEY = 'kiosk_current_user'
+KIOSK_SESSION_STATE_KEY = 'kiosk_dashboard_state'
+KIOSK_SESSION_CART_KEY = 'kiosk_cart_items'
 
 _cover_cache_warmup_started = False
 
@@ -263,6 +268,13 @@ ui.add_css('''
 async def main_page():
 
     _start_cover_cache_warmup_once()
+    user_storage = app.storage.user
+    restored_user = session_state.normalize_user_snapshot(user_storage.get(KIOSK_SESSION_USER_KEY))
+    restored_ui_state = session_state.normalize_dashboard_state(
+        user_storage.get(KIOSK_SESSION_STATE_KEY),
+        browse_only=False,
+    )
+    restored_cart_items = session_state.normalize_cart_items(user_storage.get(KIOSK_SESSION_CART_KEY))
 
     ui.add_body_html('''
     <div class="star-layer-3"></div>
@@ -287,8 +299,12 @@ async def main_page():
             'ml-1 sm:ml-4 bg-red-500/10 text-red-300 rounded-full hover:bg-red-500/30 border border-red-500/20 transition-colors p-1.5 backdrop-blur-sm shrink-0'
             ).props('flat size=sm')
 
-    cart_items = []
+    cart_items = list(restored_cart_items)
     current_user = {}
+    current_page = restored_ui_state['current_page']
+    items_per_page = 12
+    current_search_query = restored_ui_state['current_search_query']
+    current_status_filter = restored_ui_state['current_status_filter']
     themed_row_card = (
         'w-full items-center gap-4 bg-[#151924]/84 p-4 rounded-xl border border-slate-700/55 '
         'shadow-[0_16px_30px_-20px_rgba(2,6,23,0.95),0_0_0_1px_rgba(59,130,246,0.09),inset_0_1px_0_rgba(255,255,255,0.05)] '
@@ -299,20 +315,117 @@ async def main_page():
         'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
     )
 
+    def persist_user_state() -> None:
+        if current_user:
+            user_storage[KIOSK_SESSION_USER_KEY] = dict(current_user)
+        else:
+            user_storage.pop(KIOSK_SESSION_USER_KEY, None)
+
+    def persist_ui_state() -> None:
+        user_storage[KIOSK_SESSION_STATE_KEY] = {
+            'active_view': restored_ui_state['active_view'],
+            'current_page': current_page,
+            'current_search_query': current_search_query,
+            'current_status_filter': current_status_filter,
+            'search_visible': restored_ui_state['search_visible'],
+        }
+
+    def persist_cart_state() -> None:
+        user_storage[KIOSK_SESSION_CART_KEY] = list(cart_items)
+
+    def show_logged_in_state() -> None:
+        user_name_label.text = current_user.get('name', 'Guest')
+        login_cont.visible = False
+        app_header.visible = True
+        dash.container.visible = True
+
+    def show_logged_out_state() -> None:
+        user_name_label.text = 'Guest'
+        login_cont.visible = True
+        app_header.visible = False
+        dash.container.visible = False
+
+    def refresh_cart_ui() -> None:
+        dash.cart_container.clear()
+
+        if not cart_items:
+            dash.empty_cart_message.visible = True
+            dash.checkout_btn.text = 'CONFIRM CHECKOUT (0)'
+            dash.checkout_btn.disable()
+            dash.checkout_btn.classes(
+                remove='bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30',
+                add='bg-white/5 border-white/10 text-slate-500',
+            )
+            dash.checkout_cover.source = 'https://via.placeholder.com/200x300?text=Waiting…'
+            dash.checkout_title.text = '---'
+            dash.checkout_author.text = '---'
+            dash.checkout_due_date.text = ''
+            return
+
+        due = datetime.now() + timedelta(days=14)
+        dash.empty_cart_message.visible = False
+        with dash.cart_container:
+            for book in cart_items:
+                with ui.row().classes(themed_row_card):
+                    ui.image(book['cover']).classes('w-12 h-16 rounded object-cover')
+                    with ui.column().classes('gap-0'):
+                        ui.label(book['title']).classes('text-white font-bold')
+                        ui.label(book['author']).classes('text-xs text-slate-400')
+                        ui.label(f"Due: {due.strftime('%b %d, %Y')}").classes('text-xs text-blue-400 font-bold')
+
+        last_book = cart_items[-1]
+        dash.checkout_cover.source = last_book['cover']
+        dash.checkout_title.text = last_book['title']
+        dash.checkout_author.text = last_book['author']
+        dash.checkout_due_date.text = f'Due: {due.strftime("%B %d, %Y")}'
+        dash.checkout_btn.text = f'CONFIRM CHECKOUT ({len(cart_items)})'
+        dash.checkout_btn.enable()
+        dash.checkout_btn.classes(
+            remove='bg-white/5 border-white/10 text-slate-500',
+            add='bg-blue-500/20 border-blue-500/50 text-blue-400 '
+                'shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30',
+        )
+
 
     async def try_login():
         user = await db.get_user_by_id(id_input.value.strip())
         id_input.value = ''
 
         if user and user['active']:
+            current_user.clear()
             current_user.update(user)
+            persist_user_state()
             ui.notify(f"Welcome, {user['name']}!", type='positive')
-            user_name_label.text = user['name']
-            login_cont.visible  = False
-            app_header.visible  = True
-            dash.container.visible   = True
+            show_logged_in_state()
         else:
             ui.notify('Invalid Student ID.', type='negative')
+
+    async def restore_session_user():
+        if not restored_user:
+            current_user.clear()
+            cart_items.clear()
+            persist_user_state()
+            persist_cart_state()
+            return
+
+        user = await db.get_user_by_account_id(restored_user['id'])
+        if user and user.get('active'):
+            current_user.update(user)
+            persist_user_state()
+            show_logged_in_state()
+            return
+
+        current_user.clear()
+        cart_items.clear()
+        persist_user_state()
+        persist_cart_state()
+        restored_ui_state['active_view'] = 'catalog'
+        restored_ui_state['search_visible'] = bool(current_search_query)
+        persist_ui_state()
+
+    def handle_view_change(view_key: str) -> None:
+        restored_ui_state['active_view'] = view_key
+        persist_ui_state()
 
 
     async def scan_checkout_logic():
@@ -324,49 +437,46 @@ async def main_page():
                 ui.notify('Book is already checked out!', type='warning')
                 return
 
-            dash.empty_cart_message.visible = False
+            if any(item.get('isbn') == book['isbn'] for item in cart_items):
+                ui.notify('This book is already in the cart.', type='warning')
+                return
+
             cart_items.append(book)
-            dash.checkout_cover.source = book['cover']
-            dash.checkout_title.text   = book['title']
-            dash.checkout_author.text  = book['author']
-
-            due = datetime.now() + timedelta(days=14)
-            dash.checkout_due_date.text = f'Due: {due.strftime("%B %d, %Y")}'
-
-            with dash.cart_container:
-                with ui.row().classes(themed_row_card):
-                    ui.image(book['cover']).classes('w-12 h-16 rounded object-cover')
-                    with ui.column().classes('gap-0'):
-                        ui.label(book['title']).classes('text-white font-bold')
-                        ui.label(book['author']).classes('text-xs text-slate-400')
-                        ui.label(f"Due: {due.strftime('%b %d, %Y')}").classes('text-xs text-blue-400 font-bold')
-
-            dash.checkout_btn.text = f'CONFIRM CHECKOUT ({len(cart_items)})'
-            dash.checkout_btn.enable()
-            dash.checkout_btn.classes(
-                remove='bg-white/5 border-white/10 text-slate-500',
-                add='bg-blue-500/20 border-blue-500/50 text-blue-400 '
-                    'shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30'
-            )
+            persist_cart_state()
+            refresh_cart_ui()
         else:
             ui.notify('Book not found', type='negative')
 
 
     def reset_cart_ui():
         cart_items.clear()
-        dash.cart_container.clear()
-        dash.empty_cart_message.visible = True
-        dash.checkout_btn.text = 'CONFIRM CHECKOUT (0)'
-        dash.checkout_btn.disable()
-        dash.checkout_btn.classes(remove='bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_30px_-5px_rgba(59,130,246,0.3)] hover:bg-blue-500/30', add='bg-white/5 border-white/10 text-slate-500')
-        dash.checkout_cover.source = 'https://via.placeholder.com/200x300?text=Waiting…'
-        dash.checkout_title.text, dash.checkout_author.text = '---', '---'
-        dash.checkout_due_date.text = ''
+        persist_cart_state()
+        refresh_cart_ui()
 
     async def confirm_checkout():
-        await db.checkout_books(cart_items, current_user['id'])
+        if not current_user:
+            ui.notify('Please sign in before checking out books.', type='warning')
+            return
+
+        if not cart_items:
+            ui.notify('Cart is empty.', type='warning')
+            return
+
+        requested_count = len(cart_items)
+        checked_out_count = await db.checkout_books(cart_items, current_user['id'])
         due = datetime.now() + timedelta(days=14)
-        ui.notify(f'Successfully checked out {len(cart_items)} item(s)! Return by {due.strftime("%B %d, %Y")}', type='positive')
+        if checked_out_count == requested_count:
+            ui.notify(
+                f'Successfully checked out {checked_out_count} item(s)! Return by {due.strftime("%B %d, %Y")}',
+                type='positive',
+            )
+        elif checked_out_count > 0:
+            ui.notify(
+                f'Checked out {checked_out_count} of {requested_count} item(s). Some were no longer available.',
+                type='warning',
+            )
+        else:
+            ui.notify('No items were checked out. The selected books may already be unavailable.', type='warning')
         reset_cart_ui()
         await load_catalog_books()
 
@@ -397,12 +507,15 @@ async def main_page():
         nonlocal current_search_query, current_page
         current_search_query = (query or '').lower().strip()
         current_page = 1
+        restored_ui_state['search_visible'] = bool(current_search_query) or restored_ui_state['search_visible']
+        persist_ui_state()
         await load_catalog_books()
 
     async def handle_status_filter(filter_key: str):
         nonlocal current_status_filter, current_page
         current_status_filter = (filter_key or 'all').strip()
         current_page = 1
+        persist_ui_state()
         await load_catalog_books()
 
 
@@ -473,32 +586,38 @@ async def main_page():
 
 
     def do_logout():
-        login_cont.visible  = True
-        dash.container.visible   = False
-        app_header.visible  = False
-        id_input.value      = ''
+        nonlocal current_page, current_search_query, current_status_filter
+        current_page = 1
+        current_search_query = ''
+        current_status_filter = 'all'
+        restored_ui_state.update({
+            'active_view': 'catalog',
+            'search_visible': False,
+        })
+        show_logged_out_state()
+        id_input.value = ''
         current_user.clear()
+        dash.set_search_query('')
+        dash.set_search_visible(False)
+        persist_user_state()
+        persist_ui_state()
         reset_cart_ui()
 
     
     
     login_cont, id_input = login.create(try_login)
 
-
-    current_page = 1
-    items_per_page = 12
-    current_search_query = ''
-    current_status_filter = 'all'
-
     async def next_page():
         nonlocal current_page
         current_page += 1
+        persist_ui_state()
         await load_catalog_books()
 
     async def prev_page():
         nonlocal current_page
         if current_page > 1:
             current_page -= 1
+            persist_ui_state()
             await load_catalog_books()
 
     dash = dashboard.DashboardUI(
@@ -509,13 +628,18 @@ async def main_page():
         on_catalog_filter=handle_status_filter,
         on_my_books_load=load_my_books, 
         on_next_page=next_page, 
-        on_prev_page=prev_page
+        on_prev_page=prev_page,
+        on_view_change=handle_view_change,
     )
+    dash.set_search_query(current_search_query)
+    dash.set_search_visible(restored_ui_state['search_visible'])
+    refresh_cart_ui()
 
 
     async def go_to_page(page_num):
         nonlocal current_page
         current_page = max(1, page_num)
+        persist_ui_state()
         await load_catalog_books()
 
 
@@ -630,8 +754,30 @@ async def main_page():
 
         dash.set_catalog_filter(current_status_filter, trigger=False)
         dash.set_catalog_summary(len(page_books), total_books, current_page, total_pages)
+        persist_ui_state()
 
 
     await load_catalog_books()
+    await restore_session_user()
+    if current_user:
+        if restored_ui_state['active_view'] == 'my_books':
+            await dash.show_my_books()
+        elif restored_ui_state['active_view'] == 'checkout':
+            dash.show_checkout()
+        elif restored_ui_state['active_view'] == 'return':
+            dash.show_return()
+        else:
+            dash.show_catalog()
+    else:
+        refresh_cart_ui()
+        show_logged_out_state()
 
-ui.run(host='0.0.0.0', port=8080, title="CS Library Kiosk", favicon='favicon1.ico', dark=True)
+ui.run(
+    host='0.0.0.0',
+    port=8080,
+    title="CS Library Kiosk",
+    favicon='favicon1.ico',
+    dark=True,
+    reload=False,
+    storage_secret=session_state.get_storage_secret(),
+)
