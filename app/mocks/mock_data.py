@@ -1,20 +1,17 @@
 # Database seeder file.
-
-# Run this ONCE after setting up the project to pre-populate
-# the database with all real books from the shelves and the
-# three test accounts.
-
-# It is safe to re-run — books and users that already exist are skipped (no duplicates, no errors).
+# Run this once after setting up the project to populate
+# the database with books and test accounts.
+# Safe to re-run — duplicates are skipped.
 
 import sqlite3
 import bcrypt
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent / "cs_library.db"
+DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cs_library.db"
 
 
 # LOCAL BOOK CACHE
-# This cache contains the real books we scanned from Shelves 1-5.
+# Books scanned from Shelves 1-5.
 
 BOOKS = [
     # Shelf 1
@@ -42,7 +39,6 @@ BOOKS = [
 
 
 # TEST ACCOUNTS
-# NEW: Added 'id' key inside each user dict so current_user['id'] works in main.py (US006)
 
 TEST_USERS = [
     (12345, "Kenneth Molina",  "molinak4@southernct.edu",    "changeme123"),
@@ -51,7 +47,7 @@ TEST_USERS = [
 ]
 
 
-# SEEDING FUNCTION
+
 def seed():
     if not DB_PATH.exists():
         print("X  cs_library.db not found.")
@@ -62,7 +58,7 @@ def seed():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
 
-    # Ensure shelf column exists (safe migration)
+    # Ensure shelf column exists (migration)
     cols = [row[1] for row in conn.execute("PRAGMA table_info(books)").fetchall()]
     if "shelf" not in cols:
         conn.execute("ALTER TABLE books ADD COLUMN shelf TEXT NOT NULL DEFAULT ''")
@@ -95,7 +91,7 @@ def seed():
     for user_id, name, email, password in TEST_USERS:
         # Skip if this ID or email already exists
         existing = conn.execute(
-            "SELECT id FROM users WHERE id = ? OR email = ? COLLATE NOCASE",
+            "SELECT id FROM users WHERE student_id = ? OR email = ? COLLATE NOCASE",
             (user_id, email),
         ).fetchone()
         if existing:
@@ -104,9 +100,9 @@ def seed():
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         conn.execute(
-            "INSERT INTO users (id, name, email, password_hash, active) "
+            "INSERT INTO users (student_id, name, email, password_hash, active) "
             "VALUES (?, ?, ?, ?, 1)",
-            (user_id, name, email.lower(), pw_hash),
+            (str(user_id), name, email.lower(), pw_hash),
         )
         users_added += 1
 

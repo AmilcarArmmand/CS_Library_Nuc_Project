@@ -1,29 +1,114 @@
 # CS-Library-Project
 
-## Setup
+A secure library kiosk system built for the Computer Science Department at SCSU utilizing Python and NiceGUI. 
 
-1. Open a new terminal and cd into the project directory:
-    ```bash
-    cd CS_LIBRARY_NUC_PROJECT
-    ```
+This project allows students to browse the library catalog, check out books, view their borrowing history, and return items. It features real-time book metadata retrieval from Open Library, and secure user authentication.
 
-2. Create a virtual environment:
-    ```bash
-    python3 -m venv venv
-    ```
+---
 
-3. Activate the virtual environment:
-    - For macOS/Linux:
-      ```bash
-      source venv/bin/activate
-      ```
-    - For Windows:
-      ```bash
-      venv\Scripts\activate
-      ```
+## Features
 
-4. Install the project dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+- **Two Authentication Systems:** 
+  - Login by scanning a Student ID barcode.
+  - Login via secure Email & Password (with bcrypt hashing).
+- **Interactive Catalog:** 
+  - Browse available books with a paginated grid layout.
+  - Real-time search by Title or Author.
+- **Kiosk Checkout Cart:** 
+  - A self-checkout kiosk by scanning ISBN numbers.
+  - Add multiple books to a cart and check them out at once.
+- **My Books Dashboard:** 
+  - View all active loans and exact due dates.
+  - Renew books directly from the interface.
+  - See complete borrowing history, including past returns.
+- **Automated Book Metadata:**
+  - When scanning a new book (ISBN), the system automatically queries the **Open Library API** to retrieve the title and author, saving it to the local cache for future lookups.
+
+---
+
+## Technology Stack
+
+- **Frontend / UI:** [NiceGUI](https://nicegui.io/) (Vue3 & Tailwind CSS under the hood)
+- **Backend Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Integrated with NiceGUI)
+- **Database:** SQLite3 (`cs_library.db`)
+- **Password Hashing:** `bcrypt`
+- **HTTP Client for API Calls:** `httpx`
+
+---
+
+## Setup & Installation
+
+### 1. Clone the Repository
+Open a terminal and clone the repository, then navigate into the directory:
+```bash
+git clone (https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git)
+cd cs-library-kiosk
+```
+
+### 2. Create an Virtual Environment
+
+```bash
+python3 -m venv venv
+```
+
+### 3. Activate the Virtual Environment
+- **macOS / Linux:**
+  ```bash
+  source venv/bin/activate
+  ```
+- **Windows:**
+  ```bash
+  venv\Scripts\activate
+  ```
+
+### 4. Install Dependencies
+Install all required libraries using pip:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Database Seeding (First-Time Setup)
+
+Before running the application for the first time, you must populate the database with the initial catalog of books and pre-configured test accounts.
+
+Run the seeder file:
+```bash
+python3 app/mocks/mock_data.py
+```
+*Note: This creates the `cs_library.db` file in the `data/` directory.
+
+### Test Accounts Available:
+
+| Name | Email | Student ID | Password |
+|---|---|---|---|
+| Kenneth | molinak4@southernct.edu | `12345`|
+| Jose | user2@example.com | `11111` |
+| Professor | admin@example.com | `99999` |
+
+---
+
+## Running the Application
+
+There are two versions of the application you can run:
+
+### Kiosk Application (Full Features checkout/return)
+```bash
+python3 kiosk_app.py
+```
+
+### Web Application (Browse Only)
+```bash
+python3 web_app.py
+```
+
+The terminal will launch the NiceGUI server. You can access the application by navigating to:
+**[http://localhost:8080](http://localhost:8080)**
+
+---
+
+
+## Maintainers
+Created as part of the SCSU Capstone.
 
