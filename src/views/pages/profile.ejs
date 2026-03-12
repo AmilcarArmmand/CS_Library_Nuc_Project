@@ -1,0 +1,73 @@
+<%- include('../partials/header') %>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>My Profile</h1>
+            <a href="/dashboard" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 text-center mb-4">
+                <img src="<%= user.picture %>" alt="Profile Picture" class="rounded-circle mb-3" width="150" height="150">
+                <h4><%= user.name %></h4>
+                <p class="text-muted"><%= user.email %></p>
+                <span class="badge bg-success">Active Member</span>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Account Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="profileForm">
+                            <div class="row mb-3">
+                                <div class="col-sm-6">
+                                    <label for="firstName" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="firstName" value="<%= user.firstName %>" readonly>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label for="lastName" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="lastName" value="<%= user.lastName %>" readonly>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" value="<%= user.email %>" readonly>
+                                <div class="form-text">Your email is managed through Google OAuth.</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="memberSince" class="form-label">Member Since</label>
+                                <input type="text" class="form-control" id="memberSince" value="<%= new Date(user.createdAt).toLocaleDateString() %>" readonly>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <strong>Note:</strong> Profile information is automatically synced with your Google account.
+                                To make changes, please update your Google profile settings.
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Account Actions -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Account Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="/dashboard/settings" class="btn btn-outline-primary">Account Settings</a>
+                            <a href="/export" class="btn btn-outline-info">Export My Data</a>
+                            <a href="/auth/logout" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to log out?')">Sign Out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

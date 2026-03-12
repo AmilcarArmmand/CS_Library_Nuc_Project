@@ -1,0 +1,60 @@
+/* CS LIBRARY NUC PROJECT - Main Styles */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --danger-color: #dc3545;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.badge {
+    font-size: 0.8rem;
+}
+
+.list-group-item {
+    border: none;
+    padding: 0.75rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+
+    .container {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Development indicator */
+.dev-indicator {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: var(--warning-color);
+    color: black;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    z-index: 1000;
+}

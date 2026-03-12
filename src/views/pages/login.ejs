@@ -1,0 +1,33 @@
+<%- include('../partials/header') %>
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-body text-center p-5">
+                <h2 class="card-title mb-4">Welcome Back!</h2>
+                <p class="text-muted mb-4">Sign in to access your account.</p>
+
+                <% if (error) { %>
+                    <div class="alert alert-danger" role="alert">
+                        <%= error %>
+                    </div>
+                <% } %>
+
+                <a href="/auth/google" class="btn btn-danger btn-lg w-100 mb-3">
+                    <i class="fab fa-google me-2"></i>
+                    Continue with Google
+                </a>
+
+                <small class="text-muted">
+                    By signing in, you agree to our Terms of Service and Privacy Policy.
+                </small>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/" class="text-decoration-none">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>

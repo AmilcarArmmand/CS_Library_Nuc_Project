@@ -1,0 +1,123 @@
+<%- include('../partials/header') %>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>Welcome back, <%= user.firstName %>! 👋</h1>
+                <p class="lead text-muted">Ready to continue working on your project?</p>
+            </div>
+            <img src="<%= user.picture %>" alt="Profile" class="rounded-circle" width="80" height="80">
+        </div>
+
+        <!-- Project Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h3>🚀</h3>
+                        <h5 class="card-title">Project Features</h5>
+                        <p class="card-text">Access your main project functionality and features.</p>
+                        <a href="/features" class="btn btn-primary">Explore Features</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <h3>📊</h3>
+                        <h5 class="card-title">Data & Analytics</h5>
+                        <p class="card-text">View your project data and analytics dashboard.</p>
+                        <a href="/analytics" class="btn btn-outline-primary">View Analytics</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Overview -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Project Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-6 col-lg-3 text-center mb-3">
+                        <h3 class="text-primary">0</h3>
+                        <small class="text-muted">Total Records</small>
+                    </div>
+                    <div class="col-sm-6 col-lg-3 text-center mb-3">
+                        <h3 class="text-success">0</h3>
+                        <small class="text-muted">Active Sessions</small>
+                    </div>
+                    <div class="col-sm-6 col-lg-3 text-center mb-3">
+                        <h3 class="text-info">0</h3>
+                        <small class="text-muted">Completed Tasks</small>
+                    </div>
+                    <div class="col-sm-6 col-lg-3 text-center mb-3">
+                        <h3 class="text-warning">0</h3>
+                        <small class="text-muted">Achievements</small>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <strong>Getting Started:</strong> Start using your project features to see data here!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Profile Summary -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Profile Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="<%= user.picture %>" alt="Profile" class="rounded-circle mb-2" width="80" height="80">
+                    <h6><%= user.name %></h6>
+                    <small class="text-muted"><%= user.email %></small>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Account Status:</span>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Member Since:</span>
+                    <small><%= new Date(user.createdAt).toLocaleDateString() %></small>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Project Role:</span>
+                    <span class="badge bg-secondary">Team Member</span>
+                </div>
+                <hr>
+                <a href="/dashboard/profile" class="btn btn-outline-primary btn-sm w-100">Edit Profile</a>
+            </div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="/dashboard/settings" class="list-group-item list-group-item-action">
+                        ⚙️ Settings
+                    </a>
+                    <a href="/help" class="list-group-item list-group-item-action">
+                        ❓ Help & Support
+                    </a>
+                    <a href="/team" class="list-group-item list-group-item-action">
+                        👥 Team Members
+                    </a>
+                    <a href="/docs" class="list-group-item list-group-item-action">
+                        📚 Documentation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('../partials/footer') %>
