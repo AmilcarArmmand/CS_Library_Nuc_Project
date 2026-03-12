@@ -1,0 +1,65 @@
+<%- include('../partials/header') %>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Account Settings</h1>
+            <a href="/dashboard" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Project Preferences</h5>
+            </div>
+            <div class="card-body">
+                <form id="settingsForm">
+                    <div class="mb-3">
+                        <label for="projectRole" class="form-label">Project Role</label>
+                        <select class="form-select" id="projectRole">
+                            <option value="member">Team Member</option>
+                            <option value="lead">Team Lead</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notification Preferences</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                Email notifications
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="projectUpdates" checked>
+                            <label class="form-check-label" for="projectUpdates">
+                                Project updates
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">Timezone</label>
+                        <select class="form-select" id="timezone">
+                            <option value="EST">Eastern Standard Time</option>
+                            <option value="CST">Central Standard Time</option>
+                            <option value="MST">Mountain Standard Time</option>
+                            <option value="PST">Pacific Standard Time</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('settingsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Settings saved! (This is a placeholder - implement actual saving in your project)');
+});
+</script>
+
+<%- include('../partials/footer') %>
