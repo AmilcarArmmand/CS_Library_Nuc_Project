@@ -9,3 +9,11 @@ venv/
 .agents/
 skills-lock.json
 assets/covers/
+node_modules/
+.env
+*.log
+coverage/
+dist/
+build/
+package-lock.json
+*~
