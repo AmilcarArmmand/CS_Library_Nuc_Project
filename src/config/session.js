@@ -8,13 +8,13 @@ const sessionConfig = {
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true, // Prevent XSS attacks
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 };
 
-// In production, you'd want to use a store like MongoDB or Redis
+// In production, connect to use a store like MongoDB or Redis
 if (process.env.NODE_ENV === 'production') {
     sessionConfig.cookie.secure = true;
 }
