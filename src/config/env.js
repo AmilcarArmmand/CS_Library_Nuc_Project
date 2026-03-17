@@ -16,7 +16,15 @@ export const config = {
     },
 
     database: {
-        uri: process.env.MONGODB_URI,
-        name: process.env.DB_NAME || 'team-project-db'
+        uri: process.env.MONGODB_URL,
+        name: process.env.DB_NAME_MONGO
+    },
+
+    email: {
+        host: process.env.EMAIL_HOST,
+        port: process.env.EMAIL_PORT,
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+        from: process.env.EMAIL_FROM
     }
 };

@@ -1,21 +1,19 @@
 import session from 'express-session';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from './env.js';
 
 const sessionConfig = {
-    secret: process.env.SESSION_SECRET,
+    secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production',
+        secure: config.nodeEnv === 'production',
         httpOnly: true, // Prevent XSS attacks
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 };
 
 // In production, connect to use a store like MongoDB or Redis
-if (process.env.NODE_ENV === 'production') {
+if (config.nodeEnv === 'production') {
     sessionConfig.cookie.secure = true;
 }
 

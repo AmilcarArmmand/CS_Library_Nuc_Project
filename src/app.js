@@ -18,6 +18,9 @@ import dashboardRoutes from './routes/dashboard.js';
 /* Import middleware */
 import { attachUser } from './middleware/auth.js';
 
+/* Import config */
+import { config } from './config/env.js';
+
 /* ES modules __dirname equivalent */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,7 +30,6 @@ dotenv.config();
 
 /* Initialize Express application */
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 /* Connect to MongoDB */
 await connectDatabase();
@@ -77,12 +79,12 @@ app.get('/health', (req, res) => {
         status: 'OK',
         timestamp: new Date().toISOString(),
         database: 'Connected',
-        environment: process.env.NODE_ENV
+        environment: config.nodeEnv
     });
 });
 
 // Development-only database test route
-if (process.env.NODE_ENV === 'development') {
+if (config.nodeEnv === 'development') {
     app.get('/dev/db-test', async (req, res) => {
         try {
             const { testDatabaseOperations } = await import('./utils/dbTest.js');
@@ -99,7 +101,7 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).render('pages/error', {
         title: 'Error',
-        error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong!',
+        error: config.nodeEnv === 'development' ? err.message : 'Something went wrong!',
         projectName: 'CS Library Project'
     });
 });
@@ -114,10 +116,10 @@ app.use((req, res) => {
 });
 
 /* Start server */
-app.listen(PORT, () => {
-    console.log(`CS Library Project running on http://localhost:${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    console.log(`🔐 Google OAuth: ${process.env.GOOGLE_CLIENT_ID ? 'Configured' : 'Not configured'}`);
+app.listen(config.port, () => {
+    console.log(`CS Library Project running on http://localhost:${config.port}`);
+    console.log(`Environment: ${config.nodeEnv}`);
+    console.log(`🔐 Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
 });
 
 export default app;
