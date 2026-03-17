@@ -1,45 +1,62 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import dotenv from 'dotenv';
+import { User } from '../db/mongo/models/index.js';
 
-dotenv.config();
+import { config } from './env.js';
 
-// Configure Google OAuth Strategy
+
+/* Google OAuth Strategy */
 passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "/auth/google/callback"
+    clientID: config.oauth.googleClientId,
+    clientSecret: config.oauth.googleClientSecret,
+    callbackURL: config.oauth.googleCallbackURL
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        // PHASE 1: Create user object from Google profile
-        // This stores user data in session only (not database)
-        const user = {
+        /* Check if user exists in database */
+        let existingUser = await User.findByGoogleId(profile.id);
+
+        if (existingUser) {
+            // Update last login
+            await existingUser.updateLastLogin();
+            console.log('Existing user logged in:', existingUser.email);
+            return done(null, existingUser);
+        }
+
+        /* Create new user in database */
+        const newUser = new User({
             googleId: profile.id,
             email: profile.emails[0].value,
             name: profile.displayName,
-            firstName: profile.name?.givenName,
-            lastName: profile.name?.familyName,
-            picture: profile.photos?.[0]?.value,
-            accessToken: accessToken,
-            createdAt: new Date()
-        };
+            profilePicture: profile.photos?.[0]?.value || null,
+            lastLoginAt: new Date(),
+            loginCount: 1
+        });
 
-        console.log('🔐 User authenticated:', user.email);
-        return done(null, user);
+        const savedUser = await newUser.save();
+        console.log('New user created:', savedUser.email);
+        return done(null, savedUser);
+
     } catch (error) {
-        console.error('❌ Authentication error:', error);
+        console.error('Authentication error:', error);
         return done(error, null);
     }
 }));
 
-// PHASE 1: Serialize entire user object to session
+
+/* Serialize only user ID to session */
 passport.serializeUser((user, done) => {
-    done(null, user);  // Stores whole object - not ideal for production
+    done(null, user._id);
 });
 
-// PHASE 1: Deserialize user from session
-passport.deserializeUser((user, done) => {
-    done(null, user);  // Returns object from session
+
+/* Deserialize by fetching user from database */
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await User.findById(id);
+        done(null, user);
+    } catch (error) {
+        done(error, null);
+    }
 });
 
 export default passport;

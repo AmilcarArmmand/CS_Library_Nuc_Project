@@ -4,12 +4,17 @@ import { requireNoAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+/* SCSU OAuth login route */
+
+
+
 /* Google OAuth login route */
 router.get('/google', requireNoAuth, passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
 
-// Google OAuth callback route
+
+/* Google OAuth callback route */
 router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: '/auth/login' }),
     (req, res) => {
