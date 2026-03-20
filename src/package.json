@@ -1,7 +1,7 @@
 {
   "name": "src",
-  "version": "1.0.0",
-  "description": "CS400 Capstone Project",
+  "version": "1.0.2",
+  "description": "CS Library Project",
   "main": "app.js",
   "directories": {
     "test": "tests"
@@ -9,6 +9,11 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "db:drop": "drizzle-kit drop",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -20,6 +25,7 @@
   "license": "MIT",
   "type": "module",
   "dependencies": {
+    "connect-mongo": "^6.0.0",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "ejs": "^5.0.1",
@@ -35,7 +41,7 @@
   },
   "devDependencies": {
     "@types/pg": "^8.18.0",
-    "drizzle-kit": "^0.18.1",
+    "drizzle-kit": "^0.31.10",
     "nodemon": "^3.1.14",
     "tsx": "^4.21.0"
   }

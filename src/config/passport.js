@@ -1,7 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { User } from '../db/mongo/models/index.js';
-
 import { config } from './env.js';
 
 
@@ -41,7 +40,6 @@ passport.use(new GoogleStrategy({
         return done(error, null);
     }
 }));
-
 
 /* Serialize only user ID to session */
 passport.serializeUser((user, done) => {

@@ -1,11 +1,15 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import { config } from './config/env.js';
 
 /* Import database connections */
-import { connectDatabase } from './config/database.js';
+import { 
+    connectAllDatabases, 
+    getMongoStatus, 
+    getPostgresStatus 
+} from './config/database.js';
 
 /* Import authentication */
 import passport from './config/passport.js';
@@ -18,23 +22,16 @@ import dashboardRoutes from './routes/dashboard.js';
 /* Import middleware */
 import { attachUser } from './middleware/auth.js';
 
-/* Import config */
-import { config } from './config/env.js';
-
 /* ES modules __dirname equivalent */
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* Load environment variables */
-dotenv.config();
-
 /* Initialize Express application */
 const app = express();
 
-/* Connect to MongoDB */
-await connectDatabase();
+/* Connect to both databases */
+await connectAllDatabases();
 
-/* View engine setup */
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -58,6 +55,8 @@ app.use(attachUser);
 /* Routes */
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
+//app.use('/library', libraryRoutes);
+
 
 /* Home route */
 app.get('/', (req, res) => {

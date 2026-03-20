@@ -1,4 +1,5 @@
 /* CS LIBRARY NUC PROJECT - Main Styles */
+/* This file contains general Bootstrap/utility overrides */
 
 :root {
     --primary-color: #0d6efd;
@@ -7,11 +8,6 @@
     --warning-color: #ffc107;
     --info-color: #0dcaf0;
     --danger-color: #dc3545;
-}
-
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f8f9fa;
 }
 
 .navbar-brand {
