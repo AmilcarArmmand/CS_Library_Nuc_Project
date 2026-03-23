@@ -399,6 +399,7 @@ async def main_page():
         with dash.active_loans_container:
             for loan in active:
                 due     = loan.get('due_date', 'N/A')
+                has_pending_hold = bool(loan.get('has_pending_hold'))
                 overdue = False
                 if isinstance(due, datetime):
                     overdue = due < datetime.now()
@@ -413,13 +414,17 @@ async def main_page():
                         ui.label(loan['title']).classes('text-white font-bold')
                         ui.label(loan['author']).classes('text-xs text-slate-400')
                         ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due_str}").classes(f'text-xs font-bold {due_color}')
+                        if has_pending_hold:
+                            ui.label('Pending hold: renewal unavailable').classes('text-[11px] text-amber-400 font-semibold')
                     
 
                     async def _renew(l_id=loan['id']):
-                        success = await db.renew_book(l_id)
+                        success, reason = await db.renew_book(l_id)
                         if success:
                             ui.notify('Book renewed successfully for 14 more days!', type='positive')
                             await load_my_books()
+                        elif reason == 'hold':
+                            ui.notify('This book has a pending hold and cannot be renewed.', type='warning')
                         else:
                             ui.notify('Could not renew book.', type='negative')
                     
@@ -427,7 +432,7 @@ async def main_page():
                     renew_btn = ui.button('RENEW', on_click=_renew).classes(
                         'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-colors'
                     ).props('flat rounded')
-                    if overdue:
+                    if overdue or has_pending_hold:
                         renew_btn.disable()
                         renew_btn.classes(remove='bg-blue-600/20 text-blue-400 hover:bg-blue-500/30', add='bg-slate-800 text-slate-500')
 

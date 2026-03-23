@@ -7,6 +7,7 @@ import httpx
 import bcrypt
 import asyncio
 import re
+import secrets
 from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional
@@ -15,6 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DB_PATH = PROJECT_ROOT / "data" / "cs_library.db"
 ASSETS_DIR = PROJECT_ROOT / "assets"
 COVER_CACHE_DIR = ASSETS_DIR / "covers"
+AUTO_PROVISION_EMAIL_DOMAIN = "kiosk.local"
+BORROW_HISTORY_DAYS = 183
 
 # set False to disable live Open Library lookups (offline/testing mode)
 USE_LIVE_API = True
@@ -31,6 +34,45 @@ def _connect() -> sqlite3.Connection:
 
 def _row(row) -> Optional[dict]:
     return dict(row) if row else None
+
+
+def normalize_student_id_input(student_id_input: str) -> str:
+    return re.sub(r"\s+", "", str(student_id_input or "")).upper()
+
+
+def is_valid_student_id_input(student_id_input: str) -> bool:
+    student_id = normalize_student_id_input(student_id_input)
+    return student_id.isalnum() and 5 <= len(student_id) <= 16
+
+
+def normalize_isbn_input(isbn_input: str) -> str:
+    return re.sub(r"[^0-9Xx]", "", str(isbn_input or "")).upper()
+
+
+def is_valid_isbn_input(isbn_input: str) -> bool:
+    isbn = normalize_isbn_input(isbn_input)
+    if len(isbn) == 10:
+        return isbn[:9].isdigit() and (isbn[9].isdigit() or isbn[9] == "X")
+    if len(isbn) == 13:
+        return isbn.isdigit()
+    return False
+
+
+def _normalize_email(email: str) -> str:
+    return str(email or "").strip().lower()
+
+
+def _placeholder_email_for_student(student_id: str) -> str:
+    return f"student-{student_id.lower()}@{AUTO_PROVISION_EMAIL_DOMAIN}"
+
+
+def _placeholder_name_for_student(student_id: str) -> str:
+    return f"Student {student_id[-5:]}"
+
+
+def _generate_placeholder_password_hash() -> str:
+    seed = secrets.token_urlsafe(24).encode()
+    return bcrypt.hashpw(seed, bcrypt.gensalt()).decode()
 
 
 def _normalize_cover_url(cover: str, isbn: str = "") -> str:
@@ -169,6 +211,7 @@ def init_db() -> None:
                 email         TEXT    NOT NULL UNIQUE COLLATE NOCASE,
                 password_hash TEXT    NOT NULL,
                 active        INTEGER NOT NULL DEFAULT 1,
+                auto_provisioned INTEGER NOT NULL DEFAULT 0,
                 created_at    DATETIME DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -190,7 +233,29 @@ def init_db() -> None:
                 returned      INTEGER  NOT NULL DEFAULT 0,
                 returned_date DATETIME
             );
+
+            CREATE TABLE IF NOT EXISTS holds (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id     INTEGER NOT NULL REFERENCES users(id),
+                isbn        TEXT    NOT NULL REFERENCES books(isbn),
+                status      TEXT    NOT NULL DEFAULT 'pending',
+                pickup_date DATETIME,
+                created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
         ''')
+
+        user_cols = {row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
+        if "auto_provisioned" not in user_cols:
+            conn.execute(
+                "ALTER TABLE users ADD COLUMN auto_provisioned INTEGER NOT NULL DEFAULT 0"
+            )
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_loans_user_checked_out ON loans (user_id, checked_out DESC)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_holds_isbn_status ON holds (isbn, status)"
+        )
         conn.commit()
 
 
@@ -199,19 +264,56 @@ def init_db() -> None:
 async def register_user(name: str, email: str, student_id: str, password: str) -> Optional[dict]:
     """Hash the password and insert a new user. Returns user dict or None if email/student_id taken."""
 
+    normalized_name = str(name or "").strip()
+    normalized_email = _normalize_email(email)
+    normalized_student_id = normalize_student_id_input(student_id)
+    if not normalized_name or not normalized_email or not is_valid_student_id_input(normalized_student_id):
+        return None
+
     pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
     def _insert():
         try:
             with _connect() as conn:
-                cur = conn.execute(
-                    "INSERT INTO users (name, email, student_id, password_hash) VALUES (?, ?, ?, ?)",
-                    (name.strip(), email.strip().lower(), student_id.strip(), pw_hash),
-                )
+                existing_student = conn.execute(
+                    "SELECT id, auto_provisioned FROM users WHERE UPPER(student_id) = ?",
+                    (normalized_student_id,),
+                ).fetchone()
+                existing_email = conn.execute(
+                    "SELECT id FROM users WHERE email = ? COLLATE NOCASE",
+                    (normalized_email,),
+                ).fetchone()
+
+                if existing_email and (existing_student is None or existing_email["id"] != existing_student["id"]):
+                    return None
+
+                if existing_student is not None:
+                    if not bool(existing_student["auto_provisioned"]):
+                        return None
+
+                    conn.execute(
+                        """
+                        UPDATE users
+                        SET name = ?, email = ?, password_hash = ?, active = 1, auto_provisioned = 0
+                        WHERE id = ?
+                        """,
+                        (normalized_name, normalized_email, pw_hash, existing_student["id"]),
+                    )
+                    user_id = existing_student["id"]
+                else:
+                    cur = conn.execute(
+                        """
+                        INSERT INTO users (name, email, student_id, password_hash, auto_provisioned)
+                        VALUES (?, ?, ?, ?, 0)
+                        """,
+                        (normalized_name, normalized_email, normalized_student_id, pw_hash),
+                    )
+                    user_id = cur.lastrowid
+
                 conn.commit()
                 row = conn.execute(
                     "SELECT id, name, email, student_id, active FROM users WHERE id = ?",
-                    (cur.lastrowid,)
+                    (user_id,)
                 ).fetchone()
                 return _row(row)
         except sqlite3.IntegrityError:
@@ -227,7 +329,7 @@ async def authenticate_user(email: str, password: str) -> Optional[dict]:
         with _connect() as conn:
             row = conn.execute(
                 "SELECT * FROM users WHERE email = ?",
-                (email.strip().lower(),)
+                (_normalize_email(email),)
             ).fetchone()
         if row is None:
             return None
@@ -241,15 +343,62 @@ async def authenticate_user(email: str, password: str) -> Optional[dict]:
 
 async def get_user_by_id(student_id_input: str) -> Optional[dict]:
     """Look up a user by their student_id for scanner login."""
+
+    normalized_student_id = normalize_student_id_input(student_id_input)
+    if not is_valid_student_id_input(normalized_student_id):
+        return None
+
     def _fetch():
         with _connect() as conn:
             row = conn.execute(
-                "SELECT id, name, email, student_id, active FROM users WHERE student_id = ?",
-                (str(student_id_input).strip(),)
+                "SELECT id, name, email, student_id, active FROM users WHERE UPPER(student_id) = ?",
+                (normalized_student_id,)
             ).fetchone()
         return _row(row)
 
     return await _run(_fetch)
+
+
+async def get_or_create_kiosk_user(student_id_input: str) -> tuple[Optional[dict], bool, str]:
+    normalized_student_id = normalize_student_id_input(student_id_input)
+    if not is_valid_student_id_input(normalized_student_id):
+        return None, False, "invalid"
+
+    def _fetch_or_create():
+        with _connect() as conn:
+            row = conn.execute(
+                "SELECT id, name, email, student_id, active FROM users WHERE UPPER(student_id) = ?",
+                (normalized_student_id,),
+            ).fetchone()
+            if row is not None:
+                user = _row(row)
+                if not user["active"]:
+                    return None, False, "inactive"
+                return user, False, "existing"
+
+            try:
+                cur = conn.execute(
+                    """
+                    INSERT INTO users (student_id, name, email, password_hash, active, auto_provisioned)
+                    VALUES (?, ?, ?, ?, 1, 1)
+                    """,
+                    (
+                        normalized_student_id,
+                        _placeholder_name_for_student(normalized_student_id),
+                        _placeholder_email_for_student(normalized_student_id),
+                        _generate_placeholder_password_hash(),
+                    ),
+                )
+                conn.commit()
+                row = conn.execute(
+                    "SELECT id, name, email, student_id, active FROM users WHERE id = ?",
+                    (cur.lastrowid,),
+                ).fetchone()
+                return _row(row), True, "created"
+            except sqlite3.IntegrityError:
+                return None, False, "conflict"
+
+    return await _run(_fetch_or_create)
 
 
 async def get_user_by_account_id(user_id: int) -> Optional[dict]:
@@ -341,7 +490,9 @@ async def _fetch_from_open_library(isbn: str) -> Optional[dict]:
 
 async def get_book(isbn: str) -> Optional[dict]:
     """Fetch a single book by ISBN. Checks local DB first, then Open Library."""
-    isbn = isbn.strip()
+    isbn = normalize_isbn_input(isbn)
+    if not is_valid_isbn_input(isbn):
+        return None
 
 
     def _fetch():
@@ -381,14 +532,20 @@ async def get_catalog() -> list:
 
 async def add_book(isbn: str, title: str, author: str, cover: str = "") -> bool:
     """Insert a new book. Returns True on success, False if the ISBN already exists."""
-    normalized_cover = _normalize_cover_url(cover, isbn)
+    raw_isbn = str(isbn or "").strip()
+    normalized_isbn = normalize_isbn_input(raw_isbn)
+    isbn_value = normalized_isbn or raw_isbn
+    normalized_cover = _normalize_cover_url(
+        cover,
+        normalized_isbn if is_valid_isbn_input(normalized_isbn) else "",
+    )
 
     def _insert():
         try:
             with _connect() as conn:
                 conn.execute(
                     "INSERT INTO books (isbn, title, author, cover) VALUES (?, ?, ?, ?)",
-                    (isbn, title, author, normalized_cover),
+                    (isbn_value, title, author, normalized_cover),
                 )
                 conn.commit()
             return True
@@ -412,7 +569,7 @@ async def checkout_books(books: list, user_id: int) -> int:
 
         with _connect() as conn:
             for book in books:
-                isbn = str(book.get("isbn") or "").strip()
+                isbn = normalize_isbn_input(book.get("isbn") or "")
                 if not isbn or isbn in seen_isbns:
                     continue
                 seen_isbns.add(isbn)
@@ -447,13 +604,17 @@ async def checkout_books(books: list, user_id: int) -> int:
 async def return_book(isbn: str) -> bool:
     """Mark a book as Available and close its open loan."""
 
+    normalized_isbn = normalize_isbn_input(isbn)
+    if not is_valid_isbn_input(normalized_isbn):
+        return False
+
     def _return():
         now = datetime.now()
         with _connect() as conn:
             loan = conn.execute(
                 "SELECT id FROM loans WHERE isbn = ? AND returned = 0 "
                 "ORDER BY checked_out DESC LIMIT 1",
-                (isbn,)
+                (normalized_isbn,)
             ).fetchone()
             if loan is None:
                 return False
@@ -462,7 +623,7 @@ async def return_book(isbn: str) -> bool:
                 (now, loan["id"])
             )
             conn.execute(
-                "UPDATE books SET status = 'Available' WHERE isbn = ?", (isbn,)
+                "UPDATE books SET status = 'Available' WHERE isbn = ?", (normalized_isbn,)
             )
             conn.commit()
         return True
@@ -470,47 +631,77 @@ async def return_book(isbn: str) -> bool:
     return await _run(_return)
 
 
-async def renew_book(loan_id: int) -> bool:
+async def renew_book(loan_id: int) -> tuple[bool, str]:
     """Extend the due date of an active loan by 14 days from today."""
+
     def _renew():
         now = datetime.now()
         new_due_date = now + timedelta(days=14)
         with _connect() as conn:
-
             loan = conn.execute(
-                "SELECT id FROM loans WHERE id = ? AND returned = 0",
+                "SELECT id, user_id, isbn FROM loans WHERE id = ? AND returned = 0",
                 (loan_id,)
             ).fetchone()
-            
             if loan is None:
-                return False
-                
+                return False, "inactive"
+
+            hold = conn.execute(
+                """
+                SELECT 1
+                FROM holds
+                WHERE isbn = ? AND status = 'pending' AND user_id != ?
+                LIMIT 1
+                """,
+                (loan["isbn"], loan["user_id"]),
+            ).fetchone()
+            if hold is not None:
+                return False, "hold"
+
             conn.execute(
                 "UPDATE loans SET due_date = ? WHERE id = ?",
                 (new_due_date, loan_id)
             )
             conn.commit()
-        return True
+        return True, "ok"
 
     return await _run(_renew)
 
 
 # my books
 
-async def get_user_loans(user_id: int) -> list:
+async def get_user_loans(user_id: int, history_days: int | None = BORROW_HISTORY_DAYS) -> list:
     """Return all loans for a user, joined with book info."""
 
     def _fetch():
+        params: tuple[object, ...]
+        if history_days is None:
+            where_clause = "WHERE l.user_id = ?"
+            params = (user_id,)
+        else:
+            cutoff = (datetime.now() - timedelta(days=max(1, history_days))).isoformat(sep=" ")
+            where_clause = """
+                WHERE l.user_id = ?
+                  AND (l.returned = 0 OR COALESCE(l.returned_date, l.checked_out) >= ?)
+            """
+            params = (user_id, cutoff)
+
         with _connect() as conn:
-            rows = conn.execute('''
+            rows = conn.execute(f'''
                 SELECT
                     l.id, l.returned, l.due_date, l.returned_date,
-                    b.isbn, b.title, b.author, b.cover
+                    b.isbn, b.title, b.author, b.cover,
+                    EXISTS(
+                        SELECT 1
+                        FROM holds h
+                        WHERE h.isbn = l.isbn
+                          AND h.status = 'pending'
+                          AND h.user_id != l.user_id
+                    ) AS has_pending_hold
                 FROM loans l
                 JOIN books b ON l.isbn = b.isbn
-                WHERE l.user_id = ?
+                {where_clause}
                 ORDER BY l.checked_out DESC
-            ''', (user_id,)).fetchall()
+            ''', params).fetchall()
 
         result = []
         for r in rows:
@@ -523,6 +714,7 @@ async def get_user_loans(user_id: int) -> list:
                     except ValueError:
                         pass
             d["returned"] = bool(d["returned"])
+            d["has_pending_hold"] = bool(d.get("has_pending_hold"))
             d["cover"] = _resolve_cover_for_output(d.get("cover", ""), d.get("isbn", ""))
             result.append(d)
         return result

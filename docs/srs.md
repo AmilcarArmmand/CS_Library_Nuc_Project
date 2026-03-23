@@ -131,9 +131,9 @@ Owner: Kenny
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
 - [ ] System validates student is authorized to use library against the database withing 1 second
-- [ ] User profile is created automatically if not present
-- [ ] User is redirected to main dashboard after login
-- [ ] UI will display a notification if clear success or error
+- [x] User profile is created automatically if not present
+- [x] User is redirected to main dashboard after login
+- [x] UI will display a notification if clear success or error
 
 ---
 
@@ -159,10 +159,10 @@ Owner: Kenny
 **Acceptance Criteria:**
 - [ ] Barcode scanner reads ISBN successfully on first try 95% of time
 - [ ] System displays book details (title, author, cover image) withing 1.5 seconds
-- [ ] Due date automatically set to 14 days from checkout
-- [ ] Transaction recorded with timestamp and user ID
-- [ ] Clear confirmation message with return date
-- [ ] Database updates the book_status to checked out instanly upon confirmation
+- [x] Due date automatically set to 14 days from checkout
+- [x] Transaction recorded with timestamp and user ID
+- [x] Clear confirmation message with return date
+- [x] Database updates the book_status to checked out instanly upon confirmation
 
 ---
 
@@ -171,11 +171,11 @@ Owner: Kenny
 Owner: Kenny
 
 **Acceptance Criteria:**
-- [ ] System recognizes book as currently checked out
+- [x] System recognizes book as currently checked out
 - [ ] Scanner reads ISBN and queries the database
-- [ ] Database book status updates to available instantly upon scan
-- [ ] Book status updated to "available"
-- [ ] UI displays confirmation message
+- [x] Database book status updates to available instantly upon scan
+- [x] Book status updated to "available"
+- [x] UI displays confirmation message
 
 ---
 
@@ -184,9 +184,9 @@ Owner: Kenny
 Owner: Kenny
 
 **Acceptance Criteria:**
-- [ ] Search by title, author, or keyword
-- [ ] UI displays results, displaying 12 books per page to prevent any overload
-- [ ] Status badge outputs available(green) or checked out(red) based on database state
+- [x] Search by title, author, or keyword
+- [x] UI displays results, displaying 12 books per page to prevent any overload
+- [x] Status badge outputs available(green) or checked out(red) based on database state
 
 
 
@@ -197,12 +197,12 @@ Owner: Kenny
 Owner: Kenny
 
 **Acceptance Criteria:**
-- [ ] Display list of currently checked out books
-- [ ] UI highlights books where due date less than current date in red
-- [ ] Option to renew books (if no holds)
-- [ ] Show borrowing history (last 6 months)
-- [ ] Total books checked out counter
-- [ ] System restricts the renew button if the current date to already past the due date
+- [x] Display list of currently checked out books
+- [x] UI highlights books where due date less than current date in red
+- [x] Option to renew books (if no holds)
+- [x] Show borrowing history (last 6 months)
+- [x] Total books checked out counter
+- [x] System restricts the renew button if the current date to already past the due date
 
 #### Administration Features
 

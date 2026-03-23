@@ -388,15 +388,26 @@ async def main_page():
 
 
     async def try_login():
-        user = await db.get_user_by_id(id_input.value.strip())
+        scanned_id = id_input.value
         id_input.value = ''
+        user, created, reason = await db.get_or_create_kiosk_user(scanned_id)
 
-        if user and user['active']:
+        if user:
             current_user.clear()
             current_user.update(user)
             persist_user_state()
-            ui.notify(f"Welcome, {user['name']}!", type='positive')
+            if created:
+                ui.notify(
+                    f"Welcome, {user['name']}! Your kiosk profile was created automatically.",
+                    type='positive',
+                )
+            else:
+                ui.notify(f"Welcome, {user['name']}!", type='positive')
             show_logged_in_state()
+        elif reason == 'inactive':
+            ui.notify('This student ID is disabled. Please contact library staff.', type='negative')
+        elif reason == 'invalid':
+            ui.notify('Scan a valid student ID barcode to continue.', type='warning')
         else:
             ui.notify('Invalid Student ID.', type='negative')
 
@@ -429,8 +440,13 @@ async def main_page():
 
 
     async def scan_checkout_logic():
-        book = await db.get_book(dash.checkout_input.value)
+        scanned_isbn = dash.checkout_input.value
         dash.checkout_input.value = ''
+        if not db.is_valid_isbn_input(scanned_isbn):
+            ui.notify('Scan or type a valid 10- or 13-digit ISBN.', type='warning')
+            return
+
+        book = await db.get_book(scanned_isbn)
 
         if book:
             if book['status'] != 'Available':
@@ -482,8 +498,13 @@ async def main_page():
 
 
     async def scan_return_logic():
-        book = await db.get_book(dash.return_input.value)
+        scanned_isbn = dash.return_input.value
         dash.return_input.value = ''
+        if not db.is_valid_isbn_input(scanned_isbn):
+            ui.notify('Scan or type a valid 10- or 13-digit ISBN.', type='warning')
+            return
+
+        book = await db.get_book(scanned_isbn)
         if book:
             if book['status'] == 'Available':
                 ui.notify('Book is already returned.', type='warning')
@@ -537,6 +558,7 @@ async def main_page():
         with dash.active_loans_container:
             for loan in active:
                 due     = loan.get('due_date', 'N/A')
+                has_pending_hold = bool(loan.get('has_pending_hold'))
                 overdue = False
                 if isinstance(due, datetime):
                     overdue = due < datetime.now()
@@ -552,13 +574,17 @@ async def main_page():
                         ui.label(loan['title']).classes('text-white font-bold')
                         ui.label(loan['author']).classes('text-xs text-slate-400')
                         ui.label(f"{'OVERDUE' if overdue else 'Due'}: {due_str}").classes(f'text-xs font-bold {due_color}')
+                        if has_pending_hold:
+                            ui.label('Pending hold: renewal unavailable').classes('text-[11px] text-amber-400 font-semibold')
                     
 
                     async def _renew(l_id=loan['id']):
-                        success = await db.renew_book(l_id)
+                        success, reason = await db.renew_book(l_id)
                         if success:
                             ui.notify('Book renewed successfully for 14 more days!', type='positive')
                             await load_my_books()
+                        elif reason == 'hold':
+                            ui.notify('This book has a pending hold and cannot be renewed.', type='warning')
                         else:
                             ui.notify('Could not renew book.', type='negative')
                     
@@ -566,7 +592,7 @@ async def main_page():
                     renew_btn = ui.button('RENEW', on_click=_renew).classes(
                         'bg-blue-600/20 text-blue-400 font-bold tracking-widest text-xs px-4 py-2 hover:bg-blue-500/30 transition-colors'
                     ).props('flat rounded')
-                    if overdue:
+                    if overdue or has_pending_hold:
                         renew_btn.disable()
                         renew_btn.classes(remove='bg-blue-600/20 text-blue-400 hover:bg-blue-500/30', add='bg-slate-800 text-slate-500')
 

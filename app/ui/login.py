@@ -198,7 +198,7 @@ def create(on_login_success):
 
                 ui.element('div').classes('mb-5 w-10 h-0.5 bg-blue-500 shadow-[0_0_16px_rgba(59,130,246,0.8)]')
 
-                ui.label('Scan your ID to enter CS Library Kiosk').classes('login-subtitle mb-7 text-slate-400 text-xs tracking-wide')
+                ui.label('Scan your ID to enter CS Library Kiosk. First scan creates your kiosk profile automatically.').classes('login-subtitle mb-7 text-slate-400 text-xs tracking-wide')
 
                 with ui.column().classes('w-full gap-1 mb-5'):
                     with ui.row().classes('items-center gap-2 mb-1'):
