@@ -1,51 +1,64 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { config } from './env.js';
+import { schema } from '../db/postgres/schema/schema.js';
 
-const pool = new Pool({
-    connectionString: config.postgresdb.url,
-    max: 10,
+
+const options = {
+    host: config.postgresdb.host || 'localhost',
+    port: config.postgresdb.port || 5432,
+    database: config.postgresdb.name || 'librarydb',
+    user: config.postgresdb.user || 'postgres',
+    password: config.postgresdb.password,
+    max: 20, // Maximum number of clients in the pool
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
-});
+    connectionTimeoutMillis: 2000,
+};
 
-export const db = drizzle(pool);
 
-let isPostgresConnected = false;
+export const pool = new Pool(options);
 
-export const connectPostgres = async () => {
-    if (isPostgresConnected) {
-        console.log('📘 PostgreSQL already connected');
+// Initialize Drizzle ORM with schema
+export const db = drizzle(pool, { schema });
+
+// Connection status tracking
+let isConnected = false;
+
+export const connectDatabasePgsql = async () => {
+    if (isConnected) {
+        console.log('📁 PostgreSQL already connected');
         return;
     }
 
     try {
+        // Test connection
         const client = await pool.connect();
         const result = await client.query('SELECT NOW()');
         client.release();
 
-        isPostgresConnected = true;
-        console.log(`📘 PostgreSQL Connected`);
-        console.log(`📘 Database: ${config.postgresdb.url?.split('/').pop()?.split('?')[0] || 'librarydb'}`);
-        console.log(`⏰ Server Time: ${result.rows[0].now}`);
+        isConnected = true;
+        console.log('📁 PostgreSQL Connected');
+        console.log(`📊 Database: ${options.database}`);
 
+        // Handle connection events
         pool.on('error', (err) => {
             console.error('❌ PostgreSQL pool error:', err);
-            isPostgresConnected = false;
+            isConnected = false;
         });
 
+        // Graceful shutdown
         process.on('SIGINT', async () => {
             await pool.end();
-            console.log('📘 PostgreSQL pool closed');
+            console.log('📁 PostgreSQL connection closed through app termination');
+            process.exit(0);
         });
 
     } catch (error) {
         console.error('❌ PostgreSQL connection failed:', error.message);
-        throw error;
+        process.exit(1);
     }
 };
 
-export const getPostgresStatus = () => isPostgresConnected;
-export { pool };
+export const getConnectionStatusPgsql = () => isConnected;
 
-export default db;
+export default { db, pool };

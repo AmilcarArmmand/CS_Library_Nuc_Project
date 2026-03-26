@@ -1,89 +1,88 @@
 import express from 'express';
+import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-
 import { config } from './config/env.js';
 
-/* Import database connections */
-import { 
-    connectAllDatabases, 
-    getMongoStatus, 
-    getPostgresStatus 
-} from './config/database.js';
+// Import database connection
+import { connectDatabasePgsql } from './config/postgres.js';
 
-/* Import authentication */
+// Import authentication
 import passport from './config/passport.js';
 import sessionConfig from './config/session.js';
 
-/* Import routes */
+// Import routes
 import authRoutes from './routes/auth.js';
+//import homeRoutes from './routes/home.js';
+//import contactRoutes from './routes/contact.js';
 import dashboardRoutes from './routes/dashboard.js';
 
-/* Import middleware */
+
+// Import middleware
 import { attachUser } from './middleware/auth.js';
 
-/* ES modules __dirname equivalent */
+// ES modules __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-/* Initialize Express application */
 const app = express();
+const PORT = config.port || 3000;
+const NODE_ENV = config.nodeEnv;
 
-/* Connect to both databases */
-await connectAllDatabases();
+// Connect to PostgreSQL
+await connectDatabasePgsql();
 
+// View engine setup
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-/* Static files middleware */
+// Static files middleware
 app.use(express.static(path.join(__dirname, 'public')));
 
-/* Body parsing middleware */
+// Body parsing middleware
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-/* Session middleware -- NOTE: must come before passport */
+// Session config (must come before passport)
 app.use(sessionConfig);
 
-/* Passport middleware */
+// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
-/* Attach user to all templates */
+// Attach user to all templates
 app.use(attachUser);
 
-/* Routes */
+// Use route modules
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
-//app.use('/library', libraryRoutes);
 
-
-/* Home route */
+// Home route
 app.get('/', (req, res) => {
     const message = req.query.message === 'logged_out'
         ? 'You have been successfully logged out.'
         : 'Development environment setup complete!';
 
     res.render('pages/index', {
-        title: 'CS400 Library Kiosk',
+        title: 'CS Library Project',
         message: message,
         user: req.user || null,
         projectName: 'CS Library Project'
     });
 });
 
-/* Health check route */
+// Health check route
 app.get('/health', (req, res) => {
     res.json({
         status: 'OK',
         timestamp: new Date().toISOString(),
         database: 'Connected',
-        environment: config.nodeEnv
+        environment: NODE_ENV
     });
 });
 
 // Development-only database test route
-if (config.nodeEnv === 'development') {
+if (process.env.NODE_ENV === 'development') {
     app.get('/dev/db-test', async (req, res) => {
         try {
             const { testDatabaseOperations } = await import('./utils/dbTest.js');
@@ -95,17 +94,17 @@ if (config.nodeEnv === 'development') {
     });
 }
 
-/* Error handling middleware */
+// Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).render('pages/error', {
         title: 'Error',
-        error: config.nodeEnv === 'development' ? err.message : 'Something went wrong!',
+        error: NODE_ENV === 'development' ? err.message : 'Something went wrong!',
         projectName: 'CS Library Project'
     });
 });
 
-/* 404 handler */
+// 404 handler
 app.use((req, res) => {
     res.status(404).render('pages/error', {
         title: 'Page Not Found',
@@ -114,11 +113,13 @@ app.use((req, res) => {
     });
 });
 
-/* Start server */
-app.listen(config.port, () => {
-    console.log(`CS Library Project running on http://localhost:${config.port}`);
-    console.log(`Environment: ${config.nodeEnv}`);
-    console.log(`🔐 Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
+// Start server
+app.listen(PORT, () => {
+    console.log(`CS Library running on http://localhost:${PORT}`);
+    console.log(`Environment: ${NODE_ENV}`);
+    console.log(`Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
+    // console.log(`MongoDB: ${config.mongodb.url ? 'Connected' : 'Not configured'}`);
+    console.log(`PostgreSQL: ${config.postgresdb.password ? 'Connected' : 'Not configured'}`);
 });
 
 export default app;

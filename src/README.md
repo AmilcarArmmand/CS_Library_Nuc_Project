@@ -2,6 +2,7 @@
 
 ## Installation and Environment Setup
 
+SSH into VM:
 
 ```bash
 sudo apt update

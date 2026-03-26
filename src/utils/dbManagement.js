@@ -1,4 +1,4 @@
-import { User, ProjectData } from '../db/mongo/models/index.js';
+import { User, ProjectData } from '../models/index.js';
 
 // User management utilities
 export const userUtils = {

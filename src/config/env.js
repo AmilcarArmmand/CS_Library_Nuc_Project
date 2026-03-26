@@ -1,32 +1,37 @@
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-
 dotenv.config();
 
 export const config = {
     port: process.env.PORT || 3000,
     nodeEnv: process.env.NODE_ENV || 'development',
 
-    // MongoDB
-    mongodb: {
-        uri: process.env.MONGODB_URL,
-        name: process.env.MONGO_DB_NAME || 'team-project-db',
-    },
-    
-    // PostgreSQL
-    postgresdb: {
-        url: process.env.PGSQL_URL,
-    },
-
     oauth: {
         googleClientId: process.env.GOOGLE_CLIENT_ID,
         googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        googleCallbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
+        googleCallbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback'
     },
 
     session: {
         secret: process.env.SESSION_SECRET
+    },
+
+    // MongoDB (for authentication and sessions)
+    // mongodb: {
+    //     url: process.env.MONGODB_URL,
+    //     name: process.env.MONGO_DB_NAME || 'library-db',
+    //     cert: process.env.MONGO_CERT
+    // },
+
+    // PostgreSQL (for relational data and reporting)
+    postgresdb: {
+        url: process.env.POSTGRES_URL,
+        host: process.env.POSTGRES_HOST || 'localhost',
+        port: process.env.POSTGRES_PORT || 5432,
+        name: process.env.POSTGRES_DB || 'library_db',
+        user: process.env.POSTGRES_USER || 'postgres',
+        password: process.env.POSTGRES_PASSWORD
     },
 
     email: {
@@ -42,7 +47,7 @@ export const config = {
 // Validation function
 export const validateConfig = () => {
     const required = [
-        { key: 'mongodb.uri', value: config.mongodb.uri, name: 'MONGODB_URL' },
+        // { key: 'mongodb.url', value: config.mongodb.url, name: 'MONGODB_URL' },
         { key: 'postgres.url', value: config.postgresdb.url, name: 'PGSQL_URL' },
         { key: 'google.clientId', value: config.oauth.googleClientId, name: 'GOOGLE_CLIENT_ID' },
         { key: 'google.clientSecret', value: config.oauth.googleClientSecret, name: 'GOOGLE_CLIENT_SECRET' },

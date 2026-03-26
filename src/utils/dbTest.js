@@ -1,4 +1,4 @@
-import { User, ProjectData } from '../db/mongo/models/index.js';
+import { User, ProjectData } from '../models/index.js';
 
 // Test database operations
 export const testDatabaseOperations = async () => {
@@ -45,8 +45,8 @@ export const seedSampleData = async () => {
             return;
         }
 
-        // Sample data seeding can be added here for your specific project
-        console.log('Sample data seeding prepared for your project needs');
+        // Sample data seeding TODO
+        console.log('Sample data seeding');
 
     } catch (error) {
         console.error('Seeding failed:', error);

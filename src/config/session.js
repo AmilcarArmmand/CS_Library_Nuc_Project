@@ -1,30 +1,33 @@
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
+import pgSession from 'connect-pg-simple';
+import { pool } from './postgres.js';
 import { config } from './env.js';
 
-// In production, connect to use a store like MongoDB or Redis
-if (config.nodeEnv === 'production') {
-    sessionConfig.cookie.secure = true;
-}
+const PgSessionStore = pgSession(session);
 
-const sessionConfig = session({
+const sessionConfig = {
     secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: config.mongodb.uri,
-        dbName: config.mongodb.dbName,
-        collectionName: 'sessions',
+    store: new PgSessionStore({
+        pool: pool,
+        tableName: 'sessions',
+        createTableIfMissing: true,
         ttl: 14 * 24 * 60 * 60, // 14 days
-        autoRemove: 'native',
     }),
     cookie: {
-        maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
+        maxAge: 14 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         secure: config.nodeEnv === 'production',
         sameSite: 'lax',
     },
     name: 'sessionId',
-});
+};
 
-export default sessionConfig;
+
+// In production
+if (config.nodeEnv === 'production') {
+    sessionConfig.cookie.secure = true;
+}
+
+export default session(sessionConfig);
