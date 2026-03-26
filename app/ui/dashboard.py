@@ -346,7 +346,7 @@ class DashboardUI:
 
             ui.element('div').classes('w-full h-px bg-slate-700/50 my-6')
             
-            ui.label('Borrowing History').classes('text-base md:text-lg text-white font-bold mb-4')
+            ui.label('Borrowing History (Last 6 Months)').classes('text-base md:text-lg text-white font-bold mb-4')
             self.history_container = ui.column().classes('w-full gap-3 min-w-0')
 
             with ui.column().classes('w-full items-center py-6') as self.no_history:
