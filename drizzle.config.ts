@@ -1,13 +1,13 @@
 import { defineConfig } from "drizzle-kit";
-import { config } from './config/env.js';
+import { config } from './src/config/env.js';
 
 export default defineConfig({
   out: "./drizzle",
   dialect: "postgresql",
-  schema: "./db/postgres/schema/*.ts",
+  schema: "./src/db/schema/*.ts",
 
   dbCredentials: {
-        url: config.postgresdb.url
+    url: `postgresql://${config.postgresdb.user}:${config.postgresdb.password}@${config.postgresdb.host}:${config.postgresdb.port}/${config.postgresdb.name}`,
   },
   
   migrations: {

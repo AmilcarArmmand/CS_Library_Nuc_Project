@@ -17,16 +17,8 @@ export const config = {
         secret: process.env.SESSION_SECRET
     },
 
-    // MongoDB (for authentication and sessions)
-    // mongodb: {
-    //     url: process.env.MONGODB_URL,
-    //     name: process.env.MONGO_DB_NAME || 'library-db',
-    //     cert: process.env.MONGO_CERT
-    // },
-
-    // PostgreSQL (for relational data and reporting)
     postgresdb: {
-        url: process.env.POSTGRES_URL,
+        url: `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`,
         host: process.env.POSTGRES_HOST || 'localhost',
         port: process.env.POSTGRES_PORT || 5432,
         name: process.env.POSTGRES_DB || 'library_db',

@@ -1,12 +1,12 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { config } from './env.js';
-import { schema } from '../db/postgres/schema/schema.js';
+import * as schema from './schema/schema.js';
+import { config } from '../config/env.js';
 
 
 const options = {
     host: config.postgresdb.host || 'localhost',
-    port: config.postgresdb.port || 5432,
+    port: Number(config.postgresdb.port) || 5432,
     database: config.postgresdb.name || 'librarydb',
     user: config.postgresdb.user || 'postgres',
     password: config.postgresdb.password,
@@ -24,7 +24,7 @@ export const db = drizzle(pool, { schema });
 // Connection status tracking
 let isConnected = false;
 
-export const connectDatabasePgsql = async () => {
+export const connectDatabase = async () => {
     if (isConnected) {
         console.log('📁 PostgreSQL already connected');
         return;
@@ -54,11 +54,12 @@ export const connectDatabasePgsql = async () => {
         });
 
     } catch (error) {
-        console.error('❌ PostgreSQL connection failed:', error.message);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error('❌ PostgreSQL connection failed:', errorMessage);
         process.exit(1);
     }
 };
 
-export const getConnectionStatusPgsql = () => isConnected;
+export const getConnectionStatus = () => isConnected;
 
-export default { db, pool };
+export default { db, pool, connectDatabase, getConnectionStatus };

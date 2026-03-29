@@ -19,3 +19,14 @@ node -v && npm -v && git --version
 ```
 
 
+```bash
+npm init -y
+npm install passport passport-google-oauth20 express-session
+npx tsc --init
+
+
+```
+
+- Install dependencies: `npm install`
+- Start the server: `npm start`
+- Open your browser to http://localhost:3000

@@ -2,6 +2,12 @@ import express from 'express';
 import passport from '../config/passport.js';
 import { requireNoAuth } from '../middleware/auth.js';
 
+declare module 'express-session' {
+    interface SessionData {
+        returnTo?: string;
+    }
+}
+
 const router = express.Router();
 
 // Google OAuth login route
@@ -14,7 +20,7 @@ router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: '/auth/login' }),
     (req, res) => {
         // Successful authentication
-        console.log('✅ Authentication successful for:', req.user.email);
+        console.log('✅ Authentication successful for:', req.user!.email);
 
         // Redirect to originally requested page or dashboard
         const redirectTo = req.session.returnTo || '/dashboard';

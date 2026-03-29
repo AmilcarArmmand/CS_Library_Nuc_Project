@@ -3,9 +3,10 @@ import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
+import type { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
 
 // Import database connection
-import { connectDatabasePgsql } from './config/postgres.js';
+import { connectDatabase } from './db/database.js';
 
 // Import authentication
 import passport from './config/passport.js';
@@ -30,7 +31,7 @@ const PORT = config.port || 3000;
 const NODE_ENV = config.nodeEnv;
 
 // Connect to PostgreSQL
-await connectDatabasePgsql();
+await connectDatabase();
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -81,28 +82,33 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Development-only database test route
-if (process.env.NODE_ENV === 'development') {
-    app.get('/dev/db-test', async (req, res) => {
-        try {
-            const { testDatabaseOperations } = await import('./utils/dbTest.js');
-            await testDatabaseOperations();
-            res.json({ message: 'Database test completed - check console' });
-        } catch (error) {
-            res.status(500).json({ error: error.message });
-        }
-    });
-}
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).render('pages/error', {
-        title: 'Error',
-        error: NODE_ENV === 'development' ? err.message : 'Something went wrong!',
-        projectName: 'CS Library Project'
-    });
-});
+const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
+  console.error('❌ Error:', err);
+  console.error('Stack:', err.stack);
+  console.error('Path:', req.path);
+  console.error('Method:', req.method);
+
+  // Don't leak error details in production
+  const isProduction = config.nodeEnv === 'production';
+  
+  res.status(err.status || 500).json({
+    error: isProduction ? 'Internal Server Error' : err.message,
+    ...(isProduction ? {} : { stack: err.stack }),
+  });
+};
+
+app.use(errorHandler);
+
+// app.use((err, req, res, next) => {
+//     console.error(err.stack);
+//     res.status(500).render('pages/error', {
+//         title: 'Error',
+//         error: NODE_ENV === 'development' ? err.message : 'Something went wrong!',
+//         projectName: 'CS Library Project'
+//     });
+// });
 
 // 404 handler
 app.use((req, res) => {
@@ -118,7 +124,6 @@ app.listen(PORT, () => {
     console.log(`CS Library running on http://localhost:${PORT}`);
     console.log(`Environment: ${NODE_ENV}`);
     console.log(`Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
-    // console.log(`MongoDB: ${config.mongodb.url ? 'Connected' : 'Not configured'}`);
     console.log(`PostgreSQL: ${config.postgresdb.password ? 'Connected' : 'Not configured'}`);
 });
 
