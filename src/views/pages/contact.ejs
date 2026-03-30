@@ -1,0 +1,63 @@
+<%- include('partials/header') %>
+
+<h1><%= title %></h1>
+
+<% if (message) { %>
+<div class="message">
+    <p><%= message %></p>
+</div>
+<% } %>
+
+<div class="contact-grid">
+    <div class="contact-info">
+        <h2>Get in Touch</h2>
+        <p>Feel free to reach out if you want to donate or have any questions regarding the library!</p>
+        
+        <div class="contact-details">
+            <p><strong>Email:</strong> your.email@example.com</p>
+            <p><strong>GitHub:</strong> <a href="#">github.com/yourusername</a></p>
+            <p><strong>LinkedIn:</strong> <a href="#">linkedin.com/in/yourname</a></p>
+        </div>
+        
+        <div class="async-demo">
+            <h3>✨ New Features</h3>
+            <ul>
+                <li>📧 Real email sending</li>
+                <li>⚡ Async JavaScript</li>
+                <li>🔄 Loading states</li>
+                <li>✅ Real-time validation</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="contact-form-container">
+        <h2>Send a Message</h2>
+        <form id="contact-form" class="contact-form" method="POST" action="/contact">
+            <div class="form-group">
+                <label for="name">Name *</label>
+                <input type="text" id="name" name="name" value="<%= formData.name || '' %>" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" value="<%= formData.email || '' %>" required>
+                <small class="email-hint">Try typing to see real-time validation</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Message *</label>
+                <textarea id="message" name="message" rows="5" required><%= formData.message || '' %></textarea>
+            </div>
+            
+            <button type="submit" class="btn">Send Message</button>
+        </form>
+        
+        <div class="form-info">
+            <p><em>This form now sends real emails using async JavaScript! You'll receive a confirmation email when your message is sent.</em></p>
+        </div>
+    </div>
+</div>
+
+<script src="/js/contact.js"></script>
+
+<%- include('partials/footer') %>
