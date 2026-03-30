@@ -18,6 +18,13 @@ nvm install --lts
 node -v && npm -v && git --version
 ```
 
+```bash
+sudo apt install -y postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+
+
+```
+
 
 ```bash
 npm init -y
