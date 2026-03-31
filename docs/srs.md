@@ -8,8 +8,8 @@
 - Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v2.0
-**Last Updated:** 3/2/26
+**Document Version:** Draft v3.0
+**Last Updated:** 3/30/26
 
 ---
 
@@ -25,7 +25,7 @@ Computer Science students currently use a manual library system that uses paper 
 
 ### 1.3 Solution Overview
 
-Our solution is a standalone Raspberry Pi-based kiosk with integrated barcode and RFID card scanners that automates the entire library management process. The system provides instant book checkout/return, real-time inventory status, automatic ISBN lookup for cataloging, and a searchable digital catalog accessible through an intuitive touchscreen interface.
+Our solution is a kiosk-first web application designed for a Raspberry Pi touchscreen deployment with USB barcode-scanner support and a companion web portal. The system provides instant book checkout/return, real-time inventory status, automatic ISBN lookup for cataloging, and a searchable digital catalog accessible through an intuitive interface.
 
 ### 1.4 Client Context
 
@@ -86,7 +86,7 @@ Needs:
 - A easy way to add and remove books from the system
   
 Pain Points:
-- Manual tracking of books means theres the chance of missing items
+- Manual tracking of books means there is a chance of missing items
 - Can't see who has borrowed books
 - The overhead is time-consuming
   
@@ -357,17 +357,19 @@ Owner: Jose
 
 #### Database & Storage
 
-- Primary Database: MySQL
+- Primary Database: SQLite3 for the current prototype (`data/cs_library.db`)
 
 - Key Data Entities:
 
-    - Users: student_id, name, email, department, is_active, date_joined
+    - Users: student_id, name, email, password_hash, active, auto_provisioned
 
-    - Books: isbn, title, author, publisher, year, category, status, date_added
+    - Books: isbn, title, author, cover, status, shelf
 
-    - Transactions: transaction_id, user_id, book_id, checkout_date, due_date, return_date, is_overdue
+    - Loans: user_id, isbn, checked_out, due_date, returned, returned_date
 
-    - SystemLogs: log_id, action, timestamp, user_id, details
+    - Holds: user_id, isbn, status, pickup_date, created_at
+
+- Future Migration: Move to a managed relational database only after the kiosk and portal workflows are stable on the current prototype.
 
 ### 4.3 Non-Functional Requirements
 
@@ -461,32 +463,31 @@ Owner: Jose
 
 - Framework: FastAPI (NiceGUI)
 
-- Authentication: Custom barcode authentication system
+- Authentication: Student ID sign-in for kiosk, email/password for the web portal, bcrypt password hashing
 
 - Validation: Pydantic for data validation
 
+- Session State: NiceGUI user storage for kiosk and portal session persistence
 
 **Database:**
 
-- Primary Database: MySQL (MariaDB) with aiomysql for async
+- Primary Database: SQLite3 using the built-in `sqlite3` module
 
-- Alternative: PostgreSQL with asyncpg for larger deployments
+- Current Schema: users, books, loans, holds
 
-- Cache Layer: Redis (optional for performance)
+- Local Asset Cache: book cover images cached under `assets/covers`
 
-- Future Migration: Google Cloud MySQL deployment planned
+- Future Migration: Managed MySQL or PostgreSQL deployment after prototype stabilization
 
 **Hardware Integration:**
 
-- Raspberry Pi GPIO: RPi.GPIO or gpiozero library
+- Current Prototype: keyboard-style USB scanner input and manual text-entry fallback
 
-- USB Device Management: pyusb / libusb for scanner control
+- Target Hardware: Raspberry Pi, USB barcode scanner, touchscreen display
 
-- Barcode Scanning: python-barcode / pyzbar for barcode decoding
+- Scanner Strategy: scanner behaves like typed input in the current build, with dedicated hardware validation planned for the final phase
 
-- Touchscreen: evdev for touch input
-
-- Power Management: python-raspi for system monitoring
+- Power Management: graceful shutdown and backup strategy planned for deployment phase
 
 **Deployment:**
 
@@ -520,9 +521,7 @@ Owner: Jose
 
 **Third-Party Services:**
 
-- ISBN API: Open Library API via aiohttp
-
-- Fallback API: Google Books API
+- ISBN API: Open Library API via `httpx`
 
 - No external authentication (self-contained system)
 
@@ -542,375 +541,263 @@ Owner: Jose
 
 **Key Screens:**
 
-1. Welcome/Login Screen
+1. Kiosk Sign-In Screen
 
-  **Purpose:** Initial screen for user authentication
-
-  **Key Elements:**
-
-  - System header with library name
-
-  - "Scan Student ID" prompt with blinking cursor
-
-  - Admin login shortcut (Ctrl+A)
-
-  - System status indicators (network, time)
-
-  **User Actions:**
-
-  - Scan student ID barcode
-
-  - Press Ctrl+A for admin login
-
-  - Tap screen to focus scanner input
-
-2. Main Catalog
-
-  **Purpose:** Central navigation hub
+  **Purpose:** Authenticate a student for the kiosk workflow
 
   **Key Elements:**
 
-  - User greeting line
-
-  - Numbered menu options (1. Checkout, 2. Return, 3. Search, 4. My Books)
-
-  - Status bar with current time and logout option
-
-  - Quick stats (books checked out)
+  - SCSU-branded welcome layout
+  - Student ID input with scanner-friendly focus behavior
+  - Sign-in confirmation and validation messaging
+  - Timestamp / system status display
 
   **User Actions:**
 
-  - Type menu number or tap corresponding area
+  - Scan or type a student ID
+  - Submit sign-in
+  - Continue into the kiosk dashboard
 
-  - Press 'L' to logout
+2. Web Portal Sign-In / Registration
 
-  - Press 'Q' to quit to terminal
-
-3. Checkout Screen
-
-  **Purpose:** Complete book checkout transaction
+  **Purpose:** Support remote access for email/password users
 
   **Key Elements:**
 
-  - Current step indicator (Step 1/2: Scan Book)
-
-  - Book details panel (appears after scan)
-
-  - Confirmation prompt with (Y/N)
-
-  - Transaction summary
+  - Email and password sign-in form
+  - Registration page for new accounts
+  - Validation feedback for duplicate or invalid credentials
 
   **User Actions:**
 
-  - Scan book ISBN barcode
+  - Register a new account
+  - Sign in with email and password
+  - Navigate to the browse-only dashboard
 
-  - Press Y to confirm, N to cancel
+3. Catalog Dashboard
 
-  - Press ESC to return to main menu
-
-4. Return Screen
-
-  **Purpose:** Complete book return transaction
+  **Purpose:** Central navigation hub for browsing and selecting actions
 
   **Key Elements:**
 
-  - Scan prompt with animation
-
-  - Return confirmation display
-
-  - Receipt option (print or display)
-
-  - Success/failure message
+  - Top navigation tabs (Browse, Checkout, Return, My Books, Search)
+  - Book card grid with cover images and availability badges
+  - Search toggle and pagination controls
+  - User identity and logout controls
 
   **User Actions:**
 
-  - Scan book barcode
+  - Browse the collection
+  - Search by title or author
+  - Switch between major workflow tabs
 
-  - Confirm return
+4. Checkout Workspace
 
-  - Choose receipt option
-
-5. Search Screen
-
-  **Purpose:** Find books in library catalog
+  **Purpose:** Complete one or more checkout transactions
 
   **Key Elements:**
 
-  - Search input field
-
-  - Filter toggles (Title/Author/Category)
-
-  - Results list with scrollable window
-
-  - Book details pane (on selection)
+  - ISBN input for scanner or manual entry
+  - Live cart summary
+  - Book detail preview and due-date display
+  - Checkout confirmation button
 
   **User Actions:**
 
-  - Type search query
+  - Scan or type an ISBN
+  - Review the cart
+  - Confirm checkout
 
-  - Navigate results with arrow keys or touch
+5. Return Workspace
 
-  - Select book for details
+  **Purpose:** Process returned books quickly
 
-  - Press B to check out selected book
+  **Key Elements:**
+
+  - Return scan/input field
+  - Returned-book cover and title confirmation
+  - Status message for successful or invalid returns
+
+  **User Actions:**
+
+  - Scan or type a book barcode / ISBN
+  - Confirm the returned item visually
 
 6. My Books Screen
 
-  **Purpose:** View personal borrowing status
+  **Purpose:** Show active loans and borrowing history
 
   **Key Elements:**
 
-  - Current checkouts list with due dates
-
-  - Overdue indicator (!)
-
-  - Renew option (R) for eligible books
-
-  - Borrowing history (last 10 transactions)
+  - Active loan list with due dates
+  - Renewal action for eligible books
+  - Borrowing history section
+  - Hold-related messaging for renewal restrictions
 
   **User Actions:**
 
-  - View current checkouts
+  - Review active and returned books
+  - Renew eligible books
+  - Monitor due dates
 
-  - Press R to renew eligible books
+7. Admin Dashboard (Planned)
 
-  - Scroll through history
-
-7. Admin Dashboard
-
-  **Purpose:** System management (accessed via Ctrl+A)
+  **Purpose:** Manage books, users, reports, holds, and donations in a future release
 
   **Key Elements:**
 
-  - Admin menu (1. Manage Books, 2. Manage Users, 3. Reports, 4. System)
-
-  - Quick stats (total books, active users, today's checkouts)
-
-  - System status indicators
-
-  - Activity log window
+  - Book and user management tools
+  - Checkout / usage reporting
+  - Hold queue visibility
+  - Donation intake workflow support
 
   **User Actions:**
 
-  - Select admin function
-
-  - View system logs
-
-  - Generate reports
-
-  - Manage system settings
+  - Manage catalog data
+  - Review usage and loan activity
+  - Maintain hold and donation workflows
 
 
 ### 5.3 Database Schema
 
 ```bash
-┌─────────┐      ┌──────────────┐      ┌─────────┐
-│  User   │ ◄────┤ Transaction  ├─────►│  Book   │
-│         │      │              │      │         │
-└─────────┘      └──────────────┘      └─────────┘
-     │                  │                     │
-     │                  │                     │
-     ▼                  ▼                     ▼
-┌─────────┐      ┌──────────────┐      ┌──────────┐
-│  Logs   │      │   Reports    │      │ Category │
-└─────────┘      └──────────────┘      └──────────┘
+┌─────────┐       ┌─────────┐
+│  User   │◄──────┤  Loan   ├──────►│  Book   │
+└─────────┘       └─────────┘       └─────────┘
+     ▲                 ▲                 ▲
+     │                 │                 │
+     └────────────┐    │    ┌────────────┘
+                  ▼    ▼    ▼
+                ┌─────────────┐
+                │    Hold     │
+                └─────────────┘
 ```
 
 Entity: User
 ```bash
 {
-  "user_id": "String (unique, required, primary key)",
+  "id": "Integer (primary key, autoincrement)",
   "student_id": "String (unique, required)",
-  "first_name": "String (required)",
-  "last_name": "String (required)",
+  "name": "String (required)",
   "email": "String (unique, required)",
-  "department": "String (optional)",
-  "user_type": "String (enum: ['student', 'admin', 'super_admin'], default: 'student')",
-  "borrowing_limit": "Integer (default: 5)",
-  "books_checked_out": "Integer (default: 0)",
-  "is_active": "Boolean (default: true)",
-  "date_joined": "Date (required)",
-  "last_login": "Date (optional)",
-  "total_checkouts": "Integer (default: 0)"
+  "password_hash": "String (required)",
+  "active": "Boolean-like integer (default: 1)",
+  "auto_provisioned": "Boolean-like integer (default: 0)",
+  "created_at": "Datetime (default current timestamp)"
 }
 ```
 
 Entity: Book
 ```bash
 {
-  "book_id": "String (unique, required, primary key)",
-  "isbn": "String (unique, required)", // 10 or 13 digit ISBN
+  "isbn": "String (primary key)",
   "title": "String (required)",
   "author": "String (required)",
-  "publisher": "String (optional)",
-  "publication_year": "Integer (optional)",
-  "category_id": "Integer (ref: Category, optional)",
-  "book_status": "String (enum: ['available', 'checked_out', 'lost', 'damaged', 'donated'], default: 'available')",
-  "location": "String (optional)", // Shelf location
-  "cover_image_url": "String (optional)",
-  "description": "Text (optional)",
-  "donor_student_id": "String (ref: User, optional)", // If donated by student
-  "date_added": "Date (required)",
-  "total_checkouts": "Integer (default: 0)",
-  "last_checkout_date": "Date (optional)"
-}
-```
-Entity: Transaction
-```bash
-{
-  "transaction_id": "String (unique, required, primary key)",
-  "user_id": "String (ref: User, required)",
-  "book_id": "String (ref: Book, required)",
-  "transaction_type": "String (enum: ['checkout', 'return', 'renewal', 'donation'], required)",
-  "checkout_date": "Date (required for checkout)",
-  "due_date": "Date (required for checkout)",
-  "return_date": "Date (optional)",
-  "actual_return_date": "Date (optional)", // For tracking lateness
-  "renewal_count": "Integer (default: 0)",
-  "is_overdue": "Boolean (default: false)",
-  "overdue_days": "Integer (default: 0)",
-  "late_fee": "Decimal(5,2) (default: 0.00)",
-  "fee_paid": "Boolean (default: false)",
-  "notes": "Text (optional)",
-  "created_at": "Date (required)"
-}
-```
-Entity: Category
-```bash
-{
-  "category_id": "Integer (unique, required, primary key)",
-  "category_name": "String (required, unique)",
-  "description": "String (optional)",
-  "book_count": "Integer (default: 0)",
-  "created_at": "Date (required)"
+  "cover": "String (default empty string)",
+  "status": "String (default: 'Available')",
+  "shelf": "String (default empty string)"
 }
 ```
 
-Entity: SystemLog
+Entity: Loan
 ```bash
 {
-  "log_id": "String (unique, required, primary key)",
-  "user_id": "String (ref: User, optional)", // Null for system events
-  "action": "String (required)", // e.g., 'login', 'checkout', 'system_start'
-  "log_level": "String (enum: ['info', 'warning', 'error', 'critical'])",
-  "details": "Text (optional)",
-  "ip_address": "String (optional)",
-  "user_agent": "String (optional)",
-  "timestamp": "Date (required)"
+  "id": "Integer (primary key, autoincrement)",
+  "user_id": "Integer (ref: users.id, required)",
+  "isbn": "String (ref: books.isbn, required)",
+  "checked_out": "Datetime (default current timestamp)",
+  "due_date": "Datetime (required)",
+  "returned": "Boolean-like integer (default: 0)",
+  "returned_date": "Datetime (optional)"
 }
 ```
 
-Entity: Reservation
+Entity: Hold
 ```bash
 {
-  "reservation_id": "String (unique, required, primary key)",
-  "user_id": "String (ref: User, required)",
-  "book_id": "String (ref: Book, required)",
-  "reservation_date": "Date (required)",
-  "status": "String (enum: ['pending', 'ready', 'cancelled'], default: 'pending')",
-  "notified": "Boolean (default: false)",
-  "pickup_by_date": "Date (optional)",
-  "created_at": "Date (required)"
+  "id": "Integer (primary key, autoincrement)",
+  "user_id": "Integer (ref: users.id, required)",
+  "isbn": "String (ref: books.isbn, required)",
+  "status": "String (default: 'pending')",
+  "pickup_date": "Datetime (optional)",
+  "created_at": "Datetime (default current timestamp)"
 }
 ```
+
+Planned future schema extensions for donation intake, admin reporting, and statistics remain in scope, but they are not part of the committed prototype schema yet.
 
 ### 5.4 System Architecture
 
 Component Diagram:
 
 ```bash
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Raspberry Pi 5 Hardware Layer                    │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌───────────┐   │
-│  │  7" Touch   │  │ USB Barcode │  │   GPIO      │  │   Power   │   │
-│  │  Display    │  │   Scanner   │  │   Pins      │  │  Supply   │   │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └───────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Device Driver Layer                              │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
-│  │  evdev      │  │  libusb     │  │  RPi.GPIO   │                  │
-│  │ (Touch)     │  │ (Scanner)   │  │   (GPIO)    │                  │
-│  └─────────────┘  └─────────────┘  └─────────────┘                  │
-└─────────────────────────────────────────────────────────────────────┘
-
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Web Application Layer                                │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │                 Main Application Service                    │    │
-│  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌─────────┐   │    │
-│  │  │   UI      │  │  Scanner  │  │   DB      │  │   API   │   │    │
-│  │  │ Manager   │  │  Service  │  │  Service  │  │ Client  │   │    │
-│  │  │ (NICEGUI) │  │           │  │ (MySQL)   │  │         │   │    │
-│  │  └───────────┘  └───────────┘  └───────────┘  └─────────┘   │    │
-│  └─────────────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Data Layer                                       │
-├─────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                  │
-│  │   MySQL     │  │   Config    │  │   Log       │                  │
-│  │  Database   │  │   Files     │  │   Files     │                  │
-│  └─────────────┘  └─────────────┘  └─────────────┘                  │
-└─────────────────────────────────────────────────────────────────────┘
-
+┌──────────────────────┐      ┌───────────────────────────┐
+│ Kiosk UI / Web Portal│─────►│ NiceGUI + FastAPI App     │
+└──────────────────────┘      │ - auth/session handling   │
+                              │ - catalog workflows        │
+┌──────────────────────┐      │ - checkout / return / renew│
+│ USB Scanner / Manual │─────►│ - Open Library lookups    │
+│ Text Entry           │      └──────────────┬────────────┘
+└──────────────────────┘                     │
+                                             ▼
+                              ┌───────────────────────────┐
+                              │ SQLite Data Layer         │
+                              │ users / books / loans /   │
+                              │ holds + local cover cache │
+                              └───────────────────────────┘
+                                             │
+                                             ▼
+                              ┌───────────────────────────┐
+                              │ Open Library API          │
+                              │ (metadata and cover data) │
+                              └───────────────────────────┘
 ```
 
 Request/Response Flow:
 
-    Hardware Event: Student scans barcode or touches screen
+    Input Event: Student scans or types a student ID / ISBN, or uses the touchscreen UI
 
-    Driver Processing: evdev (touch) or libusb (scanner) captures input
-
-    Event Dispatch: Main application service receives hardware event
+    Event Dispatch: NiceGUI page handler receives the event
 
     Business Logic Processing:
 
-        Scanner Service decodes barcode
+        Input helpers normalize student IDs and ISBNs
 
-        DB Service queries database
+        Database helpers query SQLite for users, books, loans, and holds
 
-        FastAPI Service fetches external data (if needed)
+        Open Library metadata is requested when a scanned ISBN is not already cached locally
 
-        Transaction Service processes checkout/return logic
+        Checkout, return, renewal, and account provisioning logic updates the data model
 
-    UI Update: UI Manager updates terminal display
+    UI Update: NiceGUI components refresh the current view
 
-    Data Persistence: DB Service commits transaction to MySQL
+    Data Persistence: SQLite commits the transaction locally
 
-    Logging: System logs event to both database and file system
+    Asset Cache: Cover images are cached locally when available
 
-    Response: Visual feedback shown on terminal display
+    Response: Visual feedback shown on kiosk or web UI
 
 Security Layer:
 
     Authentication:
 
-        Student: Barcode validation against database
+        Student: Student ID validation against the local database, with auto-provisioning for kiosk use
 
         Admin: Password authentication with bcrypt hashing
 
-        Session timeout after 15 minutes of inactivity
-
-        Failed attempt logging and lockout (5 attempts)
+        Session timeout and stricter lockout rules remain planned admin hardening work
 
     Authorization:
 
         Role-based permissions (student vs. admin)
 
-        Function-level access control
+        Browse-only restrictions for the remote portal
 
-        Command authorization checks
+        Expanded admin role controls planned for final phase
 
     Input Validation:
 
-        Barcode format validation (ISBN, student ID patterns)
+        Student ID and ISBN format validation
 
         SQL injection prevention via parameterized queries
 
@@ -920,13 +807,11 @@ Security Layer:
 
     Data Protection:
 
-        MySQL database encryption
-
-        Configuration file encryption
+        Local SQLite data file permissions
 
         Secure logging (no sensitive data in logs)
 
-        Automated encrypted backups
+        Planned automated backups before deployment
 
         File system permissions (restricted access to data files)
 
@@ -938,15 +823,17 @@ Security Layer:
 
 #### Sprint 1: Foundation & Authentication (Target: Progress Report 1 - March 2)
 **Timeline:** Week 3-6
-**Goal:** Hardware setup and User Authentication
+**Goal:** Project foundation and baseline authentication
+
+**Status:** Complete
 
 **Tasks:**
-- Amilcar: Design MySQL database Schema,and API endpoints
-- Kenny: Frontend using NiceGUI and Tailwinf to build web-based Kiosk interface
-- Jose: Building the Admin Dashboard
+- Amilcar: Project planning, research, and early hardware investigation
+- Kenny: Initial NiceGUI kiosk interface and student sign-in flow
+- Jose: Baseline data model, user registration, and authentication support
 
 **Deliverables:**
-- User login and dashboard
+- Working login and dashboard foundation
 
 ---
 
@@ -954,65 +841,72 @@ Security Layer:
 **Timeline:** Week 7-9
 **Goal:** Library Workflows and external integrations
 
+**Status:** Complete
+
 **Tasks:**
-- Amilcar: Implement the OpenLibrary API for metadata
-- Kenny: Building manual fallback and search filter
-- Jose: Build Book donation workflow and remote hold workflow and UI
+- Amilcar: Metadata integration planning and workflow validation
+- Kenny: Search, manual fallback input, checkout, return, and My Books workflows
+- Jose: Registration/login improvements, seed data, and backend circulation support
 
 **Deliverables:**
-- Functional Checkout/Return flow with metadata fetching
+- Functional checkout / return flow with Open Library metadata support
 ---
 
 #### Sprint 3: Feature Completion & Enhancement (Target: Progress Report 2 )
 **Timeline:** Week 10-12
-**Goal:** Integrate Pi and Scanner with Web App
+**Goal:** Polish the prototype for Progress Report II
+
+**Status:** Mostly complete
 
 **Tasks:**
-- Amilcar: Setup Raspberry Pi and configure local networking
-- Kenny:  Connect web app to listen to scanner
-- Jose: Script the USB barcode scanner inputs
+- Amilcar: Continue hardware planning and deployment research
+- Kenny: Refine kiosk dashboard flow, renewals, and responsive UI behavior
+- Jose: Improve portal auth flow, data persistence, and supporting backend logic
+
+**Deliverables:**
+- PR2-ready prototype with kiosk and web portal workflows
 
 ---
 
 #### Sprint 4: Testing, Polish & Deployment
 **Timeline:** Week 13-14
-**Goal:** Production-ready application
+**Goal:** Final-phase completion and validation
+
+**Status:** In progress
 
 **Tasks:**
-- Team: User Testing, Load Testing and Documentation
+- Team: Admin dashboard completion, hold / donation workflow work, hardware validation, regression testing, and final documentation
 
 ---
-
-=======
 
 ## 7. Risk Assessment
 
 ### Technical Risks
 
-**Risk 1: SD Card Corruption
+**Risk 1: SD Card Corruption**
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Raspberry Pi SD cars are prone to failure under heavy loads. We will implement daily automated backups that mirror the database to a USB hard drive.
+- **Mitigation:** Raspberry Pi SD cards are prone to failure under heavy loads. We will implement daily automated backups that mirror the database to a USB hard drive.
 
-**Risk 2: Network Dependencies and Database Outages
+**Risk 2: Network Dependencies and Database Outages**
 - **Impact:** High
 - **Likelihood:** Low
-- **Mitigation:** System will locally cache library in MySQL so students can still browse even if network is down
+- **Mitigation:** The prototype uses a local SQLite database so students can still browse the catalog even if external network access is unavailable.
 
-**Risk 3: Campus IT Approval
+**Risk 3: Campus IT Approval**
 - **Impact:** High
 - **Likelihood:** Low
 - **Mitigation:** Waiting for SSO credentials from IT, team is using a mock authentication system until IT provides credentials then we swap for integration.
 
-**Risk 4: Barcode Error Hardware Failware
+**Risk 4: Barcode Error Hardware Failure**
 - **Impact:** Medium
 - **Likelihood:** High
 - **Mitigation:** The Kiosk UI includes the ability for manual text-entry fall back. If the physical USB scanner drops, you could still manual touchscreen typing.
 
-**Risk 5: Hardware Integration / Delays
+**Risk 5: Hardware Integration / Delays**
 - **Impact:** High
 - **Likelihood:** Low
-- **Mitigation:** Building the web app with manual text inputs not allowing hardware to block but be a enhancement. The USB scanner technically acts as keyboard so we could still test the kiosk software on personal laptops/computers without the need for the Pi.
+- **Mitigation:** The web app includes manual text input so hardware does not block feature development. The USB scanner behaves like keyboard input, so the kiosk software can still be tested on laptops before final Pi deployment.
 
 ## 8. Success Metrics
 
@@ -1023,38 +917,81 @@ Security Layer:
 ---
 ## 9. Testing Strategy
 
-- Backend database connections, user authentication and hashing, checkout logic
-- The physical kiosk UI will undergo manual integration testing and using USB barcode scanner plugged to Pi with rapid scanning.
+### 9.1 Testing Overview
+
+- The project is tested at three levels: unit, integration, and system.
+- The current PR2 workflow uses smoke tests against a temporary copy of the SQLite database so application data is not corrupted during verification.
+- Final-phase validation will expand this into a repeatable regression suite before delivery.
+
+### 9.2 Unit Testing
+
+Targeted units include:
+
+- student ID and ISBN normalization / validation helpers
+- user registration and email authentication logic
+- checkout, renewal, and return logic
+- local catalog lookup behavior
+
+Planned tooling:
+
+- `pytest`
+- `pytest-asyncio`
+
+### 9.3 Integration Testing
+
+Integration tests focus on:
+
+- registration followed by successful authentication
+- checkout followed by correct appearance in My Books
+- return followed by correct borrowing-history updates
+- kiosk auto-provisioning for unknown student IDs
+- Open Library lookup when an ISBN is not already in the local catalog
+
+### 9.4 System Testing
+
+System tests cover:
+
+- web portal sign-in page load
+- registration page navigation
+- kiosk browse / checkout / return workflows
+- invalid-input handling
+- scanner validation on target hardware
+
+### 9.5 Current PR2 Status
+
+- Unit smoke checks executed: 6 passed
+- Integration smoke checks executed: 4 passed
+- System smoke checks executed: 2 passed
+- Remaining work: broader end-to-end UI coverage, hardware scanner validation, and final regression automation
 
 ## 10. Appendix
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
 - **NiceGUI:** Python-based web-UI
-- **MySQL** Database management system
+- **SQLite:** Embedded relational database used by the current prototype
 
 ### B. References
 
 **Technical References**
 - Raspberry Pi Foundation. (2024). Raspberry Pi Documentation. https://www.raspberrypi.com/documentation/
 - Open Library API Documentation. https://openlibrary.org/developers/api
-- Google Books API Documentation. https://developers.google.com/books
+- FastAPI Documentation. https://fastapi.tiangolo.com/
 - NiceGUI Documentation: https://nicegui.io/documentation
 
 ### C. Change Log
 | Date | Version | Changes | Author |
 |------|---------|---------|--------|
-| [1/28] | v1.0 | Initial draft | [Team] |
-| [2/6] | v1.1 | Revision | [Jose] |
-| [2/12] | v1.2 | Revision | [Kenny] |
-| [3/1] | v2.0 | Revision | [Kenny] |
+| Feb 6, 2026 | v1.0 | Initial submission | Team |
+| Mar 2, 2026 | v2.0 | PR1 revisions and requirement updates | Team |
+| Mar 30, 2026 | v3.0 | PR2 revisions, aligned architecture and schema to current prototype, refreshed sprint plan, and added detailed testing strategy | Team |
 
 
 ---
 
-**Document Status:** Draft / Review / Final
-**Next Review Date:** TBA
+**Document Status:** Review
+**Next Review Date:** April 6, 2026
 
-Prepared by: CS Library Nuc Project
+Prepared by: CS Library Team
 Course: CSC400 - Computer Science Project Seminar 
 Semester: Spring 2026 
