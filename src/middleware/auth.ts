@@ -1,12 +1,14 @@
-/* Authentication middleware for protecting routes */
+// Authentication middleware for protecting routes
 
 export const requireAuth = (req, res, next) => {
     if (req.isAuthenticated()) {
         return next();
     }
 
+    // Store the requested URL to redirect after login
     req.session.returnTo = req.originalUrl;
 
+    // Redirect to login
     res.redirect('/auth/google');
 };
 
@@ -15,6 +17,7 @@ export const requireNoAuth = (req, res, next) => {
         return next();
     }
 
+    // If user is already logged in, redirect to dashboard
     res.redirect('/dashboard');
 };
 
@@ -25,7 +28,7 @@ export const attachUser = (req, res, next) => {
     next();
 };
 
-/* Admin middleware */
+// Admin middleware (for future use if needed)
 export const requireAdmin = (req, res, next) => {
     if (req.isAuthenticated() && req.user.role === 'admin') {
         return next();

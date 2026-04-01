@@ -1,0 +1,63 @@
+{
+  "name": "cs_library_nuc_project",
+  "version": "1.0.0",
+  "description": "A secure library system built for the Computer Science Department at SCSU.",
+  "main": "dist/app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "clean": "rm -rf dist coverage",
+    "build": "npx tsc && npm run db:generate && npm run test",
+    "start": "node dist/app.js",
+    "dev": "nodemon",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "test": "echo \"Setup Jest aready!\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project/issues"
+  },
+  "homepage": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.18.2",
+    "@types/node": "^25.5.0",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.2",
+    "drizzle-zod": "^0.8.3",
+    "ejs": "^5.0.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.1",
+    "nodemailer": "^8.0.4",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.20.0",
+    "postgres": "^3.4.8",
+    "zod": "^4.3.6"
+  }
+}

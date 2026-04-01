@@ -2,10 +2,16 @@ import express from 'express';
 import passport from '../config/passport.js';
 import { requireNoAuth } from '../middleware/auth.js';
 
+declare module 'express-session' {
+    interface SessionData {
+        returnTo?: string;
+    }
+}
+
 const router = express.Router();
 
-/* Google OAuth login route */
-router.get('/google', requireNoAuth, passport.authenticate('google', {
+// Google OAuth login route
+router.get('/google', passport.authenticate('google', {
     scope: ['profile', 'email']
 }));
 
@@ -14,7 +20,7 @@ router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: '/auth/login' }),
     (req, res) => {
         // Successful authentication
-        console.log('Authentication successful for:', req.user.email);
+        console.log('✅ Authentication successful for:', req.user!.email);
 
         // Redirect to originally requested page or dashboard
         const redirectTo = req.session.returnTo || '/dashboard';
@@ -25,7 +31,7 @@ router.get('/google/callback',
 );
 
 // Login page (for manual login or errors)
-router.get('/login', requireNoAuth, (req, res) => {
+router.get('/login', (req, res) => {
     res.render('pages/login', {
         title: 'Login',
         error: req.query.error || null,
@@ -43,7 +49,7 @@ router.get('/logout', (req, res) => {
             return res.redirect('/dashboard');
         }
 
-        console.log('User logged out:', userEmail);
+        console.log('👋 User logged out:', userEmail);
         req.session.destroy((err) => {
             if (err) {
                 console.error('Session destruction error:', err);
