@@ -34,6 +34,15 @@ npx tsc --init
 
 ```
 
+- Copy `.env.example` to create `.env` file to store credentials/secrets
+
+
 - Install dependencies: `npm install`
-- Start the server: `npm start`
+- Script to clean dist/ `npm run clean`
+- Script to build `npm run build`
+- Script to run development mode with nodemon `npm run dev`
+- Script to generate schema `npm run db:generate`
+- Script to migrate schema `npm run db:generate`
+- Script to push schema `npm run db:generate`
+- Start the server in production mode: `npm start`
 - Open your browser to http://localhost:3000
