@@ -1,4 +1,5 @@
 import express from 'express';
+import router from "./routes/router.js";
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -57,6 +58,7 @@ app.use(attachUser);
 // Use route modules
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
+app.use(router);
 
 // Home route
 app.get('/', (req, res) => {
