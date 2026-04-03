@@ -9,7 +9,8 @@ sudo apt update
 sudo apt install -y git build-essential curl nginx
 ```
 
-Install Node.js (LTS) via nvm
+Install Node.js (LTS) via nvm:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
@@ -25,9 +26,10 @@ sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
 
 ```
 
+First time startup:
 
 ```bash
-# First time startup
+
 
 npm init -y
 npm install passport passport-google-oauth20 express-session
