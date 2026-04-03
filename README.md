@@ -38,6 +38,10 @@ npx tsc --init
 # Then...
 
 npm run build && npm start
+
+```
+
+```bash
 # or
 npm run dev
 
