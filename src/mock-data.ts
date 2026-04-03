@@ -6,7 +6,7 @@
 //
 // npm run db:generate
 // npm run db:migrate
-// npx tsx src/mock-data.ts
+// npx tsx mock-data.ts
 //
 // Safe to re-run — duplicates are skipped.
 
