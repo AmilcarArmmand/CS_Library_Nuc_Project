@@ -17,12 +17,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app      = express();
-const PORT     = config.port || 3000;
+const PORT     = Number(config.port) || 3000;
 const HOST     = '0.0.0.0';   // Accept connections on all network interfaces
 const NODE_ENV = config.nodeEnv;
 const IS_PROD  = NODE_ENV === 'production';
 
-// ── Trust GCP's load balancer / proxy ─────────────────────────────────────────
+// ── TRUST GCP's LOAD BALANCER / PROXY
 // GCP puts a load balancer in front of your VM that terminates HTTPS.
 // Without this, req.secure and req.ip will be wrong, and session cookies
 // with secure:true won't work.
@@ -32,33 +32,32 @@ if (IS_PROD) {
 
 await connectDatabase();
 
-// ── View engine ────────────────────────────────────────────────────────────────
+// VIEW ENGINE
 app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'src', 'views'));
 
-// ── Static files ───────────────────────────────────────────────────────────────
+// STATIC FILES
 app.use(express.static(path.join(process.cwd(), 'src', 'public')));
 
-// ── Body parsing ───────────────────────────────────────────────────────────────
+// BODY PARSING
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// ── Session + Passport ─────────────────────────────────────────────────────────
+// SESSION + PASSPORT
 app.use(sessionConfig);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(attachUser);
 
-// ── Routes ─────────────────────────────────────────────────────────────────────
+// ROUTES
 
 app.use('/auth',          authRoutes);
 app.use('/web-dashboard', webDashboardRoutes);
 app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
-
 // Future: admin panel
 // app.use('/dashboard', dashboardRoutes);
 
-// ── Home ────────────────────────────────────────────────────────────────────────
+// HOME
 app.get('/', (req, res) => {
   res.render('pages/index', {
     title:       'CS Library',
@@ -68,7 +67,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// ── Health check — used by GCP to verify the instance is alive ────────────────
+// CHECK HEALTH
 app.get('/health', (_req, res) => {
   res.status(200).json({
     status:      'OK',
@@ -77,7 +76,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// ── 404 ─────────────────────────────────────────────────────────────────────────
+// 404 ERROR
 app.use((_req, res) => {
   res.status(404).render('pages/error', {
     title:       'Page Not Found',
@@ -86,7 +85,7 @@ app.use((_req, res) => {
   });
 });
 
-// ── 500 ─────────────────────────────────────────────────────────────────────────
+// 500 ERROR
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   console.error('❌ Error:', err.message, '— Path:', req.path);
   res.status(err.status || 500).json({
@@ -97,17 +96,17 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
 };
 app.use(errorHandler);
 
-// ── Start ────────────────────────────────────────────────────────────────────────
+// APP START
 app.listen(PORT, HOST, () => {
   console.log(`\n✅ CS Library running on http://${HOST}:${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
   console.log(`   PostgreSQL  : ${config.postgresdb.password  ? 'Configured ✓' : 'Not configured'}`);
   if (!IS_PROD) {
-    console.log(`\n   Home        : http://localhost:${PORT}/`);
-    console.log(`   Web login   : http://localhost:${PORT}/auth/login`);
-    console.log(`   Web portal  : http://localhost:${PORT}/web-dashboard`);
-    console.log(`   Kiosk API   : http://localhost:${PORT}/api/kiosk\n`);
+    console.log(`\n   Home        : http://${HOST}:${PORT}/`);
+    console.log(`   Web login   : http://${HOST}:${PORT}/auth/login`);
+    console.log(`   Web portal  : http://${HOST}:${PORT}/web-dashboard`);
+    console.log(`   Kiosk API   : http://${HOST}:${PORT}/api/kiosk\n`);
   }
 });
 
