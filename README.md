@@ -1,6 +1,4 @@
-# CS Library Project
-
-# Overhaul
+# CS Library Project Overhaul
 
 ## Installation and Environment Setup
 
