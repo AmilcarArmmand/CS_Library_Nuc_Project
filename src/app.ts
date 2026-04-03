@@ -3,41 +3,46 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
 import type { ErrorRequestHandler } from 'express';
- 
+
 import { connectDatabase } from './db/database.js';
 import passport from './config/passport.js';
 import sessionConfig from './config/session.js';
- 
+
 import authRoutes         from './routes/auth.js';
 import webDashboardRoutes from './routes/webDashboard.js';
 import kioskApiRoutes     from './routes/kioskApi.js';
 import { attachUser }     from './middleware/auth.js';
-
-// NOTE: dashboardRoutes and kioskRoutes are intentionally not imported here.
-//   dashboardRoutes → reserved for the future admin panel (/dashboard)
-//   kioskRoutes     → the kiosk UI now runs as a separate app on the Pi (kiosk/)
-//                     and calls /api/kiosk/* endpoints on this server instead.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app      = express();
 const PORT     = config.port || 3000;
+const HOST     = '0.0.0.0';   // Accept connections on all network interfaces
 const NODE_ENV = config.nodeEnv;
+const IS_PROD  = NODE_ENV === 'production';
+
+// ── Trust GCP's load balancer / proxy ─────────────────────────────────────────
+// GCP puts a load balancer in front of your VM that terminates HTTPS.
+// Without this, req.secure and req.ip will be wrong, and session cookies
+// with secure:true won't work.
+if (IS_PROD) {
+  app.set('trust proxy', 1);
+}
 
 await connectDatabase();
 
 // ── View engine ────────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
 app.set('views', path.join(process.cwd(), 'src', 'views'));
- 
+
 // ── Static files ───────────────────────────────────────────────────────────────
 app.use(express.static(path.join(process.cwd(), 'src', 'public')));
- 
+
 // ── Body parsing ───────────────────────────────────────────────────────────────
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
- 
+
 // ── Session + Passport ─────────────────────────────────────────────────────────
 app.use(sessionConfig);
 app.use(passport.initialize());
@@ -46,16 +51,10 @@ app.use(attachUser);
 
 // ── Routes ─────────────────────────────────────────────────────────────────────
 
-// Web auth — login, register, Google OAuth, logout
-app.use('/auth', authRoutes);
- 
-// Web portal — catalog browse + my loans for logged-in web users
+app.use('/auth',          authRoutes);
 app.use('/web-dashboard', webDashboardRoutes);
- 
-// Kiosk REST API — called by the Pi kiosk app over HTTPS, protected by API key.
-// The kiosk UI itself runs on the Pi (kiosk/), not here.
-app.use('/api/kiosk', kioskApiRoutes);
- 
+app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
+
 // Future: admin panel
 // app.use('/dashboard', dashboardRoutes);
 
@@ -69,14 +68,20 @@ app.get('/', (req, res) => {
   });
 });
 
+// ── Health check — used by GCP to verify the instance is alive ────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString(), environment: NODE_ENV });
+  res.status(200).json({
+    status:      'OK',
+    timestamp:   new Date().toISOString(),
+    environment: NODE_ENV,
+  });
 });
 
 // ── 404 ─────────────────────────────────────────────────────────────────────────
 app.use((_req, res) => {
   res.status(404).render('pages/error', {
-    title: 'Page Not Found', error: 'The page you are looking for does not exist.',
+    title:       'Page Not Found',
+    error:       'The page you are looking for does not exist.',
     projectName: 'CS Library Project',
   });
 });
@@ -84,24 +89,26 @@ app.use((_req, res) => {
 // ── 500 ─────────────────────────────────────────────────────────────────────────
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   console.error('❌ Error:', err.message, '— Path:', req.path);
-  const isProd = config.nodeEnv === 'production';
   res.status(err.status || 500).json({
-    error: isProd ? 'Internal Server Error' : err.message,
-    ...(isProd ? {} : { stack: err.stack }),
+    // Never leak stack traces in production
+    error: IS_PROD ? 'Internal Server Error' : err.message,
+    ...(IS_PROD ? {} : { stack: err.stack }),
   });
 };
 app.use(errorHandler);
 
 // ── Start ────────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n✅ CS Library Web Server running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`\n✅ CS Library running on http://${HOST}:${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
   console.log(`   PostgreSQL  : ${config.postgresdb.password  ? 'Configured ✓' : 'Not configured'}`);
-  console.log(`\n   Home         : http://localhost:${PORT}/`);
-  console.log(`   Web login    : http://localhost:${PORT}/auth/login`);
-  console.log(`   Web portal   : http://localhost:${PORT}/web-dashboard`);
-  console.log(`   Kiosk API    : http://localhost:${PORT}/api/kiosk  (Pi only)\n`);
+  if (!IS_PROD) {
+    console.log(`\n   Home        : http://localhost:${PORT}/`);
+    console.log(`   Web login   : http://localhost:${PORT}/auth/login`);
+    console.log(`   Web portal  : http://localhost:${PORT}/web-dashboard`);
+    console.log(`   Kiosk API   : http://localhost:${PORT}/api/kiosk\n`);
+  }
 });
 
 export default app;
