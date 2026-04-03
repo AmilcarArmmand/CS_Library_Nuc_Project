@@ -5,58 +5,55 @@
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
-    "copy":  "cp -r src/views dist/views && cp -r src/public dist/public",
+    "copy": "cp -r src/views dist/views && cp -r src/public dist/public",
     "build": "tsc && npm run copy",
-    "dev":   "tsx watch src/app.ts",
+    "dev": "tsx watch src/app.ts",
     "start": "node dist/app.js",
     "db:generate": "drizzle-kit generate",
-    "db:migrate":  "drizzle-kit migrate",
+    "db:migrate": "drizzle-kit migrate",
     "test": "echo \"Setup Jest aready!\" && exit 1"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git"
   },
-  
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "bugs": { "url": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project/issues" },
-  "homepage": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project#readme",
-
-  "directories": { 
-    "doc": "docs" 
+  "bugs": {
+    "url": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project/issues"
   },
-
+  "homepage": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project#readme",
+  "directories": {
+    "doc": "docs"
+  },
   "dependencies": {
-    "bcryptjs":               "^2.4.3",
-    "connect-pg-simple":      "^9.0.1",
-    "date-fns":               "^3.6.0",
-    "dotenv":                 "^16.4.5",
-    "drizzle-orm":            "^0.31.2",
-    "ejs":                    "^3.1.10",
-    "express":                "^4.19.2",
-    "express-session":        "^1.18.0",
-    "passport":               "^0.7.0",
-    "passport-google-oauth20":"^2.0.0",
-    "passport-local":         "^1.0.0",
-    "pg":                     "^8.12.0"
+    "bcryptjs": "^2.4.3",
+    "connect-pg-simple": "^9.0.1",
+    "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
+    "drizzle-orm": "^0.31.2",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "express-session": "^1.19.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "pg": "^8.12.0"
   },
   "devDependencies": {
-    "@types/bcryptjs":               "^2.4.6",
-    "@types/connect-pg-simple":      "^7.0.3",
-    "@types/ejs":                    "^3.1.5",
-    "@types/express":                "^4.17.21",
-    "@types/express-session":        "^1.18.0",
-    "@types/node":                   "^20.14.0",
-    "@types/passport":               "^1.0.16",
-    "@types/passport-google-oauth20":"^2.0.16",
-    "@types/passport-local":         "^1.0.38",
-    "@types/pg":                     "^8.11.6",
-    "drizzle-kit":                   "^0.22.7",
-    "tsx":                           "^4.15.0",
-    "typescript":                    "^5.4.5"
+    "@types/bcryptjs": "^2.4.6",
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/ejs": "^3.1.5",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.18.0",
+    "@types/node": "^20.14.0",
+    "@types/passport": "^1.0.16",
+    "@types/passport-google-oauth20": "^2.0.16",
+    "@types/passport-local": "^1.0.38",
+    "@types/pg": "^8.11.6",
+    "drizzle-kit": "^0.22.7",
+    "tsx": "^4.15.0",
+    "typescript": "^5.4.5"
   }
-  
 }

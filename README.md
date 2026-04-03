@@ -1,114 +1,57 @@
-# CS-Library-Project
+# CS Library Project
 
-A secure library kiosk system built for the Computer Science Department at SCSU utilizing Python and NiceGUI. 
+# Overhaul
 
-This project allows students to browse the library catalog, check out books, view their borrowing history, and return items. It features real-time book metadata retrieval from Open Library, and secure user authentication.
+## Installation and Environment Setup
 
----
-
-## Features
-
-- **Two Authentication Systems:** 
-  - Login by scanning a Student ID barcode.
-  - Login via secure Email & Password (with bcrypt hashing).
-- **Interactive Catalog:** 
-  - Browse available books with a paginated grid layout.
-  - Real-time search by Title or Author.
-- **Kiosk Checkout Cart:** 
-  - A self-checkout kiosk by scanning ISBN numbers.
-  - Add multiple books to a cart and check them out at once.
-- **My Books Dashboard:** 
-  - View all active loans and exact due dates.
-  - Renew books directly from the interface.
-  - See complete borrowing history, including past returns.
-- **Automated Book Metadata:**
-  - When scanning a new book (ISBN), the system automatically queries the **Open Library API** to retrieve the title and author, saving it to the local cache for future lookups.
-
----
-
-## Technology Stack
-
-- **Frontend / UI:** [NiceGUI](https://nicegui.io/) (Vue3 & Tailwind CSS under the hood)
-- **Backend Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Integrated with NiceGUI)
-- **Database:** SQLite3 (`cs_library.db`)
-- **Password Hashing:** `bcrypt`
-- **HTTP Client for API Calls:** `httpx`
-
----
-
-## Setup & Installation
-
-### 1. Clone the Repository
-Open a terminal and clone the repository, then navigate into the directory:
-```bash
-git clone (https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git)
-cd cs-library-kiosk
-```
-
-### 2. Create an Virtual Environment
+SSH into VM:
 
 ```bash
-python3 -m venv venv
+sudo apt update
+sudo apt install -y git build-essential curl nginx
 ```
 
-### 3. Activate the Virtual Environment
-- **macOS / Linux:**
-  ```bash
-  source venv/bin/activate
-  ```
-- **Windows:**
-  ```bash
-  venv\Scripts\activate
-  ```
-
-### 4. Install Dependencies
-Install all required libraries using pip:
+Install Node.js (LTS) via nvm
 ```bash
-pip install -r requirements.txt
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh"
+nvm install --lts
+node -v && npm -v && git --version
 ```
 
----
-
-## Database Seeding (First-Time Setup)
-
-Before running the application for the first time, you must populate the database with the initial catalog of books and pre-configured test accounts.
-
-Run the seeder file:
 ```bash
-python3 app/mocks/mock_data.py
+sudo apt install -y postgresql-common
+sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
+
+
 ```
-*Note: This creates the `cs_library.db` file in the `data/` directory.
 
-### Test Accounts Available:
 
-| Name | Email | Student ID | Password |
-|---|---|---|---|
-| Kenneth | molinak4@southernct.edu | `12345`|
-| Jose | user2@example.com | `11111` |
-| Professor | admin@example.com | `99999` |
-
----
-
-## Running the Application
-
-There are two versions of the application you can run:
-
-### Kiosk Application (Full Features checkout/return)
 ```bash
-python3 kiosk_app.py
+# First time startup
+
+npm init -y
+npm install passport passport-google-oauth20 express-session
+npx tsc --init
+
+# Then...
+
+npm run build && npm start
+# or
+npm run dev
+
 ```
 
-### Web Application (Browse Only)
-```bash
-python3 web_app.py
-```
-
-The terminal will launch the NiceGUI server. You can access the application by navigating to:
-**[http://localhost:8080](http://localhost:8080)**
-
----
+- Copy `.env.example` to create `.env` file to store credentials/secrets
 
 
-## Maintainers
-Created as part of the SCSU Capstone.
-
+- Install dependencies: `npm install`
+- Script to clean dist/ `npm run clean`
+- Script to build `npm run build`
+- Script to run development mode with nodemon `npm run dev`
+- Script to generate schema `npm run db:generate`
+- Script to migrate schema `npm run db:generate`
+- Script to push schema `npm run db:generate`
+- Start the server in production mode: `npm start`
+- Open your browser to http://localhost:3000
