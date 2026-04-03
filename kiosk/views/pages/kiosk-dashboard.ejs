@@ -341,7 +341,7 @@
     </div>
     <div class="header-user">
       <span class="header-user-name"><%= user.name %></span>
-      <a href="/kiosk/logout" class="logout-btn" title="Sign out">⏻</a>
+      <a href="/logout" class="logout-btn" title="Sign out">⏻</a>
     </div>
   </header>
 
@@ -511,7 +511,7 @@
     // ── Catalog ────────────────────────────────────────────────────────────────
     async function loadCatalog() {
       try {
-        const r = await fetch('/kiosk/api/catalog');
+        const r = await fetch('/api/catalog');
         const d = await r.json();
         allBooks = d.books ?? [];
         applyFilters();
@@ -606,7 +606,7 @@
       const isbn = inp.value.trim(); inp.value = '';
       if (!isbn) return;
       try {
-        const r = await fetch('/kiosk/api/cart/add', {
+        const r = await fetch('/api/cart/add', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({isbn}),
         });
@@ -641,7 +641,7 @@
     async function confirmCheckout() {
       if (!cart.length) return;
       try {
-        const r = await fetch('/kiosk/api/checkout', {method:'POST'});
+        const r = await fetch('/api/checkout', {method:'POST'});
         const d = await r.json();
         if (!r.ok) { toast(d.error??'Checkout failed.','negative'); return; }
         const {checkedOut, requested} = d;
@@ -667,7 +667,7 @@
       const isbn = inp.value.trim(); inp.value='';
       if (!isbn) return;
       try {
-        const r = await fetch('/kiosk/api/return', {
+        const r = await fetch('/api/return', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({isbn}),
         });
@@ -686,7 +686,7 @@
     // ── My Books ───────────────────────────────────────────────────────────────
     async function loadMyBooks() {
       try {
-        const r = await fetch('/kiosk/api/my-loans');
+        const r = await fetch('/api/my-loans');
         const d = await r.json();
         const loans   = d.loans ?? [];
         const active  = loans.filter(l => !l.returned);
@@ -737,7 +737,7 @@
     async function renewLoan(loanId, btn) {
       btn.disabled = true;
       try {
-        const r = await fetch('/kiosk/api/renew', {
+        const r = await fetch('/api/renew', {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({loanId}),
         });

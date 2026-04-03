@@ -151,7 +151,8 @@ router.get('/logout', (req: Request, res: Response) => {
 
 // GET /api/catalog
 router.get('/api/catalog', requireLogin, async (_req: Request, res: Response) => {
-  const { ok, data } = await cloudFetch('GET', '/catalog');
+  const { ok, data } = await cloudFetch('GET', '/books');
+  if (ok) data.books = data.books ?? [];
   if (!ok) { res.status(502).json(data); return; }
   res.json(data);
 });

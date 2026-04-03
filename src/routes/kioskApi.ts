@@ -10,8 +10,6 @@ import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
 import { users, books, loans } from '../db/schema/schema.js';
 import { eq, and } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
-import { randomBytes } from 'crypto';
 import { addDays } from 'date-fns';
 
 const router = express.Router();
@@ -48,19 +46,18 @@ router.post('/login', async (req: Request, res: Response) => {
       .where(eq(users.studentId, studentId))
       .limit(1);
 
-    if (user) {
-      if (!user.active) {
-        res.status(403).json({ error: 'Account is disabled.' });
-        return;
-      }
-      res.json({ user });
+    // Reject unknown IDs — students must register via the web app first
+    if (!user) {
+      res.status(404).json({ error: 'Student ID not found.' });
       return;
     }
 
-    if (!user) {
-    res.status(404).json({ error: 'Student ID not found.' });
-    return;
+    if (!user.active) {
+      res.status(403).json({ error: 'Account is disabled.' });
+      return;
     }
+
+    res.json({ user });
 
   } catch (err) {
     console.error('[Kiosk API] /login error:', err);
@@ -69,8 +66,9 @@ router.post('/login', async (req: Request, res: Response) => {
 });
 
 // GET /api/kiosk/books
+// Also responds to /catalog — the Pi kiosk proxy uses /catalog
 
-router.get('/books', async (_req: Request, res: Response) => {
+router.get(['/books', '/catalog'], async (_req: Request, res: Response) => {
   try {
     const allBooks = await db.select().from(books).orderBy(books.title);
     res.json({ books: allBooks });
@@ -169,6 +167,7 @@ router.post('/return', async (req: Request, res: Response) => {
 
     await db.update(books).set({ status: 'Available' }).where(eq(books.isbn, isbn));
 
+    // Return the updated book so the kiosk dashboard can show the title/cover
     const [book] = await db.select().from(books).where(eq(books.isbn, isbn)).limit(1);
     res.json({ ok: true, book });
 
