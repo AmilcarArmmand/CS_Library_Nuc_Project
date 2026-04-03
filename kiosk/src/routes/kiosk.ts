@@ -1,0 +1,247 @@
+// kiosk/src/routes/kiosk.ts
+// All kiosk routes for the Raspberry Pi app.
+// Every data operation is a fetch() to the cloud server — no DB access.
+//
+//   GET  /           → kiosk-login.ejs
+//   POST /login      → authenticates against cloud API
+//   GET  /dashboard  → kiosk-dashboard.ejs
+//   GET  /logout     → clears session
+//
+// The dashboard page makes these calls directly from the browser JS:
+//   GET  /api/catalog
+//   GET  /api/books/:isbn
+//   POST /api/cart/add
+//   POST /api/checkout
+//   POST /api/return
+//   GET  /api/my-loans
+//   POST /api/renew
+// All of which are proxied below to the cloud server.
+
+import express from 'express';
+import type { Request, Response, NextFunction } from 'express';
+
+const router = express.Router();
+
+// ── Cloud API client ───────────────────────────────────────────────────────────
+
+function cloudUrl(path: string): string {
+  const base = (process.env['CLOUD_API_URL'] ?? '').replace(/\/$/, '');
+  return `${base}${path}`;
+}
+
+function cloudHeaders(): Record<string, string> {
+  return {
+    'Content-Type':  'application/json',
+    'X-Kiosk-Key':   process.env['CLOUD_API_KEY'] ?? '',
+  };
+}
+
+async function cloudFetch(
+  method: string,
+  path: string,
+  body?: object,
+): Promise<{ ok: boolean; status: number; data: any }> {
+  try {
+    const res = await fetch(cloudUrl(path), {
+      method,
+      headers: cloudHeaders(),
+      body: body ? JSON.stringify(body) : null,
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    console.error(`[Kiosk] Cloud fetch failed: ${method} ${path}`, err);
+    return { ok: false, status: 503, data: { error: 'Could not reach the server.' } };
+  }
+}
+
+// ── Session helpers ────────────────────────────────────────────────────────────
+
+interface KioskUser {
+  id: number;
+  name: string;
+  email: string;
+  studentId: string | null;
+  active: boolean;
+}
+
+function getUser(req: Request): KioskUser | null {
+  return (req.session as any)['kioskUser'] ?? null;
+}
+
+function setUser(req: Request, user: KioskUser | null): void {
+  (req.session as any)['kioskUser'] = user;
+}
+
+function getCart(req: Request): any[] {
+  return (req.session as any)['kioskCart'] ?? [];
+}
+
+function setCart(req: Request, cart: any[]): void {
+  (req.session as any)['kioskCart'] = cart;
+}
+
+function requireLogin(req: Request, res: Response, next: NextFunction): void {
+  if (getUser(req)) { next(); return; }
+  res.redirect('/');
+}
+
+// ── GET / — Login page ────────────────────────────────────────────────────────
+
+router.get('/', (req: Request, res: Response) => {
+  if (getUser(req)) { res.redirect('/dashboard'); return; }
+  res.render('pages/kiosk-login', { title: 'CS Library Kiosk', error: null });
+});
+
+// ── POST /login — Student ID lookup ──────────────────────────────────────────
+
+router.post('/login', async (req: Request, res: Response) => {
+  const raw       = String(req.body.studentId ?? '');
+  const studentId = raw.replace(/\s+/g, '').toUpperCase();
+
+  if (!/^[A-Z0-9]{5,16}$/.test(studentId)) {
+    res.render('pages/kiosk-login', {
+      title: 'CS Library Kiosk',
+      error: 'Scan a valid student ID barcode to continue.',
+    });
+    return;
+  }
+
+  const { ok, status, data } = await cloudFetch('POST', '/login', { studentId });
+
+  if (!ok) {
+    const error =
+      status === 404 ? 'Student ID not found. Please register an account first.' :
+      status === 403 ? 'This student ID is disabled. Please contact library staff.' :
+      data.error ?? 'Could not reach the server. Please try again.';
+    res.render('pages/kiosk-login', { title: 'CS Library Kiosk', error });
+    return;
+  }
+
+  setUser(req, data.user as KioskUser);
+  setCart(req, []);
+
+  const msg = encodeURIComponent(`Welcome, ${data.user.name}!`);
+  res.redirect(`/dashboard?welcome=${msg}`);
+});
+
+// ── GET /dashboard ────────────────────────────────────────────────────────────
+
+router.get('/dashboard', requireLogin, (req: Request, res: Response) => {
+  const user    = getUser(req)!;
+  const welcome = req.query['welcome'] ? String(req.query['welcome']) : null;
+  res.render('pages/kiosk-dashboard', {
+    title:   'CS Library Kiosk',
+    user,
+    cart:    getCart(req),
+    welcome,
+  });
+});
+
+// ── GET /logout ───────────────────────────────────────────────────────────────
+
+router.get('/logout', (req: Request, res: Response) => {
+  req.session.destroy(() => res.redirect('/'));
+});
+
+// ── API PROXY ROUTES ──────────────────────────────────────────────────────────
+// The dashboard EJS page's JavaScript calls these local routes.
+// Each one proxies the request to the cloud server and returns the result.
+// This keeps the CLOUD_API_KEY out of the browser entirely.
+
+// GET /api/catalog
+router.get('/api/catalog', requireLogin, async (_req: Request, res: Response) => {
+  const { ok, data } = await cloudFetch('GET', '/catalog');
+  if (!ok) { res.status(502).json(data); return; }
+  res.json(data);
+});
+
+// GET /api/books/:isbn
+router.get('/api/books/:isbn', requireLogin, async (req: Request, res: Response) => {
+  const isbn = String(req.params['isbn'] ?? '');
+  const { ok, status, data } = await cloudFetch('GET', `/books/${encodeURIComponent(isbn)}`);
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/cart/add
+router.post('/api/cart/add', requireLogin, async (req: Request, res: Response) => {
+  const rawIsbn = String(req.body.isbn ?? '');
+  const isbn    = rawIsbn.replace(/[^0-9Xx]/g, '').toUpperCase();
+
+  if (!isbn || (isbn.length !== 10 && isbn.length !== 13)) {
+    res.status(400).json({ error: 'Scan or type a valid 10- or 13-digit ISBN.' });
+    return;
+  }
+
+  // Validate the book exists and is available on the server
+  const { ok, status, data } = await cloudFetch('GET', `/books/${isbn}`);
+  if (!ok) { res.status(status).json(data); return; }
+
+  const book = data.book;
+  const cart = getCart(req);
+
+  if (cart.some((b: any) => b.isbn === isbn)) {
+    res.status(409).json({ error: 'This book is already in the cart.' });
+    return;
+  }
+  if (book.status !== 'Available') {
+    res.status(409).json({ error: 'Book is already checked out.' });
+    return;
+  }
+
+  cart.push(book);
+  setCart(req, cart);
+  res.json({ book, cartCount: cart.length });
+});
+
+// POST /api/cart/clear
+router.post('/api/cart/clear', requireLogin, (req: Request, res: Response) => {
+  setCart(req, []);
+  res.json({ ok: true });
+});
+
+// POST /api/checkout
+router.post('/api/checkout', requireLogin, async (req: Request, res: Response) => {
+  const user  = getUser(req)!;
+  const cart  = getCart(req);
+  const isbns = cart.map((b: any) => b.isbn);
+
+  if (!isbns.length) {
+    res.status(400).json({ error: 'Cart is empty.' });
+    return;
+  }
+
+  const { ok, status, data } = await cloudFetch('POST', '/checkout', {
+    userId: user.id,
+    isbns,
+  });
+
+  if (!ok) { res.status(status).json(data); return; }
+
+  setCart(req, []);
+  res.json(data);
+});
+
+// POST /api/return
+router.post('/api/return', requireLogin, async (req: Request, res: Response) => {
+  const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+  const { ok, status, data } = await cloudFetch('POST', '/return', { isbn });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// GET /api/my-loans
+router.get('/api/my-loans', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('GET', `/loans/${user.id}`);
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/renew
+router.post('/api/renew', requireLogin, async (req: Request, res: Response) => {
+  const { ok, status, data } = await cloudFetch('POST', '/renew', {
+    loanId: req.body.loanId,
+  });
+  res.status(ok ? 200 : status).json(data);
+});
+
+export default router;

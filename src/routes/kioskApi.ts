@@ -57,26 +57,10 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    // Auto-provision a placeholder account for a first-time scanner
-    const placeholderEmail  = `student-${studentId.toLowerCase()}@kiosk.local`;
-    const placeholderName   = `Student ${studentId.slice(-5)}`;
-    const placeholderPwHash = await bcrypt.hash(randomBytes(24).toString('base64'), 10);
-
-    const [newUser] = await db
-      .insert(users)
-      .values({
-        studentId,
-        name:            placeholderName,
-        email:           placeholderEmail,
-        passwordHash:    placeholderPwHash,
-        active:          true,
-        autoProvisioned: true,
-      })
-      .returning({ id: users.id, name: users.name, email: users.email,
-                   studentId: users.studentId, active: users.active });
-
-    console.log(`[Kiosk API] Auto-provisioned: ${studentId}`);
-    res.json({ user: newUser, autoProvisioned: true });
+    if (!user) {
+    res.status(404).json({ error: 'Student ID not found.' });
+    return;
+    }
 
   } catch (err) {
     console.error('[Kiosk API] /login error:', err);
@@ -147,7 +131,7 @@ router.post('/checkout', async (req: Request, res: Response) => {
       count++;
     }
 
-    res.json({ count, dueDate });
+    res.json({ checkedOut: count, requested: isbns.length, dueDate });
 
   } catch (err) {
     console.error('[Kiosk API] /checkout error:', err);
@@ -185,7 +169,8 @@ router.post('/return', async (req: Request, res: Response) => {
 
     await db.update(books).set({ status: 'Available' }).where(eq(books.isbn, isbn));
 
-    res.json({ ok: true });
+    const [book] = await db.select().from(books).where(eq(books.isbn, isbn)).limit(1);
+    res.json({ ok: true, book });
 
   } catch (err) {
     console.error('[Kiosk API] /return error:', err);
@@ -225,6 +210,29 @@ router.get('/loans/:userId', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[Kiosk API] /loans error:', err);
     res.status(500).json({ error: 'Could not fetch loans.' });
+  }
+});
+
+router.post('/renew', async (req: Request, res: Response) => {
+  try {
+    const loanId = Number(req.body.loanId);
+    if (!loanId) { res.status(400).json({ error: 'loanId is required.' }); return; }
+
+    const [loan] = await db
+      .select({ id: loans.id, userId: loans.userId })
+      .from(loans)
+      .where(and(eq(loans.id, loanId), eq(loans.returned, false)))
+      .limit(1);
+
+    if (!loan) { res.status(404).json({ error: 'Loan not found.' }); return; }
+
+    const newDueDate = addDays(new Date(), 14);
+    await db.update(loans).set({ dueDate: newDueDate }).where(eq(loans.id, loanId));
+
+    res.json({ ok: true, newDueDate });
+  } catch (err) {
+    console.error('[Kiosk API] /renew error:', err);
+    res.status(500).json({ error: 'Renewal failed.' });
   }
 });
 
