@@ -1,49 +1,40 @@
 <%- include('../partials/header') %>
 
 <div class="row">
-    <div class="col-lg-8 mx-auto text-center">
-        <h1 class="display-4 mb-4">Welcome to <%= projectName || 'Your Team Project' %></h1>
-        <p class="lead mb-4"><%= message %></p>
+    <div class="col-lg-6 mx-auto text-center mt-5">
 
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Development Environment Status</h5>
-                <div class="row">
-                    <div class="col-md-6">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Node.js & Express</span>
-                                <span class="badge bg-success">✓ Ready</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>EJS Templating</span>
-                                <span class="badge bg-success">✓ Ready</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Environment Config</span>
-                                <span class="badge bg-success">✓ Ready</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <ul class="list-group list-group-flush">
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Google OAuth</span>
-                                <span class="badge bg-warning">⏳ Next Step</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>MongoDB</span>
-                                <span class="badge bg-warning">⏳ Next Step</span>
-                            </li>
-                            <li class="list-group-item d-flex justify-content-between">
-                                <span>Core Features</span>
-                                <span class="badge bg-info">📅 Sprint Development</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+        <img src="/images/scsu_logo.png" alt="SCSU Logo"
+             style="height:60px; object-fit:contain; margin-bottom:1.5rem;"
+             onerror="this.style.display='none'" />
+
+        <h1 class="display-5 fw-bold mb-2">CS Library</h1>
+        <p class="text-muted mb-5">Southern Connecticut State University — Department of Computer Science</p>
+
+        <% if (message) { %>
+            <div class="alert alert-success mb-4"><%= message %></div>
+        <% } %>
+
+        <div class="d-grid gap-3 mb-5">
+
+            <a href="/auth/login" class="btn btn-primary btn-lg py-3">
+                <span style="font-size:1.3rem;">🌐</span>
+                <strong>Web Login</strong>
+                <div class="small opacity-75 mt-1">Email &amp; Password or Google — for students and staff</div>
+            </a>
+
+            <a href="/kiosk" class="btn btn-outline-secondary btn-lg py-3">
+                <span style="font-size:1.3rem;">🪪</span>
+                <strong>Kiosk Login</strong>
+                <div class="small opacity-75 mt-1">Student ID scan — for the library kiosk terminal</div>
+            </a>
+
         </div>
+
+        <p class="text-muted small">
+            Don't have an account?
+            <a href="/auth/register">Create one here</a>
+        </p>
+
     </div>
 </div>
 

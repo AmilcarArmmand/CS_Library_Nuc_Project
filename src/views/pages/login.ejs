@@ -1,33 +1,442 @@
-<%- include('../partials/header') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-<div class="row justify-content-center">
-    <div class="col-md-6 col-lg-4">
-        <div class="card">
-            <div class="card-body text-center p-5">
-                <h2 class="card-title mb-4">Welcome Back!</h2>
-                <p class="text-muted mb-4">Sign in to access your account.</p>
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: #020617;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
 
-                <% if (error) { %>
-                    <div class="alert alert-danger" role="alert">
-                        <%= error %>
-                    </div>
-                <% } %>
+    /* ── Starfield ── */
+    .stars-1, .stars-2, .stars-3 {
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 0;
+    }
+    .stars-1 {
+      width: 1px; height: 1px; background: transparent;
+      box-shadow:
+        120px 340px #fff, 450px 89px #fff, 780px 520px #fff,
+        1200px 150px #fff, 90px 670px #fff, 1500px 400px #fff,
+        330px 210px #fff, 880px 760px #fff, 1650px 90px #fff,
+        560px 430px #fff, 1380px 620px #fff, 210px 510px #fff,
+        970px 280px #fff, 1750px 700px #fff, 640px 150px #fff,
+        1100px 480px #fff, 40px 820px #fff, 1420px 250px #fff,
+        730px 630px #fff, 1850px 180px #fff, 290px 740px #fff,
+        1050px 390px #fff, 500px 560px #fff, 1680px 460px #fff,
+        160px 120px #fff, 860px 870px #fff, 1310px 130px #fff,
+        420px 680px #fff, 1590px 810px #fff, 75px 290px #fff,
+        940px 50px #fff, 1230px 740px #fff, 610px 320px #fff,
+        1780px 550px #fff, 350px 450px #fff, 1120px 680px #fff;
+      animation: twinkle 8s infinite alternate, drift 60s linear infinite;
+    }
+    .stars-2 {
+      width: 2px; height: 2px; background: transparent;
+      box-shadow:
+        200px 500px rgba(255,255,255,0.5), 750px 200px rgba(255,255,255,0.4),
+        1300px 650px rgba(255,255,255,0.6), 450px 350px rgba(255,255,255,0.5),
+        1700px 200px rgba(255,255,255,0.3), 600px 750px rgba(255,255,255,0.5),
+        1050px 450px rgba(255,255,255,0.6), 300px 150px rgba(255,255,255,0.4),
+        50px 200px rgba(200,220,255,0.6), 1400px 80px rgba(200,220,255,0.5),
+        550px 600px rgba(200,220,255,0.7), 1150px 320px rgba(200,220,255,0.4);
+      animation: twinkle2 10s infinite alternate-reverse, drift 45s linear infinite reverse;
+    }
+    .stars-3 {
+      width: 3px; height: 3px; background: transparent; border-radius: 50%;
+      box-shadow:
+        400px 100px rgba(180,200,255,0.7), 950px 300px rgba(180,200,255,0.5),
+        1550px 500px rgba(180,200,255,0.8), 250px 800px rgba(180,200,255,0.6),
+        700px 700px rgba(200,220,255,0.7), 1750px 600px rgba(180,200,255,0.4);
+      animation: twinkle3 14s infinite alternate, drift 80s linear infinite;
+    }
 
-                <a href="/auth/google" class="btn btn-danger btn-lg w-100 mb-3">
-                    <i class="fab fa-google me-2"></i>
-                    Continue with Google
-                </a>
+    /* Nebula glow */
+    body::before {
+      content: '';
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%),
+        radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%),
+        radial-gradient(ellipse at 50% 80%, rgba(88,28,135,0.08), transparent 40%);
+      z-index: 0; pointer-events: none;
+      animation: nebulaPulse 20s ease-in-out infinite alternate;
+    }
 
-                <small class="text-muted">
-                    By signing in, you agree to our Terms of Service and Privacy Policy.
-                </small>
-            </div>
-        </div>
+    @keyframes twinkle  { 0%{opacity:.4} 50%{opacity:.9} 100%{opacity:.6} }
+    @keyframes twinkle2 { 0%{opacity:.3} 33%{opacity:.8} 100%{opacity:.9} }
+    @keyframes twinkle3 { 0%{opacity:.5} 50%{opacity:1}  100%{opacity:.3} }
+    @keyframes drift    { from{transform:translateY(0)} to{transform:translateY(-200px)} }
+    @keyframes nebulaPulse {
+      0%  { opacity: .8; }
+      50% { opacity: 1;  }
+      100%{ opacity: .7; }
+    }
 
-        <div class="text-center mt-4">
-            <a href="/" class="text-decoration-none">← Back to Home</a>
-        </div>
+    /* ── Two-panel layout ── */
+    .login-outer {
+      display: flex;
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      position: relative; z-index: 1;
+    }
+
+    /* Left panel */
+    .left-panel {
+      width: 42%; min-width: 42%;
+      height: 100%;
+      background-color: #0a1f44;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: flex-start;
+      padding: 3rem;
+      position: relative; flex-shrink: 0;
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 8px,
+        rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px
+      );
+    }
+
+    .left-panel img.logo {
+      width: 250px; height: auto;
+      object-fit: contain; opacity: 0.95;
+      filter: brightness(0) invert(1);
+      margin-left: -43px; margin-top: -60px;
+    }
+
+    .left-panel .accent-bar {
+      width: 40px; height: 2px;
+      background: #3b82f6;
+      box-shadow: 0 0 12px rgba(59,130,246,0.7);
+      margin: -50px 0 16px 0;
+    }
+
+    .left-panel .dept-label {
+      color: rgba(255,255,255,0.45);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 3rem;
+    }
+
+    .left-panel .titles { margin-top: 100px; }
+    .left-panel .title-main {
+      font-size: 2.6rem; color: white; font-weight: 700;
+      letter-spacing: -0.02em; line-height: 1;
+    }
+    .left-panel .title-sub {
+      font-size: 2.6rem; color: rgba(255,255,255,0.5); font-weight: 700;
+      letter-spacing: -0.02em; line-height: 1;
+    }
+    .left-panel .title-desc {
+      color: rgba(255,255,255,0.45); font-size: 0.7rem;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      max-width: 250px; line-height: 1.7; margin-top: 10px;
+    }
+
+    .left-panel .footer-copy {
+      color: rgba(255,255,255,0.2); font-size: 0.65rem;
+      position: absolute; bottom: 2.5rem; left: 2.5rem;
+    }
+
+    /* Right panel */
+    .right-panel {
+      flex: 1; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .form-box { width: 400px; }
+
+    .form-box h1 {
+      color: white; font-weight: 900; font-size: 3rem;
+      letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.25rem;
+    }
+
+    .accent-bar-form {
+      width: 40px; height: 2px; background: #3b82f6;
+      box-shadow: 0 0 16px rgba(59,130,246,0.8);
+      margin-bottom: 1.25rem;
+    }
+
+    .subtitle {
+      color: rgba(148,163,184,1); font-size: 0.75rem;
+      letter-spacing: 0.01em; margin-bottom: 1.5rem;
+    }
+
+    /* Tabs */
+    .auth-tabs {
+      display: flex;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 9999px;
+      padding: 3px; gap: 2px;
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      flex: 1; padding: 6px 14px;
+      border-radius: 9999px;
+      font-family: inherit; font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      cursor: pointer; border: none;
+      background: transparent; color: rgba(148,163,184,0.7);
+      transition: all 0.2s ease;
+    }
+    .tab-btn.active {
+      background: rgba(59,130,246,0.25);
+      color: #93c5fd;
+      box-shadow: 0 0 12px rgba(59,130,246,0.2);
+    }
+    .tab-btn:hover:not(.active) {
+      color: rgba(148,163,184,1);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Form panels */
+    .auth-panel { display: none; }
+    .auth-panel.active { display: block; }
+
+    /* Field groups */
+    .field-group { margin-bottom: 1rem; }
+    .field-label {
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 4px;
+    }
+    .field-label span { color: white; font-size: 0.75rem; font-weight: 600; }
+    .field-label .icon { color: #60a5fa; font-size: 14px; }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: white;
+      font-family: inherit; font-size: 0.875rem;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input::placeholder { color: rgba(148,163,184,0.6); }
+    input:focus {
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(59,130,246,0.5);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 11px;
+      border-radius: 12px;
+      font-family: inherit; font-size: 0.875rem; font-weight: 700;
+      color: white; cursor: pointer;
+      background: rgba(37,99,235,0.2);
+      border: 1px solid rgba(59,130,246,0.3);
+      transition: all 0.3s;
+      margin-bottom: 1rem;
+    }
+    .btn-primary:hover {
+      background: rgba(37,99,235,0.4);
+      border-color: rgba(59,130,246,0.7);
+      box-shadow: 0 0 30px -5px rgba(59,130,246,0.5);
+    }
+
+    .btn-google {
+      width: 100%; padding: 10px;
+      border-radius: 12px;
+      font-family: inherit; font-size: 0.875rem; font-weight: 600;
+      color: white; cursor: pointer;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.2s;
+      text-decoration: none;
+      margin-bottom: 1rem;
+    }
+    .btn-google:hover {
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.25);
+    }
+    .btn-google svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Divider */
+    .divider {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 1rem;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: rgba(255,255,255,0.1);
+    }
+    .divider span { color: rgba(148,163,184,0.5); font-size: 0.72rem; }
+
+    /* Error */
+    .error-msg {
+      color: #f87171; font-size: 0.75rem;
+      margin-bottom: 0.75rem;
+      padding: 8px 12px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 8px;
+    }
+
+    /* Links */
+    .alt-link {
+      color: #3b82f6; text-decoration: underline; cursor: pointer;
+      font-size: 0.75rem;
+    }
+    .alt-link:hover { color: #60a5fa; }
+    .links-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 6px; margin-bottom: 1.25rem;
+      color: rgba(148,163,184,0.7); font-size: 0.75rem;
+    }
+    .links-row .sep { color: rgba(148,163,184,0.4); }
+
+    /* Clock */
+    .clock-row {
+      display: flex; align-items: center; gap: 8px;
+      padding-top: 1.25rem;
+      border-top: 1px solid rgba(51,65,85,0.6);
+      opacity: 0.6;
+    }
+    .clock-row .clock-icon { color: #94a3b8; font-size: 14px; }
+    .clock-text {
+      color: #94a3b8; font-size: 0.7rem;
+      font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <!-- Starfield layers -->
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
+
+  <div class="login-outer">
+
+    <!-- Left panel -->
+    <div class="left-panel">
+      <img src="/images/scsu_logo.png" alt="SCSU Logo" class="logo" />
+      <div class="accent-bar"></div>
+      <p class="dept-label">Department of Computer Science</p>
+
+      <div class="titles">
+        <p class="title-main">CS Library</p>
+        <p class="title-sub">Sign-in Portal</p>
+        <p class="title-desc">Sign-in to access the catalog of CS Books, checkout, return, and more.</p>
+      </div>
+
+      <p class="footer-copy">© 2026 SCSU Capstone</p>
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <!-- Right panel -->
+    <div class="right-panel">
+      <div class="form-box">
+        <h1>Welcome Back</h1>
+        <div class="accent-bar-form"></div>
+        <p class="subtitle">Sign in to access the CS Library</p>
+
+        <!-- Tab toggle -->
+        <div class="auth-tabs">
+          <button class="tab-btn active" onclick="switchTab('email')">Email &amp; Password</button>
+          <button class="tab-btn" onclick="switchTab('google')">Google</button>
+        </div>
+
+        <% if (error) { %>
+          <div class="error-msg">⚠ <%= error %></div>
+        <% } %>
+        <% if (message === 'logged_out') { %>
+          <div class="error-msg" style="color:#34d399; background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.2);">
+            You have been signed out.
+          </div>
+        <% } %>
+
+        <!-- Email/password panel -->
+        <div class="auth-panel active" id="panel-email">
+          <form method="POST" action="/auth/login">
+            <div class="field-group">
+              <div class="field-label">
+                <span class="icon">✉</span>
+                <span>Email Address</span>
+              </div>
+              <input type="email" name="email" placeholder="you@example.com" required autofocus />
+            </div>
+
+            <div class="field-group">
+              <div class="field-label">
+                <span class="icon">🔒</span>
+                <span>Password</span>
+              </div>
+              <input type="password" name="password" placeholder="Enter your password" required />
+            </div>
+
+            <button type="submit" class="btn-primary">Sign In</button>
+          </form>
+
+          <div class="links-row">
+            <span>Don't have an account?</span>
+            <a href="/auth/register" class="alt-link">Create one</a>
+          </div>
+        </div>
+
+        <!-- Google panel -->
+        <div class="auth-panel" id="panel-google">
+          <a href="/auth/google" class="btn-google">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </a>
+          <p style="color:rgba(148,163,184,0.6); font-size:0.72rem; text-align:center;">
+            Sign in using your Google account. A CS Library account will be created automatically.
+          </p>
+        </div>
+
+        <!-- Clock -->
+        <div class="clock-row">
+          <span class="clock-icon">🕐</span>
+          <span class="clock-text" id="clock">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', (i === 0 && tab === 'email') || (i === 1 && tab === 'google'));
+      });
+      document.getElementById('panel-email').classList.toggle('active', tab === 'email');
+      document.getElementById('panel-google').classList.toggle('active', tab === 'google');
+    }
+
+    // Live clock
+    function updateClock() {
+      const now = new Date();
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      let h = now.getHours(), ampm = 'AM';
+      if (h >= 12) { ampm = 'PM'; if (h > 12) h -= 12; }
+      if (h === 0) h = 12;
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent =
+        `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} | ${h}:${m} ${ampm}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

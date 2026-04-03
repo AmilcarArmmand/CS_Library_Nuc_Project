@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: #020617;
+      overflow: hidden; height: 100vh; width: 100vw;
+    }
+    .stars-1 {
+      position: fixed; top: 0; left: 0; width: 1px; height: 1px;
+      background: transparent; pointer-events: none; z-index: 0;
+      box-shadow:
+        120px 340px #fff, 450px 89px #fff, 780px 520px #fff,
+        200px 150px #fff, 90px 470px #fff, 600px 400px #fff,
+        330px 210px #fff, 680px 360px #fff, 50px 290px #fff,
+        560px 130px #fff, 380px 420px #fff, 710px 210px #fff;
+      animation: twinkle 8s infinite alternate;
+    }
+    body::before {
+      content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background:
+        radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%),
+        radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%);
+      z-index: 0; pointer-events: none;
+    }
+    @keyframes twinkle { 0%{opacity:.4} 50%{opacity:.9} 100%{opacity:.6} }
+
+    .login-outer {
+      display: flex; width: 100vw; height: 100vh;
+      overflow: hidden; position: relative; z-index: 1;
+    }
+
+    /* Left panel */
+    .left-panel {
+      width: 42%; height: 100%;
+      background-color: #0a1f44;
+      display: flex; flex-direction: column;
+      align-items: flex-start; justify-content: flex-start;
+      padding: 3rem; position: relative; flex-shrink: 0;
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 8px,
+        rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px
+      );
+    }
+    .logo { width: 250px; filter: brightness(0) invert(1); opacity: 0.95;
+             margin-left: -43px; margin-top: -60px; }
+    .accent-bar { width: 40px; height: 2px; background: #3b82f6;
+                  box-shadow: 0 0 12px rgba(59,130,246,0.7); margin: -50px 0 16px 0; }
+    .dept-label { color: rgba(255,255,255,0.45); font-size: 0.7rem;
+                  letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 3rem; }
+    .titles { margin-top: 100px; }
+    .title-main { font-size: 2.6rem; color: white; font-weight: 700;
+                  letter-spacing: -0.02em; line-height: 1; }
+    .title-sub  { font-size: 2.6rem; color: rgba(255,255,255,0.5); font-weight: 700;
+                  letter-spacing: -0.02em; line-height: 1; }
+    .title-desc { color: rgba(255,255,255,0.45); font-size: 0.7rem;
+                  letter-spacing: 0.14em; text-transform: uppercase;
+                  max-width: 250px; line-height: 1.7; margin-top: 10px; }
+    .footer-copy { color: rgba(255,255,255,0.2); font-size: 0.65rem;
+                   position: absolute; bottom: 2.5rem; left: 2.5rem; }
+
+    /* Right panel */
+    .right-panel { flex: 1; height: 100%;
+                   display: flex; align-items: center; justify-content: center; }
+    .form-box { width: 400px; }
+    h1 { color: white; font-weight: 900; font-size: 3rem;
+         letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.25rem; }
+    .accent-bar-form { width: 40px; height: 2px; background: #3b82f6;
+                       box-shadow: 0 0 16px rgba(59,130,246,0.8); margin-bottom: 1.25rem; }
+    .subtitle { color: rgba(148,163,184,1); font-size: 0.75rem;
+                letter-spacing: 0.01em; margin-bottom: 1.75rem; }
+    .field-group { margin-bottom: 1.25rem; }
+    .field-label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .field-label span { color: white; font-size: 0.75rem; font-weight: 600; }
+    input[type="text"] {
+      width: 100%; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+      color: white; font-family: inherit; font-size: 1rem;
+      padding: 12px 16px; outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input::placeholder { color: rgba(148,163,184,0.6); }
+    input:focus { background: rgba(255,255,255,0.10); border-color: rgba(59,130,246,0.5); }
+    .btn-primary {
+      width: 100%; padding: 13px;
+      border-radius: 12px; font-family: inherit;
+      font-size: 0.9rem; font-weight: 700; color: white; cursor: pointer;
+      background: rgba(37,99,235,0.2); border: 1px solid rgba(59,130,246,0.3);
+      transition: all 0.3s; margin-bottom: 1rem;
+    }
+    .btn-primary:hover { background: rgba(37,99,235,0.4);
+                         border-color: rgba(59,130,246,0.7);
+                         box-shadow: 0 0 30px -5px rgba(59,130,246,0.5); }
+    .error-msg { color: #f87171; font-size: 0.75rem; margin-bottom: 0.75rem;
+                 padding: 8px 12px;
+                 background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+                 border-radius: 8px; }
+    .clock-row { display: flex; align-items: center; gap: 8px;
+                 padding-top: 1.25rem; border-top: 1px solid rgba(51,65,85,0.6); opacity: 0.6; }
+    .clock-text { color: #94a3b8; font-size: 0.7rem;
+                  font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <div class="stars-1"></div>
+
+  <div class="login-outer">
+    <div class="left-panel">
+      <img src="/assets/scsu_logo.png" alt="SCSU" class="logo" />
+      <div class="accent-bar"></div>
+      <p class="dept-label">Department of Computer Science</p>
+      <div class="titles">
+        <p class="title-main">CS Library</p>
+        <p class="title-sub">Kiosk</p>
+        <p class="title-desc">Scan your Student ID to access the library.</p>
+      </div>
+      <p class="footer-copy">© 2026 SCSU Capstone</p>
+    </div>
+
+    <div class="right-panel">
+      <div class="form-box">
+        <h1>Welcome Back</h1>
+        <div class="accent-bar-form"></div>
+        <p class="subtitle">Scan your ID to enter the CS Library Kiosk</p>
+
+        <% if (error) { %>
+          <div class="error-msg">⚠ <%= error %></div>
+        <% } %>
+
+        <form method="POST" action="/kiosk/login">
+          <div class="field-group">
+            <div class="field-label">
+              <span>🪪 Student ID</span>
+            </div>
+            <input type="text" name="studentId"
+              placeholder="Enter or scan your ID..."
+              autofocus autocomplete="off" />
+          </div>
+          <button type="submit" class="btn-primary">Sign In →</button>
+        </form>
+
+        <div class="clock-row">
+          <span>🕐</span>
+          <span class="clock-text" id="clock">--</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-submit when a barcode scanner sends Enter after the ID
+    document.querySelector('input[name="studentId"]').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') e.target.closest('form').submit();
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      let h = now.getHours(), ampm = 'AM';
+      if (h >= 12) { ampm = 'PM'; if (h > 12) h -= 12; }
+      if (h === 0) h = 12;
+      const m = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('clock').textContent =
+        `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()} | ${h}:${m} ${ampm}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

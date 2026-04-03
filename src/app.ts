@@ -1,132 +1,99 @@
 import express from 'express';
-import router from "./routes/router.js";
-import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from './config/env.js';
-import type { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
+import type { ErrorRequestHandler } from 'express';
 
-// Import database connection
 import { connectDatabase } from './db/database.js';
-
-// Import authentication
 import passport from './config/passport.js';
 import sessionConfig from './config/session.js';
 
-// Import routes
-import authRoutes from './routes/auth.js';
-//import homeRoutes from './routes/home.js';
-//import contactRoutes from './routes/contact.js';
+import authRoutes      from './routes/auth.js';
 import dashboardRoutes from './routes/dashboard.js';
+import webDashboardRoutes from './routes/webDashboard.js';
+import kioskApiRoutes  from './routes/kioskApi.js';
+import kioskRoutes     from './routes/kiosk.js';
+import { attachUser }  from './middleware/auth.js';
 
-
-// Import middleware
-import { attachUser } from './middleware/auth.js';
-
-// ES modules __dirname equivalent
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname  = path.dirname(__filename);
 
-const app = express();
-const PORT = config.port || 3000;
+const app      = express();
+const PORT     = config.port || 3000;
 const NODE_ENV = config.nodeEnv;
 
-// Connect to PostgreSQL
 await connectDatabase();
 
-// View engine setup
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Static files middleware
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Body parsing middleware
+app.set('views', path.join(process.cwd(), 'src', 'views'));
+app.use(express.static(path.join(process.cwd(), 'src', 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-
-// Session config (must come before passport)
 app.use(sessionConfig);
-
-// Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
-
-// Attach user to all templates
 app.use(attachUser);
 
-// Use route modules
+// ── Routes ─────────────────────────────────────────────────────────────────────
+
+// Web auth (login, register, Google OAuth, logout)
 app.use('/auth', authRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use(router);
 
-// Home route
+// Web dashboard — browse catalog + my loans (for logged-in web users)
+app.use('/web-dashboard', webDashboardRoutes);
+
+// Old dashboard routes kept for the future admin panel
+// app.use('/dashboard', dashboardRoutes);
+
+// Kiosk REST API — called by external Pi kiosk apps (protected by API key)
+app.use('/api/kiosk', kioskApiRoutes);
+
+// Kiosk UI — full kiosk experience at /kiosk (login + dashboard)
+app.use('/kiosk', kioskRoutes);
+
+// ── Home ────────────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    const message = req.query.message === 'logged_out'
-        ? 'You have been successfully logged out.'
-        : 'Development environment setup complete!';
-
-    res.render('pages/index', {
-        title: 'CS Library Project',
-        message: message,
-        user: req.user || null,
-        projectName: 'CS Library Project'
-    });
+  res.render('pages/index', {
+    title:       'CS Library',
+    message:     req.query['message'] === 'logged_out' ? 'You have been signed out.' : null,
+    user:        req.user ?? null,
+    projectName: 'CS Library Project',
+  });
 });
 
-// Health check route
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-        database: 'Connected',
-        environment: NODE_ENV
-    });
+app.get('/health', (_req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString(), environment: NODE_ENV });
 });
 
+// ── 404 ─────────────────────────────────────────────────────────────────────────
+app.use((_req, res) => {
+  res.status(404).render('pages/error', {
+    title: 'Page Not Found', error: 'The page you are looking for does not exist.',
+    projectName: 'CS Library Project',
+  });
+});
 
-// Error handling middleware
-const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
-  console.error('❌ Error:', err);
-  console.error('Stack:', err.stack);
-  console.error('Path:', req.path);
-  console.error('Method:', req.method);
-
-  // Don't leak error details in production
-  const isProduction = config.nodeEnv === 'production';
-  
+// ── 500 ─────────────────────────────────────────────────────────────────────────
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  console.error('❌ Error:', err.message, '— Path:', req.path);
+  const isProd = config.nodeEnv === 'production';
   res.status(err.status || 500).json({
-    error: isProduction ? 'Internal Server Error' : err.message,
-    ...(isProduction ? {} : { stack: err.stack }),
+    error: isProd ? 'Internal Server Error' : err.message,
+    ...(isProd ? {} : { stack: err.stack }),
   });
 };
-
 app.use(errorHandler);
 
-// app.use((err, req, res, next) => {
-//     console.error(err.stack);
-//     res.status(500).render('pages/error', {
-//         title: 'Error',
-//         error: NODE_ENV === 'development' ? err.message : 'Something went wrong!',
-//         projectName: 'CS Library Project'
-//     });
-// });
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).render('pages/error', {
-        title: 'Page Not Found',
-        error: 'The page you are looking for does not exist.',
-        projectName: 'CS Library Project'
-    });
-});
-
-// Start server
+// ── Start ────────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-    console.log(`CS Library running on http://localhost:${PORT}`);
-    console.log(`Environment: ${NODE_ENV}`);
-    console.log(`Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
-    console.log(`PostgreSQL: ${config.postgresdb.password ? 'Connected' : 'Not configured'}`);
+  console.log(`\n✅ CS Library running on http://localhost:${PORT}`);
+  console.log(`   Environment : ${NODE_ENV}`);
+  console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
+  console.log(`   PostgreSQL  : ${config.postgresdb.password  ? 'Configured ✓' : 'Not configured'}`);
+  console.log(`\n   Home        : http://localhost:${PORT}/`);
+  console.log(`   Web login   : http://localhost:${PORT}/auth/login`);
+  console.log(`   Kiosk login : http://localhost:${PORT}/kiosk`);
+  console.log(`   Kiosk API   : http://localhost:${PORT}/api/kiosk\n`);
 });
 
 export default app;

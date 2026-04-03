@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      background-color: #020617;
+      color: white;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Starfield ── */
+    .stars-1, .stars-2, .stars-3 { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 0; }
+    .stars-1 {
+      width: 1px; height: 1px; background: transparent;
+      box-shadow:
+        120px 340px #fff, 450px 89px #fff, 780px 520px #fff, 1200px 150px #fff,
+        90px 670px #fff, 1500px 400px #fff, 330px 210px #fff, 880px 760px #fff,
+        1650px 90px #fff, 560px 430px #fff, 1380px 620px #fff, 210px 510px #fff,
+        970px 280px #fff, 1750px 700px #fff, 640px 150px #fff, 1100px 480px #fff,
+        40px 820px #fff, 1420px 250px #fff, 730px 630px #fff, 1850px 180px #fff,
+        290px 740px #fff, 1050px 390px #fff, 500px 560px #fff, 1680px 460px #fff,
+        160px 120px #fff, 860px 870px #fff, 1310px 130px #fff, 420px 680px #fff;
+      animation: twinkle 8s infinite alternate, drift 60s linear infinite;
+    }
+    .stars-2 {
+      width: 2px; height: 2px; background: transparent;
+      box-shadow:
+        200px 500px rgba(255,255,255,0.5), 750px 200px rgba(255,255,255,0.4),
+        1300px 650px rgba(255,255,255,0.6), 450px 350px rgba(255,255,255,0.5),
+        50px 200px rgba(200,220,255,0.6), 550px 600px rgba(200,220,255,0.7);
+      animation: twinkle2 10s infinite alternate-reverse, drift 45s linear infinite reverse;
+    }
+    .stars-3 {
+      width: 3px; height: 3px; background: transparent; border-radius: 50%;
+      box-shadow:
+        400px 100px rgba(180,200,255,0.7), 950px 300px rgba(180,200,255,0.5),
+        1550px 500px rgba(180,200,255,0.8), 700px 700px rgba(200,220,255,0.7);
+      animation: twinkle3 14s infinite alternate, drift 80s linear infinite;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%),
+        radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%),
+        radial-gradient(ellipse at 50% 80%, rgba(88,28,135,0.08), transparent 40%);
+      animation: nebulaPulse 20s ease-in-out infinite alternate;
+    }
+    @keyframes twinkle  { 0%{opacity:.4} 50%{opacity:.9} 100%{opacity:.6} }
+    @keyframes twinkle2 { 0%{opacity:.3} 33%{opacity:.8} 100%{opacity:.9} }
+    @keyframes twinkle3 { 0%{opacity:.5} 50%{opacity:1}  100%{opacity:.3} }
+    @keyframes drift    { from{transform:translateY(0)} to{transform:translateY(-200px)} }
+    @keyframes nebulaPulse { 0%{opacity:.8} 50%{opacity:1} 100%{opacity:.7} }
+    @keyframes cardIn   { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+    @keyframes slideUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Top header ── */
+    .top-header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+      height: 5rem; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem;
+      background: rgba(10,15,28,0.8);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(40px);
+      box-shadow: 0 2px 32px rgba(0,0,0,0.4);
+    }
+    .header-brand { display: flex; align-items: center; gap: 1rem; }
+    .header-brand img { height: 2rem; filter: brightness(0) invert(1); opacity: 0.9; }
+    .brand-name { font-size: 0.95rem; font-weight: 900; letter-spacing: 0.15em; color: white; }
+    .brand-sub  { font-size: 0.95rem; font-weight: 300; letter-spacing: 0.15em; color: #60a5fa; }
+    .header-user { display: flex; align-items: center; gap: 0.75rem; }
+    .header-user-name { font-size: 0.82rem; font-weight: 700; color: #e2e8f0; }
+    .logout-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 2.1rem; height: 2.1rem; border-radius: 50%;
+      background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
+      color: #fca5a5; text-decoration: none; font-size: 1rem;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: rgba(239,68,68,0.3); }
+
+    /* ── Page wrap ── */
+    .page-wrap {
+      position: relative; z-index: 1;
+      padding-top: calc(6rem + env(safe-area-inset-top));
+      padding-bottom: calc(7rem + env(safe-area-inset-bottom));
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+
+    /* ── Floating nav ── */
+    .dash-nav {
+      position: fixed;
+      bottom: calc(1rem + env(safe-area-inset-bottom));
+      left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 0.25rem;
+      padding: 0.35rem;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9999px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      z-index: 200; white-space: nowrap;
+    }
+    .nav-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1.1rem; border-radius: 9999px;
+      border: 1px solid transparent; background: transparent;
+      color: #94a3b8; font-family: inherit; font-size: 0.72rem;
+      font-weight: 700; letter-spacing: 0.1em; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-btn img { width: 18px; height: 18px; opacity: 0.55; transition: opacity 0.2s; }
+    .nav-btn:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+    .nav-btn:hover img { opacity: 1; }
+    .nav-btn.active {
+      background: rgba(255,255,255,0.06); color: white;
+      border-color: rgba(255,255,255,0.1);
+      box-shadow: 0 0 20px rgba(59,130,246,0.4);
+    }
+    .nav-btn.active img { opacity: 1; }
+    .nav-divider { width: 1px; height: 1.5rem; background: rgba(255,255,255,0.1); margin: 0 0.15rem; }
+
+    /* Search */
+    .search-input {
+      width: 0; max-width: 0; opacity: 0; pointer-events: none; overflow: hidden;
+      padding: 0.4rem 1rem; border-radius: 9999px;
+      border: 1px solid rgba(59,130,246,0.5); background: rgba(15,23,42,0.9);
+      color: white; font-family: inherit; font-size: 0.8rem; outline: none;
+      transition: width 0.3s, opacity 0.3s, max-width 0.3s;
+    }
+    .search-input.open { width: 13rem; max-width: 13rem; opacity: 1; pointer-events: auto; }
+    .search-input::placeholder { color: rgba(148,163,184,0.6); }
+
+    /* ── Workspaces ── */
+    .workspace { display: none; width: 100%; max-width: 80rem; padding: 0 1rem; flex-direction: column; align-items: center; }
+    .workspace.active { display: flex; }
+
+    /* ── Panel ── */
+    .panel {
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.55);
+      border-radius: 1rem;
+      box-shadow: 0 24px 44px -22px rgba(2,6,23,0.95), 0 0 0 1px rgba(59,130,246,0.08);
+      backdrop-filter: blur(20px);
+      transition: border-color 0.5s, box-shadow 0.5s;
+    }
+    .panel:hover { border-color: rgba(96,165,250,0.3); }
+    .panel-title {
+      font-size: 0.72rem; letter-spacing: 0.3em; font-weight: 900; text-transform: uppercase;
+      background: linear-gradient(to right, #1d4ed8, #2563eb, #1d4ed8);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Catalog ── */
+    .catalog-header { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+    .catalog-title { font-size: 1.5rem; font-weight: 700; }
+    .catalog-meta { display: flex; flex-direction: column; align-items: flex-end; }
+    .catalog-count { font-size: 0.78rem; font-weight: 600; color: #cbd5e1; }
+    .catalog-page  { font-size: 0.68rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .filter-row { width: 100%; display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .filter-btn {
+      padding: 0.3rem 0.9rem; border-radius: 9999px; font-family: inherit;
+      font-size: 0.68rem; font-weight: 900; letter-spacing: 0.1em; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+      color: #94a3b8; transition: all 0.2s;
+    }
+    .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .filter-btn.active { background: rgba(59,130,246,0.2); color: white; border-color: rgba(59,130,246,0.5); box-shadow: 0 0 12px rgba(59,130,246,0.35); }
+
+    .catalog-grid {
+      width: 100%; display: grid; gap: 0.85rem;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 600px)  { .catalog-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 900px)  { .catalog-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 1200px) { .catalog-grid { grid-template-columns: repeat(5, 1fr); } }
+
+    .book-card {
+      position: relative; border-radius: 1rem; overflow: hidden;
+      border: 1px solid rgba(71,85,105,0.5); background: rgba(21,25,36,0.8);
+      cursor: default; transition: transform 0.3s, opacity 0.3s;
+      animation: cardIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .book-card:hover { transform: scale(1.025); }
+    .book-card.checked-out { opacity: 0.6; filter: grayscale(1); border-color: rgba(239,68,68,0.5); }
+    .book-card img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
+    .book-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to bottom, transparent, rgba(15,23,42,0.75) 30%, rgba(15,23,42,0.97));
+      padding: 2.5rem 0.75rem 0.75rem;
+    }
+    .book-title  { font-size: 0.88rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.2rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .book-author { font-size: 0.72rem; color: #cbd5e1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 0.2rem; }
+    .book-isbn   { font-size: 0.62rem; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.4rem; }
+    .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .badge-avail { background: rgba(34,197,94,0.2); color: #4ade80; }
+    .badge-out   { background: rgba(239,68,68,0.2); color: #f87171; }
+
+    /* Pagination */
+    .pagination { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 2rem; flex-wrap: wrap; }
+    .page-btn {
+      width: 2.1rem; height: 2.1rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-family: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; transition: all 0.2s;
+    }
+    .page-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: white; }
+    .page-btn.active { background: rgba(59,130,246,0.2); color: white; border-color: rgba(59,130,246,0.5); box-shadow: 0 0 12px rgba(59,130,246,0.35); }
+    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-dots { color: #64748b; font-size: 0.85rem; display: flex; align-items: center; padding: 0 0.25rem; }
+
+    /* ── My Books ── */
+    .mybooks-panel { width: 100%; max-width: 52rem; padding: 1.75rem; animation: slideUp 0.4s ease-out; }
+
+    .loans-summary {
+      display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+    .summary-card {
+      flex: 1; min-width: 130px; padding: 1rem 1.25rem;
+      border-radius: 0.85rem; border: 1px solid;
+      display: flex; flex-direction: column; gap: 0.25rem;
+    }
+    .summary-card.total  { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.25); }
+    .summary-card.overdue{ background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.25); }
+    .summary-num  { font-size: 2rem; font-weight: 900; line-height: 1; }
+    .summary-card.total .summary-num  { color: #60a5fa; }
+    .summary-card.overdue .summary-num { color: #f87171; }
+    .summary-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+
+    .section-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; color: white; }
+    .divider { width: 100%; height: 1px; background: rgba(71,85,105,0.5); margin: 1.5rem 0; }
+
+    .loan-row {
+      display: flex; align-items: center; gap: 1rem; padding: 1rem;
+      border-radius: 0.85rem; margin-bottom: 0.6rem;
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.55);
+      box-shadow: 0 16px 30px -20px rgba(2,6,23,0.95), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition: border-color 0.2s;
+    }
+    .loan-row:hover { border-color: rgba(96,165,250,0.25); }
+    .loan-row.history { background: rgba(21,25,36,0.55); border-color: rgba(71,85,105,0.35); opacity: 0.75; }
+
+    .loan-row img { width: 3rem; height: 4rem; border-radius: 0.4rem; object-fit: cover; flex-shrink: 0; }
+    .loan-info { flex: 1; min-width: 0; }
+    .loan-title  { font-weight: 700; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .loan-author { font-size: 0.72rem; color: #94a3b8; margin-top: 0.1rem; }
+    .loan-isbn   { font-size: 0.62rem; color: #475569; letter-spacing: 0.05em; margin-top: 0.1rem; }
+    .loan-due    { font-size: 0.72rem; font-weight: 700; flex-shrink: 0; text-align: right; }
+    .due-ok      { color: #60a5fa; }
+    .due-soon    { color: #facc15; }   /* due within 3 days */
+    .due-overdue { color: #f87171; }
+    .due-returned{ color: #475569; }
+
+    .due-badge {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px;
+      font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .due-badge.ok      { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .due-badge.soon    { background: rgba(234,179,8,0.15);  color: #facc15; border: 1px solid rgba(234,179,8,0.3); }
+    .due-badge.overdue { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 2rem; text-align: center;
+    }
+    .empty-state img { width: 3rem; height: 3rem; opacity: 0.25; margin-bottom: 0.75rem; }
+    .empty-state p { color: #475569; font-size: 0.85rem; font-weight: 600; }
+    .empty-state span { color: #334155; font-size: 0.75rem; margin-top: 0.25rem; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; top: 6rem; right: 1.25rem; z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; }
+    .toast {
+      padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 600;
+      border: 1px solid; min-width: 13rem; max-width: 22rem;
+      animation: slideUp 0.3s ease-out; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+    .toast.warning  { background: rgba(234,179,8,0.15);  color: #facc15; border-color: rgba(234,179,8,0.3); }
+
+    /* Refresh indicator */
+    .refresh-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 0.68rem; font-weight: 600; color: #475569; cursor: pointer;
+      background: none; border: none; font-family: inherit;
+      transition: color 0.2s; padding: 0.25rem 0.5rem; border-radius: 0.5rem;
+    }
+    .refresh-btn:hover { color: #94a3b8; background: rgba(255,255,255,0.04); }
+    .refresh-btn.spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
+
+    @media (max-width: 768px) {
+      ::-webkit-scrollbar { display: none; }
+      * { scrollbar-width: none; }
+      .nav-btn span { display: none; }
+      .nav-btn { padding: 0.5rem 0.65rem; }
+      .top-header { padding: 0 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
+
+  <!-- Header -->
+  <header class="top-header">
+    <div class="header-brand">
+      <img src="/images/scsu_logo.png" alt="SCSU" onerror="this.style.display='none'" />
+      <div style="display:flex;align-items:center;gap:0.3rem;">
+        <span class="brand-name">CS_LIBRARY</span>
+        <span class="brand-sub">WEB</span>
+      </div>
+    </div>
+    <div class="header-user">
+      <span class="header-user-name"><%= user.name %></span>
+      <a href="/auth/logout" class="logout-btn" title="Sign out">⏻</a>
+    </div>
+  </header>
+
+  <!-- Toasts -->
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <main class="page-wrap">
+
+    <!-- ── CATALOG WORKSPACE ── -->
+    <div class="workspace active" id="ws-catalog">
+      <div class="catalog-header">
+        <h1 class="catalog-title">Library Catalog</h1>
+        <div class="catalog-meta">
+          <span class="catalog-count" id="catalogCount">Loading…</span>
+          <span class="catalog-page"  id="catalogPage"></span>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all"         onclick="setFilter('all')">ALL</button>
+        <button class="filter-btn"        data-filter="available"   onclick="setFilter('available')">AVAILABLE</button>
+        <button class="filter-btn"        data-filter="checked_out" onclick="setFilter('checked_out')">CHECKED OUT</button>
+      </div>
+
+      <div class="catalog-grid" id="catalogGrid"></div>
+      <div class="pagination"   id="pagination"></div>
+    </div>
+
+    <!-- ── MY BOOKS WORKSPACE ── -->
+    <div class="workspace" id="ws-mybooks">
+      <div class="mybooks-panel panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <p class="panel-title">MY CHECKED OUT BOOKS</p>
+          <button class="refresh-btn" onclick="loadMyBooks(true)" id="refreshBtn">
+            ↻ Refresh
+          </button>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="loans-summary">
+          <div class="summary-card total">
+            <span class="summary-num" id="totalOut">—</span>
+            <span class="summary-label">Books Out</span>
+          </div>
+          <div class="summary-card overdue">
+            <span class="summary-num" id="totalOverdue">—</span>
+            <span class="summary-label">Overdue</span>
+          </div>
+        </div>
+
+        <!-- Active loans -->
+        <p class="section-title">Currently Checked Out</p>
+        <div id="activeLoans"></div>
+        <div class="empty-state" id="noActiveLoans" style="display:none;">
+          <img src="/assets/ph-book-open-text.svg" alt="" />
+          <p>No books currently checked out</p>
+          <span>Books you borrow from the kiosk will appear here</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- History -->
+        <p class="section-title">Borrowing History</p>
+        <div id="loanHistory"></div>
+        <div class="empty-state" id="noHistory" style="display:none;">
+          <img src="/assets/ph-clock-counter-clockwise.svg" alt="" />
+          <p>No borrowing history yet</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Floating nav -->
+  <nav class="dash-nav">
+    <button class="nav-btn active" id="nav-catalog"  onclick="showView('catalog')">
+      <img src="/assets/ph-squares-four.svg" alt="" /><span>BROWSE</span>
+    </button>
+    <button class="nav-btn"        id="nav-mybooks"  onclick="showView('mybooks')">
+      <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY BOOKS</span>
+    </button>
+    <div class="nav-divider"></div>
+    <button class="nav-btn" onclick="toggleSearch()">
+      <img src="/assets/ph-magnifying-glass.svg" alt="" /><span>SEARCH</span>
+    </button>
+    <input type="text" class="search-input" id="searchInput"
+           placeholder="Search…" oninput="handleSearch(this.value)" />
+  </nav>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────────
+    let allBooks      = [];
+    let filtered      = [];
+    let currentFilter = 'all';
+    let currentPage   = 1;
+    const PER_PAGE    = 20;
+    let searchQuery   = '';
+    let searchTimer   = null;
+
+    // ── Toast ──────────────────────────────────────────────────────────────────
+    function toast(msg, type = 'positive') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById('toastWrap').appendChild(el);
+      setTimeout(() => el.remove(), 4500);
+    }
+
+    // ── Nav ────────────────────────────────────────────────────────────────────
+    function showView(view) {
+      document.querySelectorAll('.workspace').forEach(w => w.classList.remove('active'));
+      document.querySelectorAll('.nav-btn[id^="nav-"]').forEach(b => b.classList.remove('active'));
+      document.getElementById(`ws-${view}`).classList.add('active');
+      const nb = document.getElementById(`nav-${view}`);
+      if (nb) nb.classList.add('active');
+      if (view === 'mybooks') loadMyBooks(false);
+    }
+
+    // ── Search ──────────────────────────────────────────────────────────────────
+    function toggleSearch() {
+      const inp = document.getElementById('searchInput');
+      inp.classList.toggle('open');
+      if (inp.classList.contains('open')) { showView('catalog'); inp.focus(); }
+      else { searchQuery = ''; inp.value = ''; applyFilters(); }
+    }
+    function handleSearch(val) {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = val.toLowerCase().trim();
+        currentPage = 1; applyFilters();
+      }, 250);
+    }
+
+    // ── Catalog ────────────────────────────────────────────────────────────────
+    async function loadCatalog() {
+      try {
+        const r = await fetch('/web-dashboard/api/catalog');
+        const d = await r.json();
+        allBooks = d.books ?? [];
+        applyFilters();
+      } catch { toast('Could not load catalog.', 'negative'); }
+    }
+
+    function setFilter(f) {
+      currentFilter = f; currentPage = 1;
+      document.querySelectorAll('.filter-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.filter === f));
+      applyFilters();
+    }
+
+    function applyFilters() {
+      let b = allBooks;
+      if (searchQuery)
+        b = b.filter(x =>
+          x.title.toLowerCase().includes(searchQuery)  ||
+          x.author.toLowerCase().includes(searchQuery) ||
+          (x.isbn || '').toLowerCase().includes(searchQuery));
+      if (currentFilter === 'available')   b = b.filter(x => x.status === 'Available');
+      if (currentFilter === 'checked_out') b = b.filter(x => x.status !== 'Available');
+      filtered = b;
+      const tp = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+      if (currentPage > tp) currentPage = tp;
+      renderCatalog(); renderPagination(tp);
+    }
+
+    function renderCatalog() {
+      const grid  = document.getElementById('catalogGrid');
+      const start = (currentPage - 1) * PER_PAGE;
+      const page  = filtered.slice(start, start + PER_PAGE);
+      const tp    = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+
+      document.getElementById('catalogCount').textContent =
+        `Showing ${page.length} of ${filtered.length} book${filtered.length !== 1 ? 's' : ''}`;
+      document.getElementById('catalogPage').textContent =
+        filtered.length > PER_PAGE ? `Page ${currentPage} of ${tp}` : '';
+
+      grid.innerHTML = page.map((b, i) => {
+        const avail = b.status === 'Available';
+        return `
+          <div class="book-card ${avail ? '' : 'checked-out'}"
+               style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
+            <img src="${esc(b.cover || '')}" loading="lazy"
+                 onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'"
+                 alt="${esc(b.title)}" />
+            <div class="book-overlay">
+              <p class="book-title">${esc(b.title)}</p>
+              <p class="book-author">${esc(b.author)}</p>
+              <p class="book-isbn">ISBN ${esc(b.isbn || '')}</p>
+              <span class="badge ${avail ? 'badge-avail' : 'badge-out'}">
+                ${avail ? 'AVAILABLE' : 'CHECKED OUT'}
+              </span>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function renderPagination(tp) {
+      const pg = document.getElementById('pagination');
+      if (tp <= 1) { pg.innerHTML = ''; return; }
+      let pages = [];
+      if (tp <= 7) { pages = Array.from({ length: tp }, (_, i) => i + 1); }
+      else {
+        pages = [1];
+        if (currentPage > 3) pages.push('…');
+        for (let p = Math.max(2, currentPage - 1); p <= Math.min(tp - 1, currentPage + 1); p++)
+          if (!pages.includes(p)) pages.push(p);
+        if (currentPage < tp - 2) pages.push('…');
+        if (!pages.includes(tp)) pages.push(tp);
+      }
+      pg.innerHTML =
+        `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goPage(${currentPage - 1})">‹</button>` +
+        pages.map(p => p === '…'
+          ? `<span class="page-dots">···</span>`
+          : `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goPage(${p})">${p}</button>`
+        ).join('') +
+        `<button class="page-btn" ${currentPage >= tp ? 'disabled' : ''} onclick="goPage(${currentPage + 1})">›</button>`;
+    }
+
+    function goPage(p) {
+      currentPage = Math.max(1, p);
+      renderCatalog();
+      renderPagination(Math.ceil(filtered.length / PER_PAGE));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ── My Books ───────────────────────────────────────────────────────────────
+    async function loadMyBooks(showSpinner = false) {
+      const btn = document.getElementById('refreshBtn');
+      if (showSpinner && btn) btn.classList.add('spinning');
+
+      try {
+        const r    = await fetch('/web-dashboard/api/my-loans');
+        const d    = await r.json();
+        const loanList = d.loans ?? [];
+        const active  = loanList.filter(l => !l.returned);
+        const history = loanList.filter(l =>  l.returned);
+
+        // Summary
+        const now     = new Date();
+        const overdue = active.filter(l => new Date(l.dueDate) < now);
+        document.getElementById('totalOut').textContent    = String(active.length);
+        document.getElementById('totalOverdue').textContent = String(overdue.length);
+
+        // Active loans
+        document.getElementById('noActiveLoans').style.display = active.length ? 'none' : 'flex';
+        document.getElementById('activeLoans').innerHTML = active.map(loan => {
+          const due     = new Date(loan.dueDate);
+          const diffMs  = due - now;
+          const diffDay = Math.ceil(diffMs / 86400000);
+          let badgeClass, dueClass, dueLabel;
+          if (diffMs < 0) {
+            badgeClass = 'overdue'; dueClass = 'due-overdue';
+            dueLabel   = `Overdue by ${Math.abs(diffDay)} day${Math.abs(diffDay) !== 1 ? 's' : ''}`;
+          } else if (diffDay <= 3) {
+            badgeClass = 'soon'; dueClass = 'due-soon';
+            dueLabel   = diffDay === 0 ? 'Due today!' : `Due in ${diffDay} day${diffDay !== 1 ? 's' : ''}`;
+          } else {
+            badgeClass = 'ok'; dueClass = 'due-ok';
+            dueLabel   = `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          }
+          const fullDue = due.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+          return `
+            <div class="loan-row">
+              <img src="${esc(loan.cover || '')}"
+                   onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.title)}</p>
+                <p class="loan-author">${esc(loan.author)}</p>
+                <p class="loan-isbn">ISBN ${esc(loan.isbn || '')}</p>
+              </div>
+              <div class="loan-due">
+                <span class="due-badge ${badgeClass}">${dueLabel}</span>
+                <p class="loan-due ${dueClass}" style="font-size:0.65rem;margin-top:0.2rem;">${fullDue}</p>
+              </div>
+            </div>`;
+        }).join('');
+
+        // History
+        document.getElementById('noHistory').style.display = history.length ? 'none' : 'flex';
+        document.getElementById('loanHistory').innerHTML = history.map(loan => {
+          const ret = loan.returnedDate
+            ? new Date(loan.returnedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : 'N/A';
+          return `
+            <div class="loan-row history">
+              <img src="${esc(loan.cover || '')}"
+                   onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.title)}</p>
+                <p class="loan-author">${esc(loan.author)}</p>
+              </div>
+              <div class="loan-due">
+                <span class="due-badge" style="background:rgba(71,85,105,0.2);color:#475569;border-color:rgba(71,85,105,0.3);">RETURNED</span>
+                <p class="loan-due due-returned" style="font-size:0.65rem;margin-top:0.2rem;">${ret}</p>
+              </div>
+            </div>`;
+        }).join('');
+
+        if (showSpinner) toast('Loans refreshed.', 'positive');
+      } catch {
+        toast('Could not load loans.', 'negative');
+      } finally {
+        if (btn) btn.classList.remove('spinning');
+      }
+    }
+
+    // ── Helper ──────────────────────────────────────────────────────────────────
+    function esc(s) {
+      return String(s ?? '')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Boot ────────────────────────────────────────────────────────────────────
+    loadCatalog();
+  </script>
+</body>
+</html>
