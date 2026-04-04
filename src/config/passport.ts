@@ -1,9 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { db } from '../db/database.js';
-import { users } from '../db/schema/index.js';
-import { eq, sql } from 'drizzle-orm';
-import { config } from './env.js';
+import config from './env.js';
 
 export interface GoogleUser {
     googleId: string;
@@ -24,9 +21,9 @@ declare global {
 
 // Configure Google OAuth Strategy
 passport.use(new GoogleStrategy({
-    clientID: config.oauth.googleClientId!,
-    clientSecret: config.oauth.googleClientSecret!,
-    callbackURL: config.oauth.googleCallbackURL
+    clientID: config().googleClientId!,
+    clientSecret: config().googleClientSecret!,
+    callbackURL: config().googleCallbackURL
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         // PHASE 1: Create user object from Google profile

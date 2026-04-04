@@ -1,0 +1,12 @@
+/* ============================================
+   CS LIBRARY KIOSK - Complete Theme
+   ============================================
+   
+   This file imports all theme CSS modules.
+   Use this single import for the complete kiosk theme.
+   
+   ============================================ */
+
+@import url('theme-base.css');
+@import url('space-background.css');
+@import url('components.css');

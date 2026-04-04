@@ -1,13 +1,13 @@
 import express from 'express';
-import router from "./routes/router.js";
+import router from './routes/router.js';
 import session from 'express-session';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { config } from './config/env.js';
+import config from './config/env.js';
 import type { ErrorRequestHandler, Request, Response, NextFunction } from 'express';
 
 // Import database connection
-import { connectDatabase } from './db/database.js';
+import connectDatabase from './db/database.js';
 
 // Import authentication
 import passport from './config/passport.js';
@@ -28,8 +28,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = config.port || 3000;
-const NODE_ENV = config.nodeEnv;
+const PORT = config().PORT || 3000;
+const NODE_ENV = config().NODE_ENV;
 
 // Connect to PostgreSQL
 await connectDatabase();
@@ -93,7 +93,7 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
   console.error('Method:', req.method);
 
   // Don't leak error details in production
-  const isProduction = config.nodeEnv === 'production';
+  const isProduction = config().NODE_ENV === 'production';
   
   res.status(err.status || 500).json({
     error: isProduction ? 'Internal Server Error' : err.message,
@@ -102,15 +102,6 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
 };
 
 app.use(errorHandler);
-
-// app.use((err, req, res, next) => {
-//     console.error(err.stack);
-//     res.status(500).render('pages/error', {
-//         title: 'Error',
-//         error: NODE_ENV === 'development' ? err.message : 'Something went wrong!',
-//         projectName: 'CS Library Project'
-//     });
-// });
 
 // 404 handler
 app.use((req, res) => {
@@ -121,12 +112,5 @@ app.use((req, res) => {
     });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`CS Library running on http://localhost:${PORT}`);
-    console.log(`Environment: ${NODE_ENV}`);
-    console.log(`Google OAuth: ${config.oauth.googleClientId ? 'Configured' : 'Not configured'}`);
-    console.log(`PostgreSQL: ${config.postgresdb.password ? 'Connected' : 'Not configured'}`);
-});
 
 export default app;

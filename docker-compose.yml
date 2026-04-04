@@ -1,0 +1,11 @@
+services:
+  db:
+    image: postgres:18
+    container_name: pgLibraryNode
+    restart: always
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
