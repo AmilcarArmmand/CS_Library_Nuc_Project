@@ -8,14 +8,17 @@
   },
   "scripts": {
     "clean": "rm -rf dist coverage",
-    "build": "npx tsc && npm run db:generate && npm run test",
-    "start": "node dist/app.js",
-    "dev": "nodemon",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio",
-    "test": "echo \"Setup Jest aready!\" && exit 1"
+    "build": "npx tsc && cp -r src/views dist/ && cp -r src/public dist/ && npm run drizzle:generate && npm run test",
+    "start": "node dist/index.js",
+    "dev": "npm run docker:up && npm run drizzle:generate && npm run drizzle:migrate && nodemon",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:migrate": "npx tsx src/db/migrate-standalone.ts",
+    "prestart": "test -d dist/views || (npx tsc && cp -r src/views dist/ && cp -r src/public dist/)",
+    "drizzle:push": "drizzle-kit push",
+    "drizzle:studio": "drizzle-kit studio",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' TESTCONTAINERS_HUB_IMAGE_NAME_PREFIX='' jest --coverage"
   },
   "repository": {
     "type": "git",
@@ -30,8 +33,10 @@
   },
   "homepage": "https://github.com/AmilcarArmmand/CS_Library_Nuc_Project#readme",
   "devDependencies": {
+    "@testcontainers/postgresql": "^11.13.0",
     "@types/express": "^5.0.6",
     "@types/express-session": "^1.18.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.5.0",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
@@ -39,7 +44,10 @@
     "drizzle-kit": "^0.31.10",
     "jest": "^30.3.0",
     "nodemon": "^3.1.14",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
+    "ts-sinon": "^2.0.2",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   },
@@ -58,6 +66,7 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.20.0",
     "postgres": "^3.4.8",
+    "sinon": "^21.0.3",
     "zod": "^4.3.6"
   }
 }

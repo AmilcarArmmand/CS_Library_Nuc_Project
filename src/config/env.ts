@@ -1,67 +1,37 @@
 import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+
 dotenv.config();
 
-export const config = {
-    port: process.env.PORT || 3000,
-    nodeEnv: process.env.NODE_ENV || 'development',
+interface Env {
+    PORT: number | string;
+    NODE_ENV: string;
+    DB_URL: string;
+    googleClientId: string;
+    googleClientSecret: string;
+    googleCallbackURL: string;
+    EMAIL_HOST: string;
+    EMAIL_PORT: number;
+    EMAIL_USER: string;
+    EMAIL_PASS: string;
+    EMAIL_FROM: string;
+    JWT_SECRET: string;
+}
 
-    oauth: {
-        googleClientId: process.env.GOOGLE_CLIENT_ID,
-        googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        googleCallbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback'
-    },
-
-    session: {
-        secret: process.env.SESSION_SECRET
-    },
-
-    postgresdb: {
-        url: `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`,
-        host: process.env.POSTGRES_HOST || 'localhost',
-        port: process.env.POSTGRES_PORT || 5432,
-        name: process.env.POSTGRES_DB || 'library_db',
-        user: process.env.POSTGRES_USER || 'postgres',
-        password: process.env.POSTGRES_PASSWORD
-    },
-
-    email: {
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-        from: process.env.EMAIL_FROM
-    }
-};
-
-
-// Validation function
-export const validateConfig = () => {
-    const required = [
-        // { key: 'mongodb.url', value: config.mongodb.url, name: 'MONGODB_URL' },
-        { key: 'postgres.url', value: config.postgresdb.url, name: 'PGSQL_URL' },
-        { key: 'google.clientId', value: config.oauth.googleClientId, name: 'GOOGLE_CLIENT_ID' },
-        { key: 'google.clientSecret', value: config.oauth.googleClientSecret, name: 'GOOGLE_CLIENT_SECRET' },
-        { key: 'session.secret', value: config.session.secret, name: 'SESSION_SECRET' },
-    ];
-
-    const missing = required.filter(item => !item.value);
-    
-    if (missing.length > 0) {
-        console.error('❌ Missing required environment variables:');
-        missing.forEach(item => {
-            console.error(`   - ${item.name}`);
-        });
-        
-        if (config.nodeEnv === 'production') {
-            process.exit(1);
-        } else {
-            console.warn('⚠️  Running in development mode with missing variables');
-        }
-    }
-
-    return missing.length === 0;
+const config = (): Env => {
+  return {
+    PORT: process.env.PORT ? Number(process.env.PORT) : 3000,
+    NODE_ENV: process.env.NODE_ENV || 'development',
+    DB_URL: process.env.DB_URL ? process.env.DB_URL : "value_not_provided",
+    googleClientId: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID : "value_not_provided",
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ? process.env.GOOGLE_CLIENT_SECRET : "value_not_provided",
+    googleCallbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
+    EMAIL_HOST: process.env.EMAIL_HOST || 'smtp.example.com',
+    EMAIL_PORT: process.env.EMAIL_PORT ? Number(process.env.EMAIL_PORT) : 587,
+    EMAIL_USER: process.env.EMAIL_USER ? process.env.EMAIL_USER : "value_not_provided",
+    EMAIL_PASS: process.env.EMAIL_PASS ? process.env.EMAIL_PASS : "value_not_provided",
+    EMAIL_FROM: process.env.EMAIL_FROM ? process.env.EMAIL_FROM : "value_not_provided",
+    JWT_SECRET: process.env.JWT_SECRET ? process.env.JWT_SECRET : "value_not_provided",
+  };
 };
 
 export default config;
