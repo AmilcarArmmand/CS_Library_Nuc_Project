@@ -17,7 +17,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 
 const app      = express();
-const PORT     = Number(config.port) || 3000;
+const PORT     = Number(config.port) || 8080;
 const HOST     = '0.0.0.0';   // Accept connections on all network interfaces
 const NODE_ENV = config.nodeEnv;
 const IS_PROD  = NODE_ENV === 'production';
@@ -50,7 +50,6 @@ app.use(passport.session());
 app.use(attachUser);
 
 // ROUTES
-
 app.use('/auth',          authRoutes);
 app.use('/web-dashboard', webDashboardRoutes);
 app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
@@ -98,7 +97,7 @@ app.use(errorHandler);
 
 // APP START
 app.listen(PORT, HOST, () => {
-  console.log(`\n✅ CS Library running on http://${HOST}:${PORT}`);
+  console.log(`\n✅ CS Library running on: http://${HOST}:${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
   console.log(`   PostgreSQL  : ${config.postgresdb.password  ? 'Configured ✓' : 'Not configured'}`);
