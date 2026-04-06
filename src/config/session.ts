@@ -6,7 +6,7 @@ import config from './env.js';
 const PgSessionStore = pgSession(session);
 
 const sessionConfig: session.SessionOptions = {
-    secret: config().JWT_SECRET!,
+    secret: config().SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
     store: new PgSessionStore({

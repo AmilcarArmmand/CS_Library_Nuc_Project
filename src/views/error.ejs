@@ -1,0 +1,13 @@
+<%- include('partials/header', { title: title, currentPage: currentPage }) %>
+
+<h1>Server Error</h1>
+<p><%= message %></p>
+
+<% if (typeof stack !== 'undefined') { %>
+  <h3>Stack Trace:</h3>
+  <pre><%= stack %></pre>
+<% } %>
+
+<p><a href="/">Return to Home</a></p>
+
+<%- include('partials/footer') %>

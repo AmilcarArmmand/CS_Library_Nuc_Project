@@ -9,7 +9,7 @@ export const requireAuth = (req, res, next) => {
     req.session.returnTo = req.originalUrl;
 
     // Redirect to login
-    res.redirect('/auth/google');
+    res.redirect('/?error=login_required');
 };
 
 export const requireNoAuth = (req, res, next) => {
@@ -28,7 +28,7 @@ export const attachUser = (req, res, next) => {
     next();
 };
 
-// Admin middleware (for future use if needed)
+// Admin middleware
 export const requireAdmin = (req, res, next) => {
     if (req.isAuthenticated() && req.user.role === 'admin') {
         return next();

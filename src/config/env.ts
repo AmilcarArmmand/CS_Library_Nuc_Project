@@ -14,7 +14,7 @@ interface Env {
     EMAIL_USER: string;
     EMAIL_PASS: string;
     EMAIL_FROM: string;
-    JWT_SECRET: string;
+    SESSION_SECRET: string;
 }
 
 const config = (): Env => {
@@ -30,7 +30,7 @@ const config = (): Env => {
     EMAIL_USER: process.env.EMAIL_USER ? process.env.EMAIL_USER : "value_not_provided",
     EMAIL_PASS: process.env.EMAIL_PASS ? process.env.EMAIL_PASS : "value_not_provided",
     EMAIL_FROM: process.env.EMAIL_FROM ? process.env.EMAIL_FROM : "value_not_provided",
-    JWT_SECRET: process.env.JWT_SECRET ? process.env.JWT_SECRET : "value_not_provided",
+    SESSION_SECRET: process.env.SESSION_SECRET ? process.env.SESSION_SECRET : "value_not_provided",
   };
 };
 

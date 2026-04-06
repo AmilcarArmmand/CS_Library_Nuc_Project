@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Library Management System - Discover New Things</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+    <%- include('../partials/nav') %>
+
+    <main class="landing-page">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>CS Library Kiosk</h1>
+            <p class="hero-subtitle">Sign-in to borrow a book.</p>
+
+            <% if (!user) { %>
+                <div class="hero-cta">
+                    <a href="/auth/google" class="btn btn-primary btn-large">Sign in with Google to Get Started</a>
+                </div>
+            <% } %>
+        </section>
+
+        <% if (!user) { %>
+                <div class="cta-secondary">
+                    <h3>Want to borrow a book?</h3>
+                    <p>Sign in with Google to track your library transactions and unlock personalized features.</p>
+                    <a href="/auth/google" class="btn btn-secondary">Sign in with Google</a>
+                </div>
+            <% } %>
+        </section>
+    </main>
+
+    <%- include('../partials/footer') %>
+</body>
+</html>

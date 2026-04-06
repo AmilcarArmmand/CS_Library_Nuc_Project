@@ -1,0 +1,27 @@
+<nav>
+  <div class="nav-container">
+    <div class="nav-brand">
+      <a href="<%= user ? '/dashboard' : '/' %>">CS Library</a>
+    </div>
+    <ul class="nav-links">
+      <% if (user) { %>
+        <!-- Navigation for authenticated users -->
+        <li><a href="/dashboard" class="<%= currentPage === 'dashboard' ? 'active' : '' %>">Dashboard</a></li>
+        <li><a href="/book" class="<%= currentPage === 'books' ? 'active' : '' %>">Books</a></li>
+        <li><a href="/catalog" class="<%= currentPage === 'catalog' ? 'active' : '' %>">Catalog</a></li>
+        <li><a href="/profile" class="<%= currentPage === 'profile' ? 'active' : '' %>">Profile</a></li>
+        <li><a href="/settings" class="<%= currentPage === 'settings' ? 'active' : '' %>">Settings</a></li>
+        <li><a href="/admin" class="<%= currentPage === 'admin' ? 'active' : '' %>">Admin</a></li>
+        <li><a href="/about" class="<%= currentPage === 'about' ? 'active' : '' %>">About</a></li>
+        <li><a href="/auth/logout" class="btn-nav-logout">Logout</a></li>
+      <% } else { %>
+        <!-- Navigation for unauthenticated users -->
+        <li><a href="/" class="<%= currentPage === 'home' ? 'active' : '' %>">Home</a></li>
+        <li><a href="/about" class="<%= currentPage === 'about' ? 'active' : '' %>">About</a></li>
+        <li><a href="/catalog" class="<%= currentPage === 'catalog' ? 'active' : '' %>">Catalog</a></li>
+        <li><a href="/contact" class="<%= currentPage === 'contact' ? 'active' : '' %>">Contact</a></li>
+        <li><a href="/auth/google" class="btn-nav-signin">Sign In</a></li>
+      <% } %>
+    </ul>
+  </div>
+</nav>
