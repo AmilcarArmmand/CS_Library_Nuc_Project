@@ -10,7 +10,7 @@
     "clean": "rm -rf dist coverage",
     "build": "npx tsc && cp -r src/views dist/ && cp -r src/public dist/ && npm run drizzle:generate && npm run test",
     "start": "node dist/index.js",
-    "dev": "npm run docker:up && npm run drizzle:generate && nodemon",
+    "dev": "npm run drizzle:generate && nodemon",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "drizzle:generate": "drizzle-kit generate",
