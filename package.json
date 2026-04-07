@@ -40,6 +40,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
+    "passport-microsoft": "^2.1.0",
     "pg": "^8.12.0"
   },
   "devDependencies": {
@@ -52,6 +53,7 @@
     "@types/passport": "^1.0.16",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-local": "^1.0.38",
+    "@types/passport-microsoft": "^2.1.1",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.22.7",
     "tsx": "^4.15.0",

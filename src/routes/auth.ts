@@ -40,6 +40,22 @@ router.get('/google/callback',
   }
 );
 
+// Microsoft (Outlook) OAuth routes
+
+router.get('/outlook', passport.authenticate('microsoft', {
+  prompt: 'select_account',
+}));
+
+router.get('/outlook/callback',
+  passport.authenticate('microsoft', { failureRedirect: '/auth/login?error=outlook_failed' }),
+  (req: Request, res: Response) => {
+    console.log(`[Auth] Microsoft login: ${(req.user as any)?.email}`);
+    const redirectTo = req.session['returnTo'] ?? '/web-dashboard';
+    delete req.session['returnTo'];
+    res.redirect(redirectTo);
+  }
+);
+
 // LOGIN
 
 router.get('/login', (req: Request, res: Response) => {

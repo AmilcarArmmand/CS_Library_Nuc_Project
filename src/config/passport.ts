@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcryptjs';
 import { db } from '../db/database.js';
@@ -93,6 +94,36 @@ passport.use(new GoogleStrategy(
       console.log(`[Auth] New Google user: ${email}`);
       return done(null, newUser as Express.User);
 
+    } catch (err) {
+      return done(err as Error);
+    }
+  }
+));
+
+// MICROSOFT (OUTLOOK) OAUTH STRATEGY
+
+passport.use(new MicrosoftStrategy(
+  {
+    clientID:     process.env['MICROSOFT_CLIENT_ID'] ?? 'placeholder',
+    clientSecret: process.env['MICROSOFT_CLIENT_SECRET'] ?? 'placeholder',
+    callbackURL:  process.env['MICROSOFT_CALLBACK_URL'] ?? 'http://localhost:8080/auth/outlook/callback',
+    scope:        ['user.read'],
+    tenant:       'common',
+  },
+  async (_accessToken, _refreshToken, profile, done) => {
+    try {
+      const email = (profile.emails?.[0]?.value ?? '').toLowerCase().trim();
+      const name  = profile.displayName ?? email;
+      if (!email) return done(new Error('Microsoft account has no email address'));
+
+      let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (user) {
+        await db.update(users).set({ lastLogin: new Date(), updatedAt: new Date() }).where(eq(users.id, user.id));
+        return done(null, user as Express.User);
+      }
+
+      const [newUser] = await db.insert(users).values({ email, name, active: true, lastLogin: new Date() }).returning();
+      return done(null, newUser as Express.User);
     } catch (err) {
       return done(err as Error);
     }
