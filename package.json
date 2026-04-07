@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
+    "clean": "rm -rf dist && rm -rf drizzle && rm -rf node_modules && rm -rf package-lock.json",
     "copy": "cp -r src/views dist/views && cp -r src/public dist/public",
     "build": "tsc && npm run copy",
     "dev": "tsx watch src/app.ts",
