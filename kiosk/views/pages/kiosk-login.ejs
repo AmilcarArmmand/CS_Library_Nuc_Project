@@ -37,34 +37,70 @@
       overflow: hidden; position: relative; z-index: 1;
     }
 
-    /* Left panel */
+    /* ── Left panel — dark stripe + radial blue ── */
     .left-panel {
-      width: 42%; height: 100%;
-      background-color: #0a1f44;
-      display: flex; flex-direction: column;
-      align-items: flex-start; justify-content: flex-start;
-      padding: 3rem; position: relative; flex-shrink: 0;
-      background-image: repeating-linear-gradient(
-        -45deg, transparent, transparent 8px,
-        rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px
-      );
+      width: 45%; min-width: 45%;
+      height: 100%; flex-shrink: 0;
+      position: relative; overflow: hidden;
+      background-color: #020617;
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          transparent, transparent 8px,
+          rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px
+        ),
+        radial-gradient(ellipse at 15% 20%, rgba(37,99,235,0.4) 0%, transparent 60%);
     }
-    .logo { width: 250px; filter: brightness(0) invert(1); opacity: 0.95;
-             margin-left: -43px; margin-top: -60px; }
-    .accent-bar { width: 40px; height: 2px; background: #3b82f6;
-                  box-shadow: 0 0 12px rgba(59,130,246,0.7); margin: -50px 0 16px 0; }
-    .dept-label { color: rgba(255,255,255,0.45); font-size: 0.7rem;
-                  letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 3rem; }
-    .titles { margin-top: 100px; }
-    .title-main { font-size: 2.6rem; color: white; font-weight: 700;
-                  letter-spacing: -0.02em; line-height: 1; }
-    .title-sub  { font-size: 2.6rem; color: rgba(255,255,255,0.5); font-weight: 700;
-                  letter-spacing: -0.02em; line-height: 1; }
-    .title-desc { color: rgba(255,255,255,0.45); font-size: 0.7rem;
-                  letter-spacing: 0.14em; text-transform: uppercase;
-                  max-width: 250px; line-height: 1.7; margin-top: 10px; }
-    .footer-copy { color: rgba(255,255,255,0.2); font-size: 0.65rem;
-                   position: absolute; bottom: 2.5rem; left: 2.5rem; }
+
+    /* Logo block — top-left */
+    .left-logo {
+      position: absolute; top: 1.5rem; left: 2rem;
+      display: flex; flex-direction: column; gap: 0.4rem;
+      z-index: 10;
+    }
+    .left-logo img {
+      width: 200px; height: auto; object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .left-logo .accent-bar {
+      width: 3rem; height: 3px;
+      background: #3b82f6;
+      box-shadow: 0 0 12px rgba(59,130,246,0.7);
+      margin-left: 2rem; margin-top: -2rem;
+    }
+    .left-logo .dept-label {
+      font-size: 0.65rem; letter-spacing: 0.15em; font-weight: 700;
+      text-transform: uppercase; color: rgba(148,163,184,0.8);
+      margin-left: 2rem;
+    }
+
+    /* Title block — vertically centred */
+    .left-titles {
+      position: absolute; top: 50%; left: 3rem;
+      transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 0.4rem;
+      z-index: 10;
+    }
+    .left-titles .title-main {
+      font-size: 3.5rem; font-weight: 900; line-height: 0.85;
+      letter-spacing: -0.03em; color: white;
+    }
+    .left-titles .title-sub {
+      font-size: 3.5rem; font-weight: 900; line-height: 0.85;
+      letter-spacing: -0.03em; color: #64748b;
+    }
+    .left-titles .title-desc {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: rgba(148,163,184,0.6);
+      max-width: 280px; line-height: 1.6; margin-top: 1.5rem;
+    }
+
+    /* Footer */
+    .left-footer {
+      position: absolute; bottom: 2rem; left: 3rem;
+      font-size: 0.6rem; letter-spacing: 0.1em;
+      color: rgba(100,116,139,0.4); z-index: 10;
+    }
 
     /* Right panel */
     .right-panel { flex: 1; height: 100%;
@@ -113,15 +149,19 @@
 
   <div class="login-outer">
     <div class="left-panel">
-      <img src="/assets/scsu_logo.png" alt="SCSU" class="logo" />
-      <div class="accent-bar"></div>
-      <p class="dept-label">Department of Computer Science</p>
-      <div class="titles">
+      <div class="left-logo">
+        <img src="/assets/scsu_logo.png" alt="SCSU Logo" />
+        <div class="accent-bar"></div>
+        <span class="dept-label">Department of Computer Science</span>
+      </div>
+
+      <div class="left-titles">
         <p class="title-main">CS Library</p>
-        <p class="title-sub">Kiosk</p>
+        <p class="title-sub">Kiosk.</p>
         <p class="title-desc">Scan your Student ID to access the library.</p>
       </div>
-      <p class="footer-copy">© 2026 SCSU Capstone</p>
+
+      <p class="left-footer">© 2026 SCSU Capstone</p>
     </div>
 
     <div class="right-panel">
@@ -131,13 +171,16 @@
         <p class="subtitle">Scan your ID to enter the CS Library Kiosk</p>
 
         <% if (error) { %>
-          <div class="error-msg">⚠ <%= error %></div>
+          <div class="error-msg"><%= error %></div>
         <% } %>
 
         <form method="POST" action="/login">
           <div class="field-group">
             <div class="field-label">
-              <span>🪪 Student ID</span>
+              <span class="icon" style="display:flex;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 10h2"/><path d="M16 14h2"/><path d="M6.17 15a3 3 0 0 1 5.66 0"/><circle cx="9" cy="11" r="2"/><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+              </span>
+              <span>Student ID</span>
             </div>
             <input type="text" name="studentId"
               placeholder="Enter or scan your ID..."
@@ -147,7 +190,9 @@
         </form>
 
         <div class="clock-row">
-          <span>🕐</span>
+          <span style="color:#94a3b8; display:flex;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </span>
           <span class="clock-text" id="clock">--</span>
         </div>
       </div>
