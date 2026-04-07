@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%),
+        radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%);
+    }
+    .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    /* Sidebar (shared) */
+    .sidebar { width: 250px; background: rgba(10,15,28,0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 1.5rem 0; flex-shrink: 0; backdrop-filter: blur(20px); position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1rem; }
+    .sidebar-brand h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.15em; }
+    .sidebar-brand span { font-size: 0.65rem; color: #60a5fa; font-weight: 300; letter-spacing: 0.15em; }
+    .nav-items { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.75rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .signout-btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.35rem; font-size: 0.68rem; font-weight: 700; color: #f87171; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); text-decoration: none; }
+
+    .main { flex: 1; margin-left: 250px; padding: 2rem; }
+    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .page-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; }
+
+    /* Add book panel */
+    .add-panel { background: rgba(21,25,36,0.84); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 0.72rem; letter-spacing: 0.2em; font-weight: 900; text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem; }
+    .form-row { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; flex: 1; min-width: 150px; }
+    .form-group label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 0.3rem; }
+    .form-group input, .form-group select {
+      padding: 0.55rem 0.85rem; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05); color: white; font-family: inherit; font-size: 0.82rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: rgba(59,130,246,0.5); }
+
+    .btn { padding: 0.55rem 1.25rem; border-radius: 0.5rem; font-family: inherit; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+    .btn-blue { background: rgba(59,130,246,0.2); color: #60a5fa; border-color: rgba(59,130,246,0.4); }
+    .btn-blue:hover { background: rgba(59,130,246,0.35); }
+    .btn-green { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .btn-green:hover { background: rgba(34,197,94,0.3); }
+    .btn-red { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.25); }
+    .btn-red:hover { background: rgba(239,68,68,0.25); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.65rem; }
+
+    /* Book preview */
+    .preview { display: flex; align-items: center; gap: 1rem; margin-top: 0.75rem; padding: 0.75rem; background: rgba(255,255,255,0.03); border-radius: 0.5rem; }
+    .preview img { width: 50px; height: 75px; object-fit: cover; border-radius: 0.35rem; border: 1px solid rgba(71,85,105,0.5); }
+    .preview-info .prev-title { font-size: 0.85rem; font-weight: 700; }
+    .preview-info .prev-author { font-size: 0.72rem; color: #94a3b8; }
+
+    /* Book list */
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(71,85,105,0.4); }
+    td { font-size: 0.78rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid rgba(71,85,105,0.2); color: #cbd5e1; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .book-cover-sm { width: 32px; height: 48px; object-fit: cover; border-radius: 0.25rem; }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; }
+    .badge-avail { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-out { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    .search-bar { margin-bottom: 1rem; }
+    .search-bar input {
+      width: 100%; max-width: 400px; padding: 0.55rem 1rem; border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05);
+      color: white; font-family: inherit; font-size: 0.82rem; outline: none;
+    }
+    .search-bar input:focus { border-color: rgba(59,130,246,0.5); }
+
+    /* Toast */
+    .toast-wrap { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
+    .toast { padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; border: 1px solid; pointer-events: auto; animation: dropDown 0.4s cubic-bezier(0.16,1,0.3,1); backdrop-filter: blur(12px); }
+    .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+    @keyframes dropDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <nav class="sidebar">
+    <div class="sidebar-brand"><h1>CS_LIBRARY</h1><span>ADMIN PANEL</span></div>
+    <div class="nav-items">
+      <a href="/admin" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="/admin/books" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Books</a>
+      <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Loans</a>
+      <a href="/admin/users" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+      <a href="/admin/reports" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/suggestions" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
+    </div>
+    <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-title">Book Management</h1>
+    <p class="page-sub">Add, edit, and manage the library catalog</p>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <!-- Add Book -->
+    <div class="add-panel">
+      <div class="panel-title" id="formTitle">Add New Book</div>
+      <div class="form-row">
+        <div class="form-group" style="max-width:200px;">
+          <label>ISBN</label>
+          <input type="text" id="isbnInput" placeholder="Scan or type ISBN…" />
+        </div>
+        <div class="form-group" style="align-self:flex-end;">
+          <button class="btn btn-blue" id="lookupBtn" onclick="lookupISBN()">LOOKUP</button>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Title</label><input type="text" id="titleInput" placeholder="Book title" /></div>
+        <div class="form-group"><label>Author</label><input type="text" id="authorInput" placeholder="Author name" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Cover URL</label><input type="text" id="coverInput" placeholder="https://..." /></div>
+        <div class="form-group" style="max-width:180px;">
+          <label>Shelf</label>
+          <select id="shelfInput">
+            <option value="Unsorted">Unsorted</option>
+            <option value="Shelf 1">Shelf 1</option>
+            <option value="Shelf 2">Shelf 2</option>
+            <option value="Shelf 3">Shelf 3</option>
+            <option value="Shelf 4">Shelf 4</option>
+            <option value="Shelf 5">Shelf 5</option>
+          </select>
+        </div>
+        <div class="form-group" style="align-self:flex-end; display: flex; gap: 0.5rem;">
+          <button class="btn btn-green" id="addBtn" onclick="addBook()">ADD BOOK</button>
+          <button class="btn btn-blue" id="editBtn" onclick="saveEdit()" style="display:none;">SAVE CHANGES</button>
+          <button class="btn btn-red" id="cancelBtn" onclick="cancelEdit()" style="display:none;">CANCEL</button>
+        </div>
+      </div>
+      <div id="preview" class="preview" style="display:none;">
+        <img id="prevCover" src="" alt="" />
+        <div class="preview-info">
+          <div class="prev-title" id="prevTitle"></div>
+          <div class="prev-author" id="prevAuthor"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Book List -->
+    <div class="add-panel">
+      <div class="panel-title">Catalog (<%= books.length %> books)</div>
+      <div class="search-bar"><input type="text" id="bookSearch" placeholder="Search books…" oninput="filterBooks(this.value)" /></div>
+      <table>
+        <thead><tr><th></th><th>Title</th><th>Author</th><th>ISBN</th><th>Shelf</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="bookTable">
+          <% books.forEach(b => { %>
+          <tr data-isbn="<%= b.isbn %>" data-title="<%= b.title.toLowerCase() %>" data-author="<%= b.author.toLowerCase() %>" data-raw-title="<%= b.title %>" data-raw-author="<%= b.author %>" data-cover="<%= b.cover || '' %>" data-shelf="<%= b.shelf %>">
+            <td><img class="book-cover-sm" src="<%= b.cover || '' %>" onerror="this.src='https://via.placeholder.com/32x48?text=?'" /></td>
+            <td style="font-weight:700;"><%= b.title %></td>
+            <td><%= b.author %></td>
+            <td style="font-family:monospace;font-size:0.7rem;"><%= b.isbn %></td>
+            <td><%= b.shelf %></td>
+            <td><span class="badge <%= b.status === 'Available' ? 'badge-avail' : 'badge-out' %>"><%= b.status === 'Available' ? 'AVAILABLE' : 'CHECKED OUT' %></span></td>
+            <td>
+              <button class="btn btn-blue btn-sm" onclick="startEdit(this)">EDIT</button>
+              <button class="btn btn-red btn-sm" onclick="deleteBook('<%= b.isbn %>')">DELETE</button>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+  function toast(msg, type='positive') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  async function lookupISBN() {
+    const isbn = document.getElementById('isbnInput').value.trim();
+    if (!isbn) return;
+    try {
+      const r = await fetch('/admin/books/lookup', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ isbn }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error, 'negative'); return; }
+      document.getElementById('titleInput').value = d.title;
+      document.getElementById('authorInput').value = d.author;
+      document.getElementById('coverInput').value = d.cover;
+      // Show preview
+      document.getElementById('preview').style.display = 'flex';
+      document.getElementById('prevCover').src = d.cover;
+      document.getElementById('prevTitle').textContent = d.title;
+      document.getElementById('prevAuthor').textContent = d.author;
+      toast('Book found on Open Library!');
+    } catch { toast('Lookup failed.', 'negative'); }
+  }
+
+  async function addBook() {
+    const data = {
+      isbn:   document.getElementById('isbnInput').value.trim(),
+      title:  document.getElementById('titleInput').value.trim(),
+      author: document.getElementById('authorInput').value.trim(),
+      cover:  document.getElementById('coverInput').value.trim(),
+      shelf:  document.getElementById('shelfInput').value,
+    };
+    if (!data.isbn || !data.title || !data.author) { toast('ISBN, title, and author are required.', 'negative'); return; }
+    try {
+      const r = await fetch('/admin/books/add', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error, 'negative'); return; }
+      toast('Book added to catalog!');
+      setTimeout(() => location.reload(), 800);
+    } catch { toast('Failed to add book.', 'negative'); }
+  }
+
+  function startEdit(btn) {
+    const tr = btn.closest('tr');
+    document.getElementById('isbnInput').value = tr.dataset.isbn;
+    document.getElementById('isbnInput').disabled = true;
+    document.getElementById('titleInput').value = tr.dataset.rawTitle;
+    document.getElementById('authorInput').value = tr.dataset.rawAuthor;
+    document.getElementById('coverInput').value = tr.dataset.cover;
+    document.getElementById('shelfInput').value = tr.dataset.shelf;
+
+    document.getElementById('addBtn').style.display = 'none';
+    document.getElementById('editBtn').style.display = 'inline-block';
+    document.getElementById('cancelBtn').style.display = 'inline-block';
+    document.getElementById('lookupBtn').disabled = true;
+    document.getElementById('formTitle').textContent = 'Edit Book';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function cancelEdit() {
+    document.getElementById('isbnInput').value = '';
+    document.getElementById('isbnInput').disabled = false;
+    document.getElementById('titleInput').value = '';
+    document.getElementById('authorInput').value = '';
+    document.getElementById('coverInput').value = '';
+    document.getElementById('shelfInput').value = 'Unsorted';
+
+    document.getElementById('addBtn').style.display = 'inline-block';
+    document.getElementById('editBtn').style.display = 'none';
+    document.getElementById('cancelBtn').style.display = 'none';
+    document.getElementById('lookupBtn').disabled = false;
+    document.getElementById('formTitle').textContent = 'Add New Book';
+  }
+
+  async function saveEdit() {
+    const data = {
+      isbn:   document.getElementById('isbnInput').value.trim(),
+      title:  document.getElementById('titleInput').value.trim(),
+      author: document.getElementById('authorInput').value.trim(),
+      cover:  document.getElementById('coverInput').value.trim(),
+      shelf:  document.getElementById('shelfInput').value,
+    };
+    if (!data.title || !data.author) { toast('Title and author are required.', 'negative'); return; }
+    try {
+      const r = await fetch('/admin/books/edit', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error, 'negative'); return; }
+      toast('Book updated!');
+      setTimeout(() => location.reload(), 800);
+    } catch { toast('Failed to update book.', 'negative'); }
+  }
+
+  async function deleteBook(isbn) {
+    if (!confirm('Delete this book from the catalog?')) return;
+    try {
+      const r = await fetch('/admin/books/delete', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ isbn }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error, 'negative'); return; }
+      toast('Book deleted.');
+      document.querySelector(`tr[data-isbn="${isbn}"]`)?.remove();
+    } catch { toast('Failed to delete.', 'negative'); }
+  }
+
+  function filterBooks(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('#bookTable tr').forEach(row => {
+      const t = row.dataset.title || '';
+      const a = row.dataset.author || '';
+      const isbn = row.dataset.isbn || '';
+      row.style.display = (t.includes(q) || a.includes(q) || isbn.includes(q)) ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>

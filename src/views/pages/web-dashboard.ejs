@@ -61,7 +61,8 @@
     @keyframes drift    { from{transform:translateY(0)} to{transform:translateY(-200px)} }
     @keyframes nebulaPulse { 0%{opacity:.8} 50%{opacity:1} 100%{opacity:.7} }
     @keyframes cardIn   { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-    @keyframes slideUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes slideUp  { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes dropDown { from{opacity:0;transform:translateY(-24px)} to{opacity:1;transform:translateY(0)} }
 
     /* ── Top header ── */
     .top-header {
@@ -280,11 +281,12 @@
     .empty-state span { color: #334155; font-size: 0.75rem; margin-top: 0.25rem; }
 
     /* Toast */
-    .toast-wrap { position: fixed; top: 6rem; right: 1.25rem; z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; }
+    .toast-wrap { position: fixed; top: 6rem; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
     .toast {
-      padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 600;
-      border: 1px solid; min-width: 13rem; max-width: 22rem;
-      animation: slideUp 0.3s ease-out; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.82rem; font-weight: 700;
+      border: 1px solid; min-width: 15rem; max-width: 24rem; text-align: center;
+      backdrop-filter: blur(12px); pointer-events: auto;
+      animation: dropDown 0.4s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 12px 32px rgba(0,0,0,0.5);
     }
     .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
     .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
@@ -403,6 +405,20 @@
       </div>
     </div>
 
+    <!-- ── SUGGEST ── -->
+    <div class="workspace" id="ws-suggest">
+      <div class="panel" style="max-width:500px;margin:0 auto;padding:2rem;">
+        <p class="section-title" style="margin-bottom:1.25rem;">Suggest a Book</p>
+        <p style="color:#94a3b8;font-size:0.78rem;margin-bottom:1.25rem;">Can’t find a book you need? Let us know and the library team will review your suggestion.</p>
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+          <input type="text" id="suggestTitle" placeholder="Book title *" style="width:100%;padding:0.6rem 1rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:white;font-family:inherit;font-size:0.85rem;outline:none;" />
+          <input type="text" id="suggestAuthor" placeholder="Author (optional)" style="width:100%;padding:0.6rem 1rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:white;font-family:inherit;font-size:0.85rem;outline:none;" />
+          <textarea id="suggestReason" placeholder="Why do you want this book? (optional)" rows="3" style="width:100%;padding:0.6rem 1rem;border-radius:0.5rem;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:white;font-family:inherit;font-size:0.85rem;outline:none;resize:vertical;"></textarea>
+          <button onclick="submitSuggestion()" style="padding:0.65rem;border-radius:0.5rem;background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);font-family:inherit;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;">SUBMIT SUGGESTION</button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Floating nav -->
@@ -412,6 +428,9 @@
     </button>
     <button class="nav-btn"        id="nav-mybooks"  onclick="showView('mybooks')">
       <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY BOOKS</span>
+    </button>
+    <button class="nav-btn"        id="nav-suggest"  onclick="showView('suggest')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg><span>SUGGEST</span>
     </button>
     <div class="nav-divider"></div>
     <button class="nav-btn" onclick="toggleSearch()">
@@ -430,6 +449,7 @@
     const PER_PAGE    = 20;
     let searchQuery   = '';
     let searchTimer   = null;
+    let currentUserId = null;
 
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
@@ -471,6 +491,7 @@
         const r = await fetch('/web-dashboard/api/catalog');
         const d = await r.json();
         allBooks = d.books ?? [];
+        currentUserId = d.currentUserId ?? null;
         applyFilters();
       } catch { toast('Could not load catalog.', 'negative'); }
     }
@@ -510,6 +531,13 @@
 
       grid.innerHTML = page.map((b, i) => {
         const avail = b.status === 'Available';
+        const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
+        let holdBtn = '';
+        if (!avail && !isBorrower) {
+          holdBtn = `<button class="catalog-add-btn" onclick="event.stopPropagation(); placeHold('${esc(b.isbn)}')" style="margin-top:0.4rem;padding:0.3rem 0.75rem;border-radius:0.35rem;font-family:inherit;font-size:0.62rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.15);color:#c084fc;transition:all 0.2s;">PLACE HOLD</button>`;
+        } else if (!avail && isBorrower) {
+          holdBtn = `<span style="margin-top:0.4rem;font-size:0.6rem;color:#64748b;font-weight:700;">YOU HAVE THIS BOOK</span>`;
+        }
         return `
           <div class="book-card ${avail ? '' : 'checked-out'}"
                style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
@@ -523,6 +551,7 @@
               <span class="badge ${avail ? 'badge-avail' : 'badge-out'}">
                 ${avail ? 'AVAILABLE' : 'CHECKED OUT'}
               </span>
+              ${holdBtn}
             </div>
           </div>`;
       }).join('');
@@ -636,6 +665,39 @@
       } finally {
         if (btn) btn.classList.remove('spinning');
       }
+    }
+
+    // ── Holds ───────────────────────────────────────────────────────────────────
+    async function placeHold(isbn) {
+      try {
+        const r = await fetch('/web-dashboard/api/hold', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ isbn }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Could not place hold.', r.status === 409 ? 'warning' : 'negative'); return; }
+        toast('Hold placed! You\u2019ll be notified when available.', 'positive');
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    // ── Suggestions ─────────────────────────────────────────────────────────────
+    async function submitSuggestion() {
+      const title  = document.getElementById('suggestTitle').value.trim();
+      const author = document.getElementById('suggestAuthor').value.trim();
+      const reason = document.getElementById('suggestReason').value.trim();
+      if (!title) { toast('Book title is required.', 'negative'); return; }
+      try {
+        const r = await fetch('/web-dashboard/api/suggest', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ title, author, reason }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Could not submit.', 'negative'); return; }
+        toast('Suggestion submitted! Thank you.', 'positive');
+        document.getElementById('suggestTitle').value = '';
+        document.getElementById('suggestAuthor').value = '';
+        document.getElementById('suggestReason').value = '';
+      } catch { toast('Server error.', 'negative'); }
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────────

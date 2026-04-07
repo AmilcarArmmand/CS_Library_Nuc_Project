@@ -201,6 +201,15 @@ router.post('/api/cart/clear', requireLogin, (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// POST /api/cart/remove
+router.post('/api/cart/remove', requireLogin, (req: Request, res: Response) => {
+  const isbn = String(req.body.isbn ?? '');
+  let cart = getCart(req);
+  cart = cart.filter((b: any) => b.isbn !== isbn);
+  setCart(req, cart);
+  res.json({ ok: true, cartCount: cart.length });
+});
+
 // POST /api/checkout
 router.post('/api/checkout', requireLogin, async (req: Request, res: Response) => {
   const user  = getUser(req)!;
@@ -242,6 +251,64 @@ router.post('/api/renew', requireLogin, async (req: Request, res: Response) => {
   const { ok, status, data } = await cloudFetch('POST', '/renew', {
     loanId: req.body.loanId,
   });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/donate — Donate a book
+router.post('/api/donate', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('POST', '/donate', {
+    isbn:      req.body.isbn,
+    title:     req.body.title,
+    author:    req.body.author,
+    cover:     req.body.cover,
+    donorName: user.name,
+  });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/donate/lookup — Lookup ISBN via Open Library
+router.post('/api/donate/lookup', requireLogin, async (req: Request, res: Response) => {
+  const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+  if (!isbn) { res.status(400).json({ error: 'ISBN required.' }); return; }
+
+  try {
+    const olRes = await fetch(
+      `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+    );
+    const olData = await olRes.json().catch(() => ({}));
+    const bookData = (olData as any)[`ISBN:${isbn}`];
+
+    if (!bookData) {
+      res.status(404).json({ error: 'Not found on Open Library. Enter details manually.' });
+      return;
+    }
+
+    res.json({
+      isbn,
+      title:  bookData.title || '',
+      author: bookData.authors?.[0]?.name || '',
+      cover:  bookData.cover?.large || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`,
+    });
+  } catch {
+    res.status(500).json({ error: 'Lookup failed.' });
+  }
+});
+
+// POST /api/hold — Place a hold
+router.post('/api/hold', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('POST', '/hold', {
+    userId: user.id,
+    isbn:   req.body.isbn,
+  });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// GET /api/my-holds
+router.get('/api/my-holds', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('GET', `/holds/${user.id}`);
   res.status(ok ? 200 : status).json(data);
 });
 

@@ -62,6 +62,7 @@
     @keyframes nebulaPulse { 0%{opacity:.8} 50%{opacity:1} 100%{opacity:.7} }
     @keyframes cardIn   { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
     @keyframes slideUp  { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes dropDown { from{opacity:0;transform:translateY(-24px)} to{opacity:1;transform:translateY(0)} }
 
     /* ── Header ── */
     .app-header {
@@ -240,6 +241,10 @@
     .cart-item-title  { font-weight: 700; font-size: 0.82rem; }
     .cart-item-author { font-size: 0.7rem; color: #94a3b8; }
     .cart-item-due    { font-size: 0.68rem; color: #60a5fa; font-weight: 700; }
+    .remove-btn { width: 1.85rem; height: 1.85rem; border-radius: 50%; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; margin-left: auto; }
+    .remove-btn:hover { background: rgba(239,68,68,0.3); color: white; }
+    .catalog-add-btn { margin-top: 0.5rem; width: 100%; padding: 0.4rem; border-radius: 0.5rem; font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; cursor: pointer; background: rgba(59,130,246,0.2); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); transition: all 0.2s; }
+    .catalog-add-btn:hover { background: rgba(59,130,246,0.4); color: white; }
 
     .empty-cart { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; }
     .empty-cart img { width: 3rem; height: 3rem; opacity: 0.3; margin-bottom: 0.6rem; filter: brightness(0) invert(1); }
@@ -299,11 +304,12 @@
     .empty-state p { color: #64748b; font-size: 0.82rem; }
 
     /* Toast */
-    .toast-wrap { position: fixed; top: 6rem; right: 1.25rem; z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; }
+    .toast-wrap { position: fixed; top: 6rem; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
     .toast {
-      padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.8rem; font-weight: 600;
-      border: 1px solid; min-width: 13rem; max-width: 22rem;
-      animation: slideUp 0.3s ease-out; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.82rem; font-weight: 700;
+      border: 1px solid; min-width: 15rem; max-width: 24rem; text-align: center;
+      backdrop-filter: blur(12px); pointer-events: auto;
+      animation: dropDown 0.4s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 12px 32px rgba(0,0,0,0.5);
     }
     .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
     .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
@@ -432,6 +438,35 @@
           <p>No borrowing history yet</p>
         </div>
       </div>
+      </div>
+    </div>
+
+    <!-- ── DONATE ── -->
+    <div class="workspace" id="ws-donate">
+      <div class="panel return-panel">
+        <p class="panel-title" style="margin-bottom:1.25rem;">DONATE A BOOK</p>
+        <input type="text" class="scan-input" id="donateIsbnInput"
+               placeholder="Scan or type ISBN…" autocomplete="off"
+               onkeydown="if(event.key==='Enter') lookupDonation()" />
+        <div id="donatePreview" style="display:none;margin-top:1.25rem;">
+          <img id="donateCover" src="" class="checkout-cover" alt="cover" style="margin:0 auto 0.85rem;" />
+          <p class="checkout-title" id="donateTitle"></p>
+          <p class="checkout-author" id="donateAuthor"></p>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:1rem;max-width:320px;margin-left:auto;margin-right:auto;">
+            <input type="text" class="scan-input" id="donateTitleInput" placeholder="Title (edit if needed)" />
+            <input type="text" class="scan-input" id="donateAuthorInput" placeholder="Author (edit if needed)" />
+          </div>
+          <button class="confirm-btn on" style="max-width:320px;margin:1rem auto 0;" onclick="confirmDonation()">CONFIRM DONATION</button>
+        </div>
+        <div id="donateManual" style="display:none;margin-top:1.25rem;">
+          <p style="color:#fbbf24;font-size:0.82rem;margin-bottom:0.75rem;">Not found on Open Library — enter details manually:</p>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;max-width:320px;margin:0 auto;">
+            <input type="text" class="scan-input" id="donateManualTitle" placeholder="Book title" />
+            <input type="text" class="scan-input" id="donateManualAuthor" placeholder="Author" />
+          </div>
+          <button class="confirm-btn on" style="max-width:320px;margin:1rem auto 0;" onclick="confirmManualDonation()">DONATE THIS BOOK</button>
+        </div>
+      </div>
     </div>
 
   </main>
@@ -449,6 +484,9 @@
     </button>
     <button class="nav-btn"        id="nav-mybooks"  onclick="showView('mybooks')">
       <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY BOOKS</span>
+    </button>
+    <button class="nav-btn"        id="nav-donate"   onclick="showView('donate')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span>DONATE</span>
     </button>
     <div class="nav-divider"></div>
     <button class="nav-btn" onclick="toggleSearch()">
@@ -470,6 +508,7 @@
     const PER_PAGE    = 12;
     let searchQuery   = '';
     let searchTimer   = null;
+    const currentUserId = <%= user.id %>;
 
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
@@ -490,6 +529,7 @@
       if (view === 'checkout') document.getElementById('checkoutInput').focus();
       if (view === 'return')   document.getElementById('returnInput').focus();
       if (view === 'mybooks')  loadMyBooks();
+      if (view === 'donate')   document.getElementById('donateIsbnInput')?.focus();
     }
 
     // ── Search ─────────────────────────────────────────────────────────────────
@@ -558,6 +598,20 @@
             <p class="book-author">${esc(b.author)}</p>
             <p class="book-isbn">ISBN ${esc(b.isbn||'')}</p>
             <span class="badge ${avail?'badge-avail':'badge-out'}">${avail?'AVAILABLE':'CHECKED OUT'}</span>
+            ${(() => {
+              if (!avail) {
+                const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
+                if (isBorrower) {
+                  return `<span style="margin-top:0.3rem;font-size:0.6rem;color:#64748b;font-weight:700;">YOU HAVE THIS BOOK</span>`;
+                }
+                return `<button class="catalog-add-btn" onclick="event.stopPropagation(); placeHold('${esc(b.isbn)}')" style="background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3);">PLACE HOLD</button>`;
+              }
+              const inCart = cart.some(c => c.isbn === b.isbn);
+              if (inCart) {
+                return `<button class="catalog-add-btn" disabled style="background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); cursor: default;">ADDED TO CART</button>`;
+              }
+              return `<button class="catalog-add-btn" onclick="addToCartByIsbn(event, '${esc(b.isbn)}')">ADD TO CART</button>`;
+            })()}
           </div>
         </div>`;
       }).join('');
@@ -633,9 +687,38 @@
           <div><p class="cart-item-title">${esc(b.title)}</p>
                <p class="cart-item-author">${esc(b.author)}</p>
                <p class="cart-item-due">Due: ${dueShort()}</p></div>
+          <button class="remove-btn" onclick="removeFromCart('${esc(b.isbn)}')">✕</button>
         </div>`).join('');
       btn.textContent = `CONFIRM CHECKOUT (${cart.length})`;
       btn.className   = `confirm-btn ${cart.length?'on':'off'}`;
+      if (typeof renderCatalog === 'function' && filtered && filtered.length) {
+        renderCatalog();
+      }
+    }
+
+    async function addToCartByIsbn(e, isbn) {
+      e.stopPropagation();
+      const inp = document.getElementById('checkoutInput');
+      inp.value = isbn;
+      
+      const preCartSize = cart.length;
+      await scanISBN();
+      
+      if (cart.length > preCartSize) {
+        toast('Added to cart!', 'positive');
+      }
+    }
+
+    async function removeFromCart(isbn) {
+      try {
+        const r = await fetch('/api/cart/remove', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isbn }),
+        });
+        if (!r.ok) return;
+        cart = cart.filter(b => b.isbn !== isbn);
+        refreshCartUI();
+      } catch (err) { toast('Error removing item.', 'negative'); }
     }
 
     async function confirmCheckout() {
@@ -746,6 +829,95 @@
         toast('Book renewed for 14 more days!','positive');
         await loadMyBooks();
       } catch { toast('Server error.','negative'); btn.disabled=false; }
+    }
+
+    // ── Donate ──────────────────────────────────────────────────────────────────
+    let donateIsbn = '';
+    let donateMeta = {};
+
+    async function lookupDonation() {
+      const isbn = document.getElementById('donateIsbnInput').value.trim();
+      if (!isbn) return;
+      donateIsbn = isbn;
+
+      document.getElementById('donatePreview').style.display = 'none';
+      document.getElementById('donateManual').style.display = 'none';
+
+      try {
+        const r = await fetch('/api/donate/lookup', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ isbn }),
+        });
+        const d = await r.json();
+
+        if (!r.ok) {
+          // Show manual entry
+          document.getElementById('donateManual').style.display = 'block';
+          return;
+        }
+
+        donateMeta = d;
+        document.getElementById('donateCover').src = d.cover || '';
+        document.getElementById('donateTitle').textContent = d.title;
+        document.getElementById('donateAuthor').textContent = d.author;
+        document.getElementById('donateTitleInput').value = d.title;
+        document.getElementById('donateAuthorInput').value = d.author;
+        document.getElementById('donatePreview').style.display = 'block';
+      } catch {
+        document.getElementById('donateManual').style.display = 'block';
+      }
+    }
+
+    async function confirmDonation() {
+      const title  = document.getElementById('donateTitleInput').value.trim();
+      const author = document.getElementById('donateAuthorInput').value.trim();
+      if (!title) { toast('Title is required.', 'negative'); return; }
+      try {
+        const r = await fetch('/api/donate', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ isbn: donateIsbn, title, author, cover: donateMeta.cover || '' }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Donation failed.', 'negative'); return; }
+        toast('Book donated! Thank you! 📚', 'positive');
+        document.getElementById('donateIsbnInput').value = '';
+        document.getElementById('donatePreview').style.display = 'none';
+        donateIsbn = '';
+        donateMeta = {};
+        loadCatalog(); // Refresh catalog to show new book
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    async function confirmManualDonation() {
+      const title  = document.getElementById('donateManualTitle').value.trim();
+      const author = document.getElementById('donateManualAuthor').value.trim();
+      if (!title) { toast('Title is required.', 'negative'); return; }
+      try {
+        const r = await fetch('/api/donate', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ isbn: donateIsbn, title, author }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Donation failed.', 'negative'); return; }
+        toast('Book donated! Thank you! 📚', 'positive');
+        document.getElementById('donateIsbnInput').value = '';
+        document.getElementById('donateManual').style.display = 'none';
+        donateIsbn = '';
+        loadCatalog();
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    // ── Holds ───────────────────────────────────────────────────────────────────
+    async function placeHold(isbn) {
+      try {
+        const r = await fetch('/api/hold', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ isbn }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Could not place hold.', r.status===409 ? 'warning' : 'negative'); return; }
+        toast('Hold placed! You will be notified when available.', 'positive');
+      } catch { toast('Server error.', 'negative'); }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────

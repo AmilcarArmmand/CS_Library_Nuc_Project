@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%), radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%); }
+    .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    .sidebar { width: 250px; background: rgba(10,15,28,0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 1.5rem 0; flex-shrink: 0; backdrop-filter: blur(20px); position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1rem; }
+    .sidebar-brand h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.15em; }
+    .sidebar-brand span { font-size: 0.65rem; color: #60a5fa; font-weight: 300; letter-spacing: 0.15em; }
+    .nav-items { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.75rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .signout-btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.35rem; font-size: 0.68rem; font-weight: 700; color: #f87171; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); text-decoration: none; }
+
+    .main { flex: 1; margin-left: 250px; padding: 2rem; }
+    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .page-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; }
+
+    .panel { background: rgba(21,25,36,0.84); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 0.72rem; letter-spacing: 0.2em; font-weight: 900; text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem; }
+
+    .search-bar { margin-bottom: 1rem; }
+    .search-bar input { width: 100%; max-width: 400px; padding: 0.55rem 1rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: white; font-family: inherit; font-size: 0.82rem; outline: none; }
+    .search-bar input:focus { border-color: rgba(59,130,246,0.5); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(71,85,105,0.4); }
+    td { font-size: 0.78rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid rgba(71,85,105,0.2); color: #cbd5e1; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; }
+    .badge-active { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-disabled { background: rgba(239,68,68,0.15); color: #f87171; }
+    .badge-admin { background: rgba(168,85,247,0.15); color: #c084fc; }
+    .badge-user { background: rgba(100,116,139,0.2); color: #94a3b8; }
+
+    .btn { padding: 0.3rem 0.65rem; border-radius: 0.35rem; font-family: inherit; font-size: 0.65rem; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+    .btn-toggle { background: rgba(59,130,246,0.1); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+    .btn-toggle:hover { background: rgba(59,130,246,0.25); }
+    .btn-role { background: rgba(168,85,247,0.1); color: #c084fc; border-color: rgba(168,85,247,0.3); }
+    .btn-role:hover { background: rgba(168,85,247,0.25); }
+    .btn-hist { background: rgba(255,255,255,0.05); color: #94a3b8; border-color: rgba(255,255,255,0.1); }
+    .btn-hist:hover { background: rgba(255,255,255,0.1); color: white; }
+
+    /* History Modal */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: rgba(15,20,35,0.98); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto; backdrop-filter: blur(20px); }
+    .modal-close { float: right; background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer; }
+    .modal-close:hover { color: white; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
+    .toast { padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; border: 1px solid; pointer-events: auto; animation: dropDown 0.4s ease; backdrop-filter: blur(12px); }
+    .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+    @keyframes dropDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <nav class="sidebar">
+    <div class="sidebar-brand"><h1>CS_LIBRARY</h1><span>ADMIN PANEL</span></div>
+    <div class="nav-items">
+      <a href="/admin" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="/admin/books" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Books</a>
+      <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Loans</a>
+      <a href="/admin/users" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+      <a href="/admin/reports" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/suggestions" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
+    </div>
+    <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-title">User Management</h1>
+    <p class="page-sub">Manage accounts, roles, and borrowing access</p>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <div class="panel">
+      <div class="panel-title">All Users (<%= users.length %>)</div>
+      <div class="search-bar"><input type="text" placeholder="Search by name, email, or student ID…" oninput="filterUsers(this.value)" /></div>
+      <table>
+        <thead><tr><th>Name</th><th>Email</th><th>Student ID</th><th>Role</th><th>Active Loans</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="userTable">
+          <% users.forEach(u => { %>
+          <tr data-search="<%= (u.name||'').toLowerCase() %> <%= (u.email||'').toLowerCase() %> <%= (u.studentId||'').toLowerCase() %>">
+            <td style="font-weight:700;"><%= u.name %></td>
+            <td style="font-size:0.72rem;"><%= u.email %></td>
+            <td style="font-family:monospace;font-size:0.72rem;"><%= u.studentId || '—' %></td>
+            <td><span class="badge <%= u.role === 'admin' ? 'badge-admin' : 'badge-user' %>"><%= u.role.toUpperCase() %></span></td>
+            <td style="text-align:center;font-weight:700;<%= u.activeLoans > 0 ? 'color:#fbbf24;' : '' %>"><%= u.activeLoans %></td>
+            <td><span class="badge <%= u.active ? 'badge-active' : 'badge-disabled' %>"><%= u.active ? 'ACTIVE' : 'DISABLED' %></span></td>
+            <td style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+              <button class="btn btn-toggle" onclick="toggleUser(<%= u.id %>)"><%= u.active ? 'DISABLE' : 'ENABLE' %></button>
+              <button class="btn btn-role" onclick="toggleRole(<%= u.id %>, '<%= u.role %>')"><%= u.role === 'admin' ? 'DEMOTE' : 'PROMOTE' %></button>
+              <button class="btn btn-hist" onclick="viewHistory(<%= u.id %>, '<%= u.name %>')">HISTORY</button>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="panel-title" id="modalTitle">Borrowing History</div>
+    <table>
+      <thead><tr><th>Book</th><th>Checked Out</th><th>Due</th><th>Status</th></tr></thead>
+      <tbody id="historyBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function toast(msg, type='positive') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  function filterUsers(q) {
+    q = q.toLowerCase();
+    document.querySelectorAll('#userTable tr').forEach(row => {
+      row.style.display = (row.dataset.search || '').includes(q) ? '' : 'none';
+    });
+  }
+
+  async function toggleUser(userId) {
+    try {
+      const r = await fetch('/admin/users/toggle', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error, 'negative'); return; }
+      toast(d.active ? 'User enabled.' : 'User disabled.');
+      setTimeout(() => location.reload(), 600);
+    } catch { toast('Error.', 'negative'); }
+  }
+
+  async function toggleRole(userId, currentRole) {
+    const newRole = currentRole === 'admin' ? 'user' : 'admin';
+    if (!confirm(`Change this user to ${newRole}?`)) return;
+    try {
+      const r = await fetch('/admin/users/set-role', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId, role: newRole }),
+      });
+      if (!r.ok) { toast('Failed.', 'negative'); return; }
+      toast(`Role changed to ${newRole}.`);
+      setTimeout(() => location.reload(), 600);
+    } catch { toast('Error.', 'negative'); }
+  }
+
+  async function viewHistory(userId, name) {
+    document.getElementById('modalTitle').textContent = `${name} — Borrowing History`;
+    document.getElementById('historyModal').classList.add('open');
+    document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b;">Loading…</td></tr>';
+
+    try {
+      const r = await fetch(`/admin/users/${userId}/history`);
+      const d = await r.json();
+      const tbody = document.getElementById('historyBody');
+      if (!d.loans?.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#64748b;">No borrowing history</td></tr>';
+        return;
+      }
+      tbody.innerHTML = d.loans.map(l => {
+        const due = new Date(l.dueDate);
+        const overdue = !l.returned && due < new Date();
+        const status = l.returned ? '<span class="badge badge-active">RETURNED</span>' :
+                       overdue ? '<span class="badge badge-disabled">OVERDUE</span>' :
+                       '<span class="badge badge-active">ACTIVE</span>';
+        return `<tr>
+          <td style="font-weight:700;">${l.title}</td>
+          <td>${new Date(l.checkedOut).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+          <td>${due.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
+          <td>${status}</td>
+        </tr>`;
+      }).join('');
+    } catch { toast('Failed to load history.', 'negative'); }
+  }
+
+  function closeModal() {
+    document.getElementById('historyModal').classList.remove('open');
+  }
+</script>
+</body>
+</html>

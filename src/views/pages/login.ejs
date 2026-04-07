@@ -414,6 +414,14 @@
     }
     updateClock();
     setInterval(updateClock, 1000);
+
+    // Ctrl+A → Admin login
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        window.location.href = '/admin/login';
+      }
+    });
   </script>
 </body>
 </html>

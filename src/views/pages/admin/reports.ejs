@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%), radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%); }
+    .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    .sidebar { width: 250px; background: rgba(10,15,28,0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 1.5rem 0; flex-shrink: 0; backdrop-filter: blur(20px); position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1rem; }
+    .sidebar-brand h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.15em; }
+    .sidebar-brand span { font-size: 0.65rem; color: #60a5fa; font-weight: 300; letter-spacing: 0.15em; }
+    .nav-items { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.75rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .signout-btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.35rem; font-size: 0.68rem; font-weight: 700; color: #f87171; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); text-decoration: none; }
+
+    .main { flex: 1; margin-left: 250px; padding: 2rem; }
+    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .page-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; }
+
+    .toolbar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .btn { padding: 0.4rem 1rem; border-radius: 0.5rem; font-family: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.2s; text-decoration: none; }
+    .btn-green { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .btn-green:hover { background: rgba(34,197,94,0.3); }
+
+    .panel { background: rgba(21,25,36,0.84); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 0.72rem; letter-spacing: 0.2em; font-weight: 900; text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    /* Bar chart */
+    .chart { display: flex; align-items: flex-end; gap: 0.35rem; height: 180px; padding-top: 1rem; }
+    .chart-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+    .chart-bar { width: 100%; max-width: 40px; background: linear-gradient(to top, rgba(59,130,246,0.4), rgba(59,130,246,0.8)); border-radius: 0.25rem 0.25rem 0 0; min-height: 4px; transition: height 0.5s; }
+    .chart-label { font-size: 0.55rem; color: #64748b; margin-top: 0.35rem; text-align: center; }
+    .chart-val { font-size: 0.6rem; color: #60a5fa; font-weight: 700; margin-bottom: 0.2rem; }
+
+    /* Popular table */
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(71,85,105,0.4); }
+    td { font-size: 0.78rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid rgba(71,85,105,0.2); color: #cbd5e1; }
+    .rank { width: 1.5rem; height: 1.5rem; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(59,130,246,0.15); color: #60a5fa; font-size: 0.65rem; font-weight: 900; }
+    .book-cover-sm { width: 28px; height: 42px; object-fit: cover; border-radius: 0.2rem; }
+
+    /* Day/Hour heat */
+    .heat-grid { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .heat-cell { display: flex; flex-direction: column; align-items: center; padding: 0.5rem 0.75rem; border-radius: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid rgba(71,85,105,0.3); min-width: 70px; }
+    .heat-day { font-size: 0.68rem; font-weight: 700; color: #cbd5e1; }
+    .heat-count { font-size: 1.1rem; font-weight: 900; color: #60a5fa; }
+
+    @media (max-width: 1024px) { .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <nav class="sidebar">
+    <div class="sidebar-brand"><h1>CS_LIBRARY</h1><span>ADMIN PANEL</span></div>
+    <div class="nav-items">
+      <a href="/admin" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="/admin/books" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Books</a>
+      <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Loans</a>
+      <a href="/admin/users" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+      <a href="/admin/reports" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/suggestions" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
+    </div>
+    <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-title">Usage Reports</h1>
+    <p class="page-sub">Library usage statistics and analytics</p>
+
+    <div class="toolbar">
+      <a href="/admin/reports/csv" class="btn btn-green">EXPORT FULL REPORT CSV</a>
+      <button class="btn btn-green" onclick="window.print()">PRINT REPORT</button>
+    </div>
+
+    <!-- Monthly Checkouts -->
+    <div class="panel">
+      <div class="panel-title">Monthly Checkouts (Last 12 Months)</div>
+      <% const maxMonth = Math.max(...monthlyStats.map(m => Number(m.checkouts)), 1); %>
+      <div class="chart">
+        <% monthlyStats.forEach(m => { %>
+        <div class="chart-bar-wrap">
+          <div class="chart-val"><%= m.checkouts %></div>
+          <div class="chart-bar" style="height: <%= Math.max((Number(m.checkouts) / maxMonth) * 150, 4) %>px;"></div>
+          <div class="chart-label"><%= m.month ? m.month.slice(5) : '' %></div>
+        </div>
+        <% }); %>
+        <% if (!monthlyStats.length) { %>
+        <p style="color:#64748b;font-size:0.82rem;width:100%;text-align:center;">No data yet — checkouts will appear here</p>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Most Popular Books -->
+      <div class="panel">
+        <div class="panel-title">Most Popular Books</div>
+        <table>
+          <thead><tr><th>#</th><th></th><th>Title</th><th>Author</th><th>Checkouts</th></tr></thead>
+          <tbody>
+            <% popular.forEach((b, i) => { %>
+            <tr>
+              <td><span class="rank"><%= i + 1 %></span></td>
+              <td><img class="book-cover-sm" src="<%= b.cover || '' %>" onerror="this.style.display='none'" /></td>
+              <td style="font-weight:700;"><%= b.title %></td>
+              <td><%= b.author %></td>
+              <td style="font-weight:700;color:#60a5fa;"><%= b.checkoutCount %></td>
+            </tr>
+            <% }); %>
+            <% if (!popular.length) { %>
+            <tr><td colspan="5" style="text-align:center;color:#64748b;">No data</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Usage by Day of Week -->
+      <div class="panel">
+        <div class="panel-title">Checkouts by Day of Week</div>
+        <div class="heat-grid">
+          <% dayOfWeek.forEach(d => { %>
+          <div class="heat-cell">
+            <div class="heat-day"><%= (d.day || '').trim() %></div>
+            <div class="heat-count"><%= d.checkouts %></div>
+          </div>
+          <% }); %>
+          <% if (!dayOfWeek.length) { %>
+          <p style="color:#64748b;font-size:0.82rem;">No data yet</p>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Usage by Hour -->
+    <div class="panel">
+      <div class="panel-title">Checkouts by Hour of Day</div>
+      <% const maxHour = Math.max(...hourOfDay.map(h => Number(h.checkouts)), 1); %>
+      <div class="chart">
+        <% for (let h = 8; h <= 22; h++) { %>
+        <% const found = hourOfDay.find(x => Number(x.hour) === h); %>
+        <% const c = found ? Number(found.checkouts) : 0; %>
+        <div class="chart-bar-wrap">
+          <div class="chart-val"><%= c %></div>
+          <div class="chart-bar" style="height: <%= Math.max((c / maxHour) * 150, 4) %>px;"></div>
+          <div class="chart-label"><%= h > 12 ? (h-12)+'pm' : h+'am' %></div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

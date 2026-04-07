@@ -116,11 +116,31 @@ export const holdsRelations = relations(holds, ({ one }) => ({
   book: one(books, { fields: [holds.isbn],   references: [books.isbn] }),
 }));
 
+// SUGGESTIONS TABLE
+
+// Students can suggest books they'd like to see in the library.
+// status: 'pending' | 'approved' | 'rejected'
+
+export const suggestions = pgTable('suggestions', {
+  id:        serial('id').primaryKey(),
+  userId:    integer('user_id').notNull().references(() => users.id),
+  title:     varchar('title', { length: 500 }).notNull(),
+  author:    varchar('author', { length: 255 }).notNull().default(''),
+  reason:    text('reason').notNull().default(''),
+  status:    varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const suggestionsRelations = relations(suggestions, ({ one }) => ({
+  user: one(users, { fields: [suggestions.userId], references: [users.id] }),
+}));
+
 // TYPE EXPORTS
 
-export type User    = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Book    = typeof books.$inferSelect;
-export type NewBook = typeof books.$inferInsert;
-export type Loan    = typeof loans.$inferSelect;
-export type Hold    = typeof holds.$inferSelect;
+export type User       = typeof users.$inferSelect;
+export type NewUser    = typeof users.$inferInsert;
+export type Book       = typeof books.$inferSelect;
+export type NewBook    = typeof books.$inferInsert;
+export type Loan       = typeof loans.$inferSelect;
+export type Hold       = typeof holds.$inferSelect;
+export type Suggestion = typeof suggestions.$inferSelect;

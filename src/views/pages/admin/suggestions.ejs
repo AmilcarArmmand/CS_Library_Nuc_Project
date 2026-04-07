@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%), radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%); }
+    .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    .sidebar { width: 250px; background: rgba(10,15,28,0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 1.5rem 0; flex-shrink: 0; backdrop-filter: blur(20px); position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1rem; }
+    .sidebar-brand h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.15em; }
+    .sidebar-brand span { font-size: 0.65rem; color: #60a5fa; font-weight: 300; letter-spacing: 0.15em; }
+    .nav-items { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.75rem; flex: 1; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .signout-btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.35rem; font-size: 0.68rem; font-weight: 700; color: #f87171; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); text-decoration: none; }
+
+    .main { flex: 1; margin-left: 250px; padding: 2rem; }
+    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .page-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; }
+
+    .panel { background: rgba(21,25,36,0.84); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 0.72rem; letter-spacing: 0.2em; font-weight: 900; text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem; }
+
+    .toolbar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-btn { padding: 0.35rem 0.85rem; border-radius: 9999px; font-family: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; transition: all 0.2s; }
+    .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .filter-btn.active { background: rgba(59,130,246,0.2); color: white; border-color: rgba(59,130,246,0.5); }
+
+    .sug-card {
+      padding: 1rem; border-bottom: 1px solid rgba(71,85,105,0.3);
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .sug-card:last-child { border-bottom: none; }
+    .sug-info { flex: 1; }
+    .sug-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.15rem; }
+    .sug-author { font-size: 0.75rem; color: #94a3b8; }
+    .sug-reason { font-size: 0.78rem; color: #cbd5e1; margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.03); border-radius: 0.35rem; border-left: 2px solid rgba(59,130,246,0.3); }
+    .sug-meta { font-size: 0.65rem; color: #64748b; margin-top: 0.4rem; }
+    .sug-actions { display: flex; flex-direction: column; gap: 0.35rem; flex-shrink: 0; }
+    .btn { padding: 0.3rem 0.65rem; border-radius: 0.35rem; font-family: inherit; font-size: 0.65rem; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+    .btn-approve { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .btn-approve:hover { background: rgba(34,197,94,0.3); }
+    .btn-reject { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.25); }
+    .btn-reject:hover { background: rgba(239,68,68,0.25); }
+
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; }
+    .badge-pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-approved { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    .toast-wrap { position: fixed; top: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; pointer-events: none; }
+    .toast { padding: 0.6rem 1rem; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; border: 1px solid; pointer-events: auto; animation: dropDown 0.4s ease; backdrop-filter: blur(12px); }
+    .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+    @keyframes dropDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+
+    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+  <nav class="sidebar">
+    <div class="sidebar-brand"><h1>CS_LIBRARY</h1><span>ADMIN PANEL</span></div>
+    <div class="nav-items">
+      <a href="/admin" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="/admin/books" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Books</a>
+      <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Loans</a>
+      <a href="/admin/users" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
+      <a href="/admin/reports" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/suggestions" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
+    </div>
+    <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
+  </nav>
+
+  <main class="main">
+    <h1 class="page-title">Book Suggestions</h1>
+    <p class="page-sub">Review and respond to student book requests</p>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <div class="toolbar">
+      <button class="filter-btn active" onclick="filterSuggestions('all')">ALL (<%= suggestions.length %>)</button>
+      <button class="filter-btn" onclick="filterSuggestions('pending')">PENDING (<%= suggestions.filter(s => s.status === 'pending').length %>)</button>
+      <button class="filter-btn" onclick="filterSuggestions('approved')">APPROVED</button>
+      <button class="filter-btn" onclick="filterSuggestions('rejected')">REJECTED</button>
+    </div>
+
+    <div class="panel">
+      <% if (!suggestions.length) { %>
+        <p style="color:#64748b;text-align:center;padding:2rem;font-size:0.85rem;">No suggestions yet. Students can submit them from the web portal.</p>
+      <% } %>
+      <% suggestions.forEach(s => { %>
+      <div class="sug-card" data-status="<%= s.status %>">
+        <div class="sug-info">
+          <div class="sug-title"><%= s.title %></div>
+          <% if (s.author) { %><div class="sug-author">by <%= s.author %></div><% } %>
+          <% if (s.reason) { %><div class="sug-reason">"<%= s.reason %>"</div><% } %>
+          <div class="sug-meta">
+            Suggested by <strong><%= s.userName %></strong> (<%= s.userEmail %>) —
+            <%= new Date(s.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) %>
+          </div>
+        </div>
+        <div class="sug-actions">
+          <span class="badge badge-<%= s.status %>"><%= s.status.toUpperCase() %></span>
+          <% if (s.status === 'pending') { %>
+            <button class="btn btn-approve" onclick="updateSuggestion(<%= s.id %>, 'approved', this)">APPROVE</button>
+            <button class="btn btn-reject" onclick="updateSuggestion(<%= s.id %>, 'rejected', this)">REJECT</button>
+          <% } %>
+        </div>
+      </div>
+      <% }); %>
+    </div>
+  </main>
+</div>
+
+<script>
+  function toast(msg, type='positive') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  function filterSuggestions(status) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.sug-card').forEach(card => {
+      card.style.display = (status === 'all' || card.dataset.status === status) ? '' : 'none';
+    });
+  }
+
+  async function updateSuggestion(id, status, btn) {
+    try {
+      const r = await fetch('/admin/suggestions/update', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, status }),
+      });
+      if (!r.ok) { toast('Failed to update.', 'negative'); return; }
+      toast(`Suggestion ${status}.`);
+      setTimeout(() => location.reload(), 600);
+    } catch { toast('Error.', 'negative'); }
+  }
+</script>
+</body>
+</html>
