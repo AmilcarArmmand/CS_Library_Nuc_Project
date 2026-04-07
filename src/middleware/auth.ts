@@ -1,41 +1,46 @@
-// Authentication middleware for protecting routes
+// Authentication middleware for protecting routes.
 
-export const requireAuth = (req, res, next) => {
-    if (req.isAuthenticated()) {
-        return next();
-    }
+import type { Request, Response, NextFunction } from 'express';
 
-    // Store the requested URL to redirect after login
-    req.session.returnTo = req.originalUrl;
-
-    // Redirect to login
-    res.redirect('/auth/google');
+// Makes req.user available in all EJS templates as `user`
+export const attachUser = (req: Request, res: Response, next: NextFunction): void => {
+  res.locals['user'] = req.user ?? null;
+  res.locals['isAuthenticated'] = req.isAuthenticated();
+  next();
 };
 
-export const requireNoAuth = (req, res, next) => {
-    if (!req.isAuthenticated()) {
-        return next();
-    }
-
-    // If user is already logged in, redirect to dashboard
-    res.redirect('/dashboard');
+// Redirects unauthenticated users to /auth/login
+// Saves the originally requested URL so the user is sent there after login
+export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (req.isAuthenticated()) { next(); return; }
+  req.session['returnTo'] = req.originalUrl;
+  res.redirect('/auth/login');
 };
 
-export const attachUser = (req, res, next) => {
-    // Make user available in all templates
-    res.locals.user = req.user || null;
-    res.locals.isAuthenticated = req.isAuthenticated();
-    next();
+// Redirects already-authenticated users away from pages like /auth/login and /auth/register
+export const requireNoAuth = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.isAuthenticated()) { next(); return; }
+  res.redirect('/web-dashboard');
 };
 
-// Admin middleware (for future use if needed)
-export const requireAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.role === 'admin') {
-        return next();
-    }
+// Blocks non-admin users from accessing admin routes.
+// If not logged in at all, redirects to /admin/login.
+// If logged in but not admin, renders a 403 error page.
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
+  if (!req.isAuthenticated()) {
+    req.session['returnTo'] = req.originalUrl;
+    res.redirect('/admin/login');
+    return;
+  }
 
+  if ((req.user as any)?.role !== 'admin') {
     res.status(403).render('pages/error', {
-        title: 'Access Denied',
-        error: 'You do not have permission to access this page.'
+      title:       'Access Denied',
+      error:       'You are not authorized to access this page.',
+      projectName: 'CS Library Project',
     });
+    return;
+  }
+
+  next();
 };

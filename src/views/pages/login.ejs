@@ -13,8 +13,8 @@
     body {
       font-family: 'Space Grotesk', sans-serif;
       background-color: #020617;
-      overflow: hidden;
-      height: 100vh;
+      /* FIX: removed overflow:hidden + fixed height so mobile keyboards don't clip the form */
+      min-height: 100vh;
       width: 100vw;
       position: relative;
     }
@@ -86,15 +86,17 @@
     /* ── Two-panel layout ── */
     .login-outer {
       display: flex;
-      width: 100vw; height: 100vh;
-      overflow: hidden;
+      width: 100%;
+      min-height: 100vh;
+      /* FIX: removed overflow:hidden so mobile content isn't clipped */
       position: relative; z-index: 1;
     }
 
-    /* Left panel */
+    /* Left panel — hidden on mobile, visible on md+ */
     .left-panel {
       width: 42%; min-width: 42%;
-      height: 100%;
+      /* FIX: use min-height instead of height:100% so it grows with content */
+      min-height: 100vh;
       background-color: #0a1f44;
       display: flex; flex-direction: column;
       align-items: flex-start; justify-content: flex-start;
@@ -107,17 +109,18 @@
     }
 
     .left-panel img.logo {
-      width: 250px; height: auto;
+      width: 220px; height: auto;
       object-fit: contain; opacity: 0.95;
       filter: brightness(0) invert(1);
-      margin-left: -43px; margin-top: -60px;
+      /* FIX: replaced negative hack margins with clean spacing */
+      margin-bottom: 0.5rem;
     }
 
     .left-panel .accent-bar {
       width: 40px; height: 2px;
       background: #3b82f6;
       box-shadow: 0 0 12px rgba(59,130,246,0.7);
-      margin: -50px 0 16px 0;
+      margin: 0.5rem 0 1rem 0;
     }
 
     .left-panel .dept-label {
@@ -128,7 +131,7 @@
       margin-bottom: 3rem;
     }
 
-    .left-panel .titles { margin-top: 100px; }
+    .left-panel .titles { margin-top: 3rem; }
     .left-panel .title-main {
       font-size: 2.6rem; color: white; font-weight: 700;
       letter-spacing: -0.02em; line-height: 1;
@@ -150,11 +153,18 @@
 
     /* Right panel */
     .right-panel {
-      flex: 1; height: 100%;
+      flex: 1;
+      /* FIX: min-height instead of fixed height */
+      min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
+      /* FIX: padding so form doesn't touch edges on small screens */
+      padding: 2rem 1.25rem;
     }
 
-    .form-box { width: 400px; }
+    .form-box {
+      width: 100%;
+      max-width: 400px; /* FIX: was fixed 400px with no max-width, causing overflow */
+    }
 
     .form-box h1 {
       color: white; font-weight: 900; font-size: 3rem;
@@ -312,6 +322,31 @@
     .clock-text {
       color: #94a3b8; font-size: 0.7rem;
       font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    }
+
+    /* ── Mobile: hide left panel, full-width form ── */
+    @media (max-width: 640px) {
+      .left-panel { display: none; }
+      .right-panel {
+        min-height: 100vh;
+        padding: calc(2rem + env(safe-area-inset-top)) 1.25rem
+                 calc(2rem + env(safe-area-inset-bottom));
+        align-items: flex-start;
+        padding-top: max(3rem, calc(2rem + env(safe-area-inset-top)));
+      }
+      .form-box h1 { font-size: 2.2rem; }
+    }
+
+    /* ── Tablet: shrink left panel, tighten form ── */
+    @media (min-width: 641px) and (max-width: 900px) {
+      .left-panel {
+        width: 36%; min-width: 36%;
+        padding: 2rem;
+      }
+      .left-panel .titles { margin-top: 2rem; }
+      .left-panel .title-main,
+      .left-panel .title-sub { font-size: 1.8rem; }
+      .form-box h1 { font-size: 2.4rem; }
     }
   </style>
 </head>

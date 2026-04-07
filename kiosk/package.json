@@ -5,6 +5,7 @@
   "type": "module",
   "main": "dist/app.js",
   "scripts": {
+    "clean": "rm -rf dist && rm -rf drizzle && rm -rf node_modules && rm -rf package-lock.json",
     "dev":   "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"

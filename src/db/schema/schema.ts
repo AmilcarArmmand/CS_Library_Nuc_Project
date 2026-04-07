@@ -24,10 +24,6 @@ import { relations } from 'drizzle-orm';
 // password_hash is null for Google-only users.
 // google_id is null for local (email/password) users.
 
-// !! IGNORE THIS, WILL REMOVE LATER !!
-// auto_provisioned = true means the kiosk created the account on first scan
-// and the user has not yet registered with a real name/email/password.
-
 export const users = pgTable('users', {
   id:               serial('id').primaryKey(),
   studentId:        varchar('student_id', { length: 16 }).unique(),
@@ -38,7 +34,6 @@ export const users = pgTable('users', {
   picture:          varchar('picture', { length: 500 }),
   role:             varchar('role', { length: 50 }).notNull().default('user'),
   active:           boolean('active').notNull().default(true),
-  autoProvisioned:  boolean('auto_provisioned').notNull().default(false),
   lastLogin:        timestamp('last_login', { withTimezone: true }),
   createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt:        timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

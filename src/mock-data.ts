@@ -6,7 +6,7 @@
 //
 // npm run db:generate
 // npm run db:migrate
-// npx tsx mock-data.ts
+// npx tsx src/mock-data.ts
 //
 // Safe to re-run — duplicates are skipped.
 
@@ -57,6 +57,8 @@ const BOOKS = [
 // Although unnecessary since these are test accounts, change passwords before deploying to production!
 
 const TEST_USERS = [
+  { studentId: "40000", name: "Nisreen Cain",     email: "cainn3@southernct.edu", password: "changeme123" },
+  { studentId: "10101", name: "Amilcar Armmand",  email: "armmanda1@southernct.edu",    password: "changeme123" },
   { studentId: "12345", name: "Kenneth Molina",  email: "molinak4@southernct.edu",    password: "changeme123" },
   { studentId: "11111", name: "Jose Gaspar",     email: "gasparmarij1@southernct.edu", password: "changeme123" },
   { studentId: "99999", name: "Professor James", email: "james@southernct.edu",         password: "changeme123" },
@@ -120,7 +122,6 @@ async function seed() {
       email:           email.toLowerCase(),
       passwordHash,
       active:          true,
-      autoProvisioned: false,
     });
 
     usersAdded++;

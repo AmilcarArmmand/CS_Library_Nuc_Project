@@ -12,6 +12,7 @@ import authRoutes         from './routes/auth.js';
 import webDashboardRoutes from './routes/webDashboard.js';
 import kioskApiRoutes     from './routes/kioskApi.js';
 import { attachUser }     from './middleware/auth.js';
+import adminRoutes from './routes/admin.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -53,8 +54,7 @@ app.use(attachUser);
 app.use('/auth',          authRoutes);
 app.use('/web-dashboard', webDashboardRoutes);
 app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
-// Future: admin panel
-// app.use('/dashboard', dashboardRoutes);
+app.use('/admin', adminRoutes);
 
 // HOME
 app.get('/', (req, res) => {

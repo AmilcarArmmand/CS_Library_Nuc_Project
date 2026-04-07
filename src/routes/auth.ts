@@ -103,7 +103,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const studentId = normalizeStudentId(String(req.body.studentId ?? ''));
     const password  = String(req.body.password  ?? '');
     const confirm   = String(req.body.confirm   ?? '');
-
+ 
     if (!name || !email || !studentId || !password) {
       return renderError('All fields are required.');
     }
@@ -116,57 +116,47 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     if (password !== confirm) {
       return renderError('Passwords do not match.');
     }
-
+ 
     // Check for existing email
     const [existingEmail] = await db
       .select({ id: users.id })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
-
+ 
+    if (existingEmail) {
+      return renderError('That email is already registered.');
+    }
+ 
     // Check for existing student ID
     const [existingStudent] = await db
-      .select({ id: users.id, autoProvisioned: users.autoProvisioned })
+      .select({ id: users.id })
       .from(users)
       .where(eq(users.studentId, studentId))
       .limit(1);
-
-    // Email taken by a different account
-    if (existingEmail && existingStudent?.id !== existingEmail.id) {
-      return renderError('That email is already registered.');
-    }
-
-    const passwordHash = await bcrypt.hash(password, 12);
-    let userId: number;
-
-    if (existingStudent?.autoProvisioned) {
-      // Upgrade a kiosk auto-provisioned account to a full account
-      await db
-        .update(users)
-        .set({ name, email, passwordHash, active: true, autoProvisioned: false, updatedAt: new Date() })
-        .where(eq(users.id, existingStudent.id));
-      userId = existingStudent.id;
-      console.log(`[Auth] Auto-provisioned account upgraded: ${email}`);
-    } else if (existingStudent) {
+ 
+    if (existingStudent) {
       return renderError('That Student ID is already registered.');
-    } else {
-      const [newUser] = await db
-        .insert(users)
-        .values({ name, email, studentId, passwordHash, active: true, autoProvisioned: false })
-        .returning({ id: users.id });
-      if (!newUser) return renderError('Registration failed. Please try again.');
-      userId = newUser.id;
-      console.log(`[Auth] New account registered: ${email}`);
     }
-
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+ 
+    const passwordHash = await bcrypt.hash(password, 12);
+ 
+    const [newUser] = await db
+      .insert(users)
+      .values({ name, email, studentId, passwordHash, active: true })
+      .returning({ id: users.id });
+ 
+    if (!newUser) return renderError('Registration failed. Please try again.');
+    console.log(`[Auth] New account registered: ${email}`);
+ 
+    const [user] = await db.select().from(users).where(eq(users.id, newUser.id)).limit(1);
     if (!user) return renderError('Registration failed. Please try again.');
-
+ 
     req.logIn(user, (err) => {
       if (err) return next(err);
       res.redirect('/web-dashboard');
     });
-
+ 
   } catch (err) {
     next(err);
   }

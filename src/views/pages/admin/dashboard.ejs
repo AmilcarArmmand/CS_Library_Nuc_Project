@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f8fafc;
+      color: #1e293b;
+      min-height: 100vh;
+    }
+
+    /* Header */
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 0 2rem;
+      height: 3.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header .title { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.05em; }
+    header .user  { font-size: 0.8rem; color: #94a3b8; display: flex; align-items: center; gap: 1rem; }
+    header a { color: #f87171; font-size: 0.8rem; text-decoration: none; }
+    header a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .container { max-width: 900px; margin: 2rem auto; padding: 0 1.5rem; }
+
+    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .subtitle { font-size: 0.85rem; color: #64748b; margin-bottom: 2rem; }
+
+    /* Stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-card .num   { font-size: 2rem; font-weight: 800; color: #1e293b; line-height: 1; }
+    .stat-card .label { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* Nav links */
+    .nav-section h2 { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+    .nav-links { display: flex; flex-direction: column; gap: 0.5rem; }
+    .nav-link {
+      display: flex; align-items: center; justify-content: space-between;
+      background: white; border: 1px solid #e2e8f0; border-radius: 0.5rem;
+      padding: 0.9rem 1.25rem; text-decoration: none; color: #1e293b;
+      font-size: 0.875rem; font-weight: 500; transition: border-color 0.15s;
+    }
+    .nav-link:hover { border-color: #94a3b8; }
+    .nav-link .arrow { color: #94a3b8; }
+    .nav-link.disabled { color: #94a3b8; cursor: not-allowed; background: #f8fafc; }
+    .nav-link.disabled .badge {
+      font-size: 0.65rem; background: #f1f5f9; color: #94a3b8;
+      border: 1px solid #e2e8f0; padding: 0.15rem 0.5rem; border-radius: 9999px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span class="title">CS LIBRARY — ADMIN</span>
+    <div class="user">
+      <span><%= admin.name %></span>
+      <a href="/auth/logout">Sign out</a>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <h1>Welcome!</h1>
+    <p class="subtitle">This is just a placeholder website for the admin panel.</p>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="num"><%= stats.users %></div>
+        <div class="label">Registered Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.books %></div>
+        <div class="label">Books in Catalog</div>
+      </div>
+      <div class="stat-card">
+        <div class="num"><%= stats.activeLoans %></div>
+        <div class="label">Active Loans</div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-section">
+      <h2>Admin Pages (COMING SOON)</h2>
+      <div class="nav-links">
+
+        <a href="/admin/users" class="nav-link disabled">
+          <span>Users <span class="badge">Plan: Manage currently registereduser accounts and permissions.</span></span>
+          <span class="arrow">→</span>
+        </a>
+
+        <a href="/admin/books" class="nav-link disabled">
+          <span>Books <span class="badge">Plan: Manage and add books to the catalog. This is where we will use the scanner and the library API. </span></span>
+          <span class="arrow">→</span>
+        </a>
+
+        <a href="/admin/loans" class="nav-link disabled">
+          <span>Loans <span class="badge">Plan: Manage current loans and accept approvals for loan requests.</span></span>
+          <span class="arrow">→</span>
+        </a>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

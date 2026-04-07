@@ -25,7 +25,6 @@ passport.deserializeUser(async (id: number, done) => {
         picture:       users.picture,
         googleId:      users.googleId,
         passwordHash:  users.passwordHash,
-        autoProvisioned: users.autoProvisioned,
         lastLogin:     users.lastLogin,
         createdAt:     users.createdAt,
         updatedAt:     users.updatedAt,
@@ -88,7 +87,7 @@ passport.use(new GoogleStrategy(
       // Create new Google user
       const [newUser] = await db
         .insert(users)
-        .values({ googleId, email, name, picture, active: true, autoProvisioned: false, lastLogin: new Date() })
+        .values({ googleId, email, name, picture, active: true, lastLogin: new Date() })
         .returning();
 
       console.log(`[Auth] New Google user: ${email}`);
