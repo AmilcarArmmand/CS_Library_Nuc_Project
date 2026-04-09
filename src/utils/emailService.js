@@ -72,12 +72,16 @@ async function sendEmail({ to, subject, text, html }) {
     });
 
     child.on('close', (code) => {
-      if (code === 0) {
+      const errorOutput = stderr.trim();
+
+      // Postfix/sendmail can emit submission warnings to stderr even when it exits 0.
+      // Treat that as a failed send so password reset tokens and notices aren't left dangling.
+      if (code === 0 && !errorOutput) {
         resolve({ success: true });
         return;
       }
 
-      const error = stderr.trim() || `sendmail exited with code ${code}`;
+      const error = errorOutput || `sendmail exited with code ${code}`;
       console.error('[Email] Send failed:', error);
       resolve({ success: false, error });
     });
