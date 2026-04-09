@@ -38,6 +38,7 @@ app.set('views', path.join(process.cwd(), 'src', 'views'));
 // STATIC FILES
 app.use(express.static(path.join(process.cwd(), 'src', 'public')));
 app.use('/assets', express.static(path.join(process.cwd(), 'assets')));
+app.use('/favicon1.ico', express.static(path.join(process.cwd(), 'favicon1.ico')));
 
 // BODY PARSING
 app.use(express.urlencoded({ extended: true }));
