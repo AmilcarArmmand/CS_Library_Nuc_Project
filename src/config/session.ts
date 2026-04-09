@@ -18,15 +18,10 @@ const sessionConfig = {
     cookie: {
         maxAge: 14 * 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: config.nodeEnv === 'production',
+        secure: config.session.cookieSecure,
         sameSite: 'lax' as const,
     },
     name: 'sessionId',
 };
-
-// In production use Redis or connect-pg-simple
-if (config.nodeEnv === 'production') {
-    sessionConfig.cookie.secure = true;
-}
 
 export default session(sessionConfig);

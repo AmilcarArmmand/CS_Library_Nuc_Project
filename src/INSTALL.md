@@ -42,7 +42,11 @@ npx tsc --init
 - Script to build `npm run build`
 - Script to run development mode with nodemon `npm run dev`
 - Script to generate schema `npm run db:generate`
-- Script to migrate schema `npm run db:generate`
-- Script to push schema `npm run db:generate`
+- Script to migrate generated Drizzle files `npm run db:migrate`
+- Script to apply the password-reset/email/library schema additions directly `npm run db:migrate:library`
+- Script to seed baseline data `npm run db:seed`
+- Script to import a CSV/TSV inventory file `npm run books:import -- ./docs/book-import-template.csv --dry-run`
+- Script to enrich existing catalog entries from Open Library `npm run books:enrich -- --dry-run`
+- Script to send due-soon and overdue reminder emails `npm run email:reminders`
 - Start the server in production mode: `npm start`
-- Open your browser to http://localhost:3000
+- Open your browser to http://localhost:8080

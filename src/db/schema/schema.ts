@@ -34,6 +34,7 @@ export const users = pgTable('users', {
   picture:          varchar('picture', { length: 500 }),
   role:             varchar('role', { length: 50 }).notNull().default('user'),
   active:           boolean('active').notNull().default(true),
+  borrowingLimit:   integer('borrowing_limit').notNull().default(5),
   lastLogin:        timestamp('last_login', { withTimezone: true }),
   createdAt:        timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt:        timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -47,7 +48,7 @@ export const users = pgTable('users', {
 
 // isbn is the primary key — can be ISBN-10 or ISBN-13 (normalized, no dashes).
 // cover stores either a remote URL or a local /assets/covers/{isbn}.jpg path.
-// status: 'Available' | 'Checked Out'
+// status: 'Available' | 'Checked Out' | 'On Hold'
 
 export const books = pgTable('books', {
   isbn:   varchar('isbn', { length: 20 }).primaryKey(),
@@ -74,6 +75,8 @@ export const loans = pgTable('loans', {
   dueDate:      timestamp('due_date', { withTimezone: true }).notNull(),
   returned:     boolean('returned').notNull().default(false),
   returnedDate: timestamp('returned_date', { withTimezone: true }),
+  dueReminderSentAt: timestamp('due_reminder_sent_at', { withTimezone: true }),
+  overdueNoticeSentAt: timestamp('overdue_notice_sent_at', { withTimezone: true }),
 }, (table) => ({
   idxUserCheckedOut: index('idx_loans_user_checked_out').on(table.userId, table.checkedOut),
   idxIsbnReturned:   index('idx_loans_isbn_returned').on(table.isbn, table.returned),
@@ -135,6 +138,45 @@ export const suggestionsRelations = relations(suggestions, ({ one }) => ({
   user: one(users, { fields: [suggestions.userId], references: [users.id] }),
 }));
 
+// DONATIONS TABLE
+
+export const donations = pgTable('donations', {
+  id:          serial('id').primaryKey(),
+  donorUserId: integer('donor_user_id').references(() => users.id),
+  donorName:   varchar('donor_name', { length: 255 }),
+  donorEmail:  varchar('donor_email', { length: 255 }),
+  isbn:        varchar('isbn', { length: 20 }).notNull(),
+  title:       varchar('title', { length: 500 }).notNull(),
+  author:      varchar('author', { length: 255 }).notNull().default('Unknown Author'),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxDonorUserId: index('idx_donations_donor_user_id').on(table.donorUserId),
+  idxCreatedAt:   index('idx_donations_created_at').on(table.createdAt),
+  idxIsbn:        index('idx_donations_isbn').on(table.isbn),
+}));
+
+export const donationsRelations = relations(donations, ({ one }) => ({
+  donor: one(users, { fields: [donations.donorUserId], references: [users.id] }),
+}));
+
+// PASSWORD RESET TOKENS TABLE
+
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id:        serial('id').primaryKey(),
+  userId:    integer('user_id').notNull().references(() => users.id),
+  tokenHash: text('token_hash').notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt:    timestamp('used_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxUserId:    index('idx_password_reset_tokens_user_id').on(table.userId),
+  idxExpiresAt: index('idx_password_reset_tokens_expires_at').on(table.expiresAt),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, { fields: [passwordResetTokens.userId], references: [users.id] }),
+}));
+
 // TYPE EXPORTS
 
 export type User       = typeof users.$inferSelect;
@@ -144,3 +186,5 @@ export type NewBook    = typeof books.$inferInsert;
 export type Loan       = typeof loans.$inferSelect;
 export type Hold       = typeof holds.$inferSelect;
 export type Suggestion = typeof suggestions.$inferSelect;
+export type Donation   = typeof donations.$inferSelect;
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

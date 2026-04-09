@@ -14,8 +14,13 @@ import type { Request, Response, NextFunction } from 'express';
 import passport from '../config/passport.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { db } from '../db/database.js';
-import { users, books, loans, holds, suggestions } from '../db/schema/schema.js';
-import { eq, count, and, lt, gt, desc, asc, sql, isNull, isNotNull } from 'drizzle-orm';
+import { users, books, loans, holds, suggestions, donations } from '../db/schema/schema.js';
+import { eq, count, and, lt, gt, desc, asc, sql } from 'drizzle-orm';
+import {
+  fetchOpenLibraryBookByIsbn,
+  mergeCatalogBookMetadata,
+  normalizeIsbn,
+} from '../utils/openLibrary.js';
 
 const router = express.Router();
 
@@ -100,7 +105,7 @@ router.get('/logout', (req: Request, res: Response, next: NextFunction) => {
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
-      res.clearCookie('connect.sid');
+      res.clearCookie('sessionId');
       console.log(`[Admin] Logged out: ${email}`);
       res.redirect('/admin/login');
     });
@@ -186,7 +191,7 @@ router.get('/books', async (_req: Request, res: Response) => {
 // POST /admin/books/add
 router.post('/books/add', async (req: Request, res: Response) => {
   try {
-    const isbn   = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
     const title  = String(req.body.title ?? '').trim();
     const author = String(req.body.author ?? '').trim();
     const cover  = String(req.body.cover ?? '').trim();
@@ -216,35 +221,63 @@ router.post('/books/add', async (req: Request, res: Response) => {
 // POST /admin/books/lookup — Open Library API lookup
 router.post('/books/lookup', async (req: Request, res: Response) => {
   try {
-    const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn = normalizeIsbn(String(req.body.isbn ?? ''));
     if (!isbn) return res.status(400).json({ error: 'ISBN is required.' });
 
-    const olRes = await fetch(
-      `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
-    );
-    const olData = await olRes.json().catch(() => ({}));
-    const bookData = (olData as any)[`ISBN:${isbn}`];
-
-    if (!bookData) {
+    const metadata = await fetchOpenLibraryBookByIsbn(isbn);
+    if (!metadata) {
       return res.status(404).json({ error: 'Book not found on Open Library.' });
     }
 
-    res.json({
-      isbn,
-      title:  bookData.title || '',
-      author: bookData.authors?.[0]?.name || '',
-      cover:  bookData.cover?.large || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`,
-    });
+    res.json(metadata);
   } catch (err) {
     console.error('[Admin] /books/lookup error:', err);
     res.status(500).json({ error: 'Lookup failed.' });
   }
 });
 
+// POST /admin/books/enrich — Update an existing catalog entry from Open Library
+router.post('/books/enrich', async (req: Request, res: Response) => {
+  try {
+    const isbn = normalizeIsbn(String(req.body.isbn ?? ''));
+    const force = req.body.force === true || req.body.force === 'true';
+
+    if (!isbn) {
+      return res.status(400).json({ error: 'ISBN is required.' });
+    }
+
+    const [existingBook] = await db.select().from(books).where(eq(books.isbn, isbn)).limit(1);
+    if (!existingBook) {
+      return res.status(404).json({ error: 'Book not found in the catalog.' });
+    }
+
+    const metadata = await fetchOpenLibraryBookByIsbn(isbn);
+    if (!metadata) {
+      return res.status(404).json({ error: 'Book not found on Open Library.' });
+    }
+
+    const update = mergeCatalogBookMetadata(existingBook, metadata, { force });
+    if (Object.keys(update).length === 0) {
+      return res.json({ ok: true, changed: false, book: existingBook });
+    }
+
+    const [updatedBook] = await db
+      .update(books)
+      .set(update)
+      .where(eq(books.isbn, isbn))
+      .returning();
+
+    res.json({ ok: true, changed: true, book: updatedBook });
+  } catch (err) {
+    console.error('[Admin] /books/enrich error:', err);
+    res.status(500).json({ error: 'Failed to enrich book metadata.' });
+  }
+});
+
 // POST /admin/books/edit
 router.post('/books/edit', async (req: Request, res: Response) => {
   try {
-    const isbn   = String(req.body.isbn ?? '');
+    const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
     const title  = String(req.body.title ?? '').trim();
     const author = String(req.body.author ?? '').trim();
     const cover  = String(req.body.cover ?? '').trim();
@@ -261,7 +294,7 @@ router.post('/books/edit', async (req: Request, res: Response) => {
 // POST /admin/books/delete
 router.post('/books/delete', async (req: Request, res: Response) => {
   try {
-    const isbn = String(req.body.isbn ?? '');
+    const isbn = normalizeIsbn(String(req.body.isbn ?? ''));
     // Check if book has active loans
     const [activeLoan] = await db.select().from(loans)
       .where(and(eq(loans.isbn, isbn), eq(loans.returned, false))).limit(1);
@@ -343,6 +376,33 @@ router.get('/loans/csv', async (_req: Request, res: Response) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DONATION LOG
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get('/donations', async (_req: Request, res: Response) => {
+  const donationRows = await db
+    .select({
+      id: donations.id,
+      isbn: donations.isbn,
+      title: donations.title,
+      author: donations.author,
+      donorName: donations.donorName,
+      donorEmail: donations.donorEmail,
+      donorUserName: users.name,
+      donorUserEmail: users.email,
+      createdAt: donations.createdAt,
+    })
+    .from(donations)
+    .leftJoin(users, eq(donations.donorUserId, users.id))
+    .orderBy(desc(donations.createdAt));
+
+  res.render('pages/admin/donations', {
+    title: 'Donation Log — CS Library Admin',
+    donations: donationRows,
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // USER MANAGEMENT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -355,6 +415,7 @@ router.get('/users', async (_req: Request, res: Response) => {
       studentId: users.studentId,
       role:      users.role,
       active:    users.active,
+      borrowingLimit: users.borrowingLimit,
       lastLogin: users.lastLogin,
       createdAt: users.createdAt,
     })
@@ -408,6 +469,31 @@ router.post('/users/set-role', async (req: Request, res: Response) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update role.' });
+  }
+});
+
+// POST /admin/users/set-limit
+router.post('/users/set-limit', async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.body.userId);
+    const borrowingLimit = Number(req.body.borrowingLimit);
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User is required.' });
+    }
+
+    if (!Number.isInteger(borrowingLimit) || borrowingLimit < 1 || borrowingLimit > 25) {
+      return res.status(400).json({ error: 'Borrowing limit must be between 1 and 25.' });
+    }
+
+    await db
+      .update(users)
+      .set({ borrowingLimit, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    res.json({ ok: true, borrowingLimit });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update borrowing limit.' });
   }
 });
 

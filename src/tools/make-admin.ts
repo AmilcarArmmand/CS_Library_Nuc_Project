@@ -25,7 +25,7 @@ async function makeAdmin() {
   const email = process.argv[2];
 
   if (!email) {
-    console.error('Usage: npx tsx src/scripts/make-admin.ts <email>');
+    console.error('Usage: npx tsx src/tools/make-admin.ts <email>');
     process.exit(1);
   }
 

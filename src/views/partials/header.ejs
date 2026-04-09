@@ -43,8 +43,9 @@
                             </ul>
                         </div>
                     <% } else { %>
-                        <a class="nav-link btn btn-outline-light ms-2" href="/auth/google">
-                            <i class="fab fa-google me-1"></i> Sign In
+                        <a class="nav-link btn btn-outline-light ms-2" href="<%= locals.authProviders?.google ? '/auth/google' : '/auth/login' %>">
+                            <i class="<%= locals.authProviders?.google ? 'fab fa-google' : 'fas fa-user' %> me-1"></i>
+                            <%= locals.authProviders?.google ? 'Sign In with Google' : 'Sign In' %>
                         </a>
                     <% } %>
                 </div>

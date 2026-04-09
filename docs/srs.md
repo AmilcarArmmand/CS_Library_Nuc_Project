@@ -8,8 +8,8 @@
 - Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v3.0
-**Last Updated:** 3/30/26
+**Document Version:** Draft v3.1
+**Last Updated:** 4/8/26
 
 ---
 
@@ -25,7 +25,7 @@ Computer Science students currently use a manual library system that uses paper 
 
 ### 1.3 Solution Overview
 
-Our solution is a kiosk-first web application designed for a Raspberry Pi touchscreen deployment with USB barcode-scanner support and a companion web portal. The system provides instant book checkout/return, real-time inventory status, automatic ISBN lookup for cataloging, and a searchable digital catalog accessible through an intuitive interface.
+Our solution is a kiosk-first web application with a Raspberry Pi-friendly kiosk client, a cloud-hosted Node.js/Express backend, and a PostgreSQL database. The system provides instant book checkout/return, real-time inventory status, automatic ISBN lookup for cataloging, and a searchable digital catalog accessible through both the kiosk and a companion web portal.
 
 ### 1.4 Client Context
 
@@ -131,7 +131,7 @@ Owner: Kenny
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
 - [ ] System validates student is authorized to use library against the database withing 1 second
-- [x] User profile is created automatically if not present
+- [ ] User profile is created automatically if not present
 - [x] User is redirected to main dashboard after login
 - [x] UI will display a notification if clear success or error
 
@@ -143,10 +143,10 @@ Owner: Jose
 
 **Acceptance Criteria:**
 - [ ] Secure admin login screen accessible from main menu
-- [ ] Failed login attempts limited to 5 before lockout
-- [ ] Role-based access to different admin functions
-- [ ] Using bcrypt to validate the hashed password
-- [ ] Role-based access to validate user type, admin/stuent before routing to dashboard
+- [x] Failed login attempts limited to 5 before lockout
+- [x] Role-based access to different admin functions
+- [x] Using bcrypt to validate the hashed password
+- [x] Role-based access to validate user type, admin/stuent before routing to dashboard
 
 ---
 
@@ -172,7 +172,7 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [x] System recognizes book as currently checked out
-- [ ] Scanner reads ISBN and queries the database
+- [x] Scanner reads ISBN and queries the database
 - [x] Database book status updates to available instantly upon scan
 - [x] Book status updated to "available"
 - [x] UI displays confirmation message
@@ -199,8 +199,8 @@ Owner: Kenny
 **Acceptance Criteria:**
 - [x] Display list of currently checked out books
 - [x] UI highlights books where due date less than current date in red
-- [x] Option to renew books (if no holds)
-- [x] Show borrowing history (last 6 months)
+- [ ] Option to renew books (if no holds)
+- [ ] Show borrowing history (last 6 months)
 - [x] Total books checked out counter
 - [x] System restricts the renew button if the current date to already past the due date
 
@@ -211,12 +211,12 @@ Owner: Kenny
 Owner: Jose
 
 **Acceptance Criteria:**
-- [ ] Manual entry form for books without ISBN
-- [ ] Open Library API request fetches and pares metadata with scan
-- [ ] ISBN scan auto-populates metadata from API
+- [x] Manual entry form for books without ISBN
+- [x] Open Library API request fetches and pares metadata with scan
+- [x] ISBN scan auto-populates metadata from API
 - [ ] Option to categorize books (programming, theory, etc.)
 - [ ] Upload cover images manually if needed
-- [ ] Confirmation message after successful addition
+- [x] Confirmation message after successful addition
 
 
 **US008:** As an administrator, I want to view all checked-out books so that I can track library usage.
@@ -224,11 +224,11 @@ Owner: Jose
 Owner: Jose
 
 **Acceptance Criteria:**
-- [ ] Dashboard showing all active checkouts
+- [x] Dashboard showing all active checkouts
 - [ ] Filter by due date (today, overdue, upcoming)
-- [ ] Sort by borrower name or book title
-- [ ] Export list to CSV for record keeping
-- [ ] Overdue items highlighted with days overdue
+- [x] Sort by borrower name or book title
+- [x] Export list to CSV for record keeping
+- [x] Overdue items highlighted with days overdue
 
 
 **US009:** As an administrator, I want to manage user accounts so that I can manage library access.
@@ -238,7 +238,7 @@ Owner: Jose
 **Acceptance Criteria:**
 
 - [ ] Set borrowing limits per user
-- [ ] View borrowing history per student
+- [x] View borrowing history per student
 - [ ] Reset system for new semester
 
 
@@ -248,28 +248,28 @@ Owner: Jose
 Owner: Jose
 
 **Acceptance Criteria:**
-- [ ] Monthly checkout statistics
-- [ ] Most popular books report
-- [ ] Usage patterns by time of day/day of week
-- [ ] Export reports to CSV format
-- [ ] Print summary reports
+- [x] Monthly checkout statistics
+- [x] Most popular books report
+- [x] Usage patterns by time of day/day of week
+- [x] Export reports to CSV format
+- [x] Print summary reports
 
 **US011:** As a Book Donor, I want to be able to donate a book using the kiosk by scanning it's ISBN, which should add the book to the CS Lounge Library Database.
 
 Owner: Jose
 
 **Acceptance Criteria:**
- - [ ] Donor scans book ISBN at kiosk
- - [ ] System fills in book metadata from ISBN
- - [ ] Donor can also manually enter details if ISBN is invalid or missing
- - [ ] Confirmation from system that book has been added to the database successfully
+ - [x] Donor scans book ISBN at kiosk
+ - [x] System fills in book metadata from ISBN
+ - [x] Donor can also manually enter details if ISBN is invalid or missing
+ - [x] Confirmation from system that book has been added to the database successfully
  - [ ] Donation is logged with timestamp
 
 **US012:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
 
 **Acceptance Criteria:**
-- [ ] Track books that have been checked out
-- [ ] View currently checked out books marked in the system
+- [x] Track books that have been checked out
+- [x] View currently checked out books marked in the system
 - [ ] Schedule a pickup date, if pre-existing days are scheduled from other users
 - [ ] Notify the student when the book has been returned, based on scheduled time, for pickup
 
@@ -305,9 +305,9 @@ Owner: Jose
 Owner: Jose
 
 **Acceptance Criteria:**
-- [ ] User fills out a form on the page detailing what books can be purchased
-- [ ] System collects every form filled out
-- [ ] Administrators view the form and review it for further consideration
+- [x] User fills out a form on the page detailing what books can be purchased
+- [x] System collects every form filled out
+- [x] Administrators view the form and review it for further consideration
 
 ---
 
@@ -319,7 +319,7 @@ Owner: Jose
 
 - Touchscreen Kiosk Interface - Touch-optimized UI with larger touch targets designed to allow a complete checkout in 4 or fewer taps.
 
-- Student ID Authentication - Hardware-level barcode scaning of student ID cards that processes and queries the database.
+- Student ID Authentication - Student ID scans are processed through the kiosk workflow and validated against the shared library database.
 
 - Barcode Book Scanning - ISBN scanning integration that reads an retrieves database metadata with each scan
 
@@ -329,7 +329,9 @@ Owner: Jose
 
 - Admin Management Dashboard - Comprehensive backend for managing books, users, and generating reports.
 
-- Offline Operation Mode - Core functionality continues during network outages with sync when reconnected.
+- Web Portal Access - Remote browser access for registration, catalog browsing, holds, suggestions, and account management.
+
+- Donation Intake Workflow - Kiosk donation flow with ISBN lookup and manual-entry fallback.
 
 - Automated Due Date Tracking - Automatic calculation of return dates with overdue detection and reporting.
 
@@ -339,29 +341,31 @@ Owner: Jose
 
 - Barcode scanner authentication for students via student ID cards
 
-- Username/password authentication for administrators
+- Username/password authentication for administrators and web-portal users
+
+- Optional OAuth support for Google and Microsoft sign-in
 
 - Session management with automatic timeout
 
-- Role-based access control (student vs. admin vs. super-admin)
+- Role-based access control (student vs. admin)
 
 #### Data Management (CRUD Operations)
 
-- Create: Add new books, register new users, record transactions
+- Create: Add new books, register new users, record transactions, submit holds and suggestions
 
 - Read: Search catalog, view borrowing history, generate reports
 
 - Update: Checkout/return status, user information, book details
 
-- Delete: Archive old records, remove lost books (soft delete)
+- Delete: Remove catalog records for books with no active loans; archival workflows remain future work
 
 #### Database & Storage
 
-- Primary Database: SQLite3 for the current prototype (`data/cs_library.db`)
+- Primary Database: PostgreSQL (department-hosted server)
 
 - Key Data Entities:
 
-    - Users: student_id, name, email, password_hash, active, auto_provisioned
+    - Users: student_id, name, email, password_hash, google_id, role, active, last_login
 
     - Books: isbn, title, author, cover, status, shelf
 
@@ -369,7 +373,9 @@ Owner: Jose
 
     - Holds: user_id, isbn, status, pickup_date, created_at
 
-- Future Migration: Move to a managed relational database only after the kiosk and portal workflows are stable on the current prototype.
+    - Suggestions: user_id, title, author, reason, status, created_at
+
+- Schema Management: Type-safe schema and migrations managed through Drizzle ORM and drizzle-kit
 
 ### 4.3 Non-Functional Requirements
 
@@ -449,57 +455,57 @@ Owner: Jose
 
 **Frontend:**
 
-- Web Framework UI: NiceGUI (Python-based UI framework)
+- Web templates: EJS-rendered server views
 
-- Styling: Tailwind CSS
+- Styling: Custom CSS with responsive layouts
 
-- Touchscreen Support: Web Browser Touch Events
+- Client-side behavior: Vanilla JavaScript for kiosk and portal interactions
 
 - Architecture: Web Portal and Kiosk Site
 
 **Backend:**
 
-- Runtime: Python 3.11+ (optimized for Raspberry Pi 5)
+- Runtime: Node.js 20+
 
-- Framework: FastAPI (NiceGUI)
+- Framework: Express 4 with TypeScript
 
-- Authentication: Student ID sign-in for kiosk, email/password for the web portal, bcrypt password hashing
+- Authentication: Student ID sign-in for kiosk, email/password for the web portal, bcrypt password hashing, optional Google/Microsoft OAuth
 
-- Validation: Pydantic for data validation
+- Session handling: express-session with PostgreSQL-backed session storage
 
-- Session State: NiceGUI user storage for kiosk and portal session persistence
+- ORM / DB access: Drizzle ORM with node-postgres
 
 **Database:**
 
-- Primary Database: SQLite3 using the built-in `sqlite3` module
+- Primary Database: PostgreSQL
 
-- Current Schema: users, books, loans, holds
+- Current Schema: users, books, loans, holds, suggestions
 
-- Local Asset Cache: book cover images cached under `assets/covers`
+- Asset Handling: Remote cover URLs with local static assets for branding/icons
 
-- Future Migration: Managed MySQL or PostgreSQL deployment after prototype stabilization
+- Migrations: drizzle-kit generate/migrate workflow
 
 **Hardware Integration:**
 
-- Current Prototype: keyboard-style USB scanner input and manual text-entry fallback
+- Current Input Model: keyboard-style USB scanner input and manual text-entry fallback
 
 - Target Hardware: Raspberry Pi, USB barcode scanner, touchscreen display
 
-- Scanner Strategy: scanner behaves like typed input in the current build, with dedicated hardware validation planned for the final phase
+- Scanner Strategy: scanner behaves like typed input in the current build, with form fields kept scanner-focused in kiosk workflows
 
 - Power Management: graceful shutdown and backup strategy planned for deployment phase
 
 **Deployment:**
 
-- Platform: Raspberry Pi 5 (on-premise)
+- Application Host: Department-managed Linux VM for the shared web app and database-backed API
 
-- OS: Raspberry Pi OS (64-bit) Lite
+- Kiosk Client: Raspberry Pi or comparable Linux kiosk device on the local network
 
-- Process Management: Systemd for daemon management
+- Reverse Proxy: Nginx planned in front of the Node.js app for TLS termination
 
-- Service Orchestration: Supervisor or systemd services
+- Process Management: `npm start` / `tsx` during development, PM2 or systemd suitable for persistent deployment
 
-- Logging: journald (systemd journal) with Python logging integration
+- Logging: application stdout/stderr plus server logs
 
 - Backup: rsync + cron for automated backups
 
@@ -507,23 +513,23 @@ Owner: Jose
 
 - Version Control: Git + GitHub
 
-- Package Management: pip + uv (faster Python package installer)
+- Package Management: npm
 
-- Environment Management: pipenv or poetry
+- Environment Management: `.env` configuration files
 
-- Testing: pytest + pytest-asyncio
+- Testing Direction: route-level and browser-based smoke testing, with automated TypeScript tests planned
 
 - IDE: VS Code with SSH remote development
 
-- Debugging: pdb++, remote debugging with VS Code
+- Debugging: browser devtools, Node.js logs, and remote shell access
 
-- Documentation: Sphinx for API documentation
+- Documentation: Markdown project documentation
 
 **Third-Party Services:**
 
-- ISBN API: Open Library API via `httpx`
+- ISBN API: Open Library API via `fetch`
 
-- No external authentication (self-contained system)
+- Optional external authentication: Google OAuth 2.0 and Microsoft identity integration
 
 ### 5.2 User Interface Design
 
@@ -640,22 +646,22 @@ Owner: Jose
   - Renew eligible books
   - Monitor due dates
 
-7. Admin Dashboard (Planned)
+7. Admin Dashboard
 
-  **Purpose:** Manage books, users, reports, holds, and donations in a future release
+  **Purpose:** Manage books, users, reports, suggestions, and circulation data
 
   **Key Elements:**
 
   - Book and user management tools
   - Checkout / usage reporting
-  - Hold queue visibility
-  - Donation intake workflow support
+  - Loan exports and overdue visibility
+  - Suggestion review workflow
 
   **User Actions:**
 
   - Manage catalog data
   - Review usage and loan activity
-  - Maintain hold and donation workflows
+  - Maintain user roles and suggestion workflows
 
 
 ### 5.3 Database Schema
@@ -676,14 +682,18 @@ Owner: Jose
 Entity: User
 ```bash
 {
-  "id": "Integer (primary key, autoincrement)",
-  "student_id": "String (unique, required)",
+  "id": "Serial integer (primary key)",
+  "student_id": "String (unique, optional for OAuth-first users)",
   "name": "String (required)",
   "email": "String (unique, required)",
-  "password_hash": "String (required)",
-  "active": "Boolean-like integer (default: 1)",
-  "auto_provisioned": "Boolean-like integer (default: 0)",
-  "created_at": "Datetime (default current timestamp)"
+  "password_hash": "String (optional for OAuth users)",
+  "google_id": "String (unique, optional)",
+  "picture": "String (optional)",
+  "role": "String (default: 'user')",
+  "active": "Boolean (default: true)",
+  "last_login": "Timestamp with timezone (optional)",
+  "created_at": "Timestamp with timezone",
+  "updated_at": "Timestamp with timezone"
 }
 ```
 
@@ -702,29 +712,42 @@ Entity: Book
 Entity: Loan
 ```bash
 {
-  "id": "Integer (primary key, autoincrement)",
+  "id": "Serial integer (primary key)",
   "user_id": "Integer (ref: users.id, required)",
   "isbn": "String (ref: books.isbn, required)",
-  "checked_out": "Datetime (default current timestamp)",
-  "due_date": "Datetime (required)",
-  "returned": "Boolean-like integer (default: 0)",
-  "returned_date": "Datetime (optional)"
+  "checked_out": "Timestamp with timezone",
+  "due_date": "Timestamp with timezone",
+  "returned": "Boolean (default: false)",
+  "returned_date": "Timestamp with timezone (optional)"
 }
 ```
 
 Entity: Hold
 ```bash
 {
-  "id": "Integer (primary key, autoincrement)",
+  "id": "Serial integer (primary key)",
   "user_id": "Integer (ref: users.id, required)",
   "isbn": "String (ref: books.isbn, required)",
   "status": "String (default: 'pending')",
-  "pickup_date": "Datetime (optional)",
-  "created_at": "Datetime (default current timestamp)"
+  "pickup_date": "Timestamp with timezone (optional)",
+  "created_at": "Timestamp with timezone"
 }
 ```
 
-Planned future schema extensions for donation intake, admin reporting, and statistics remain in scope, but they are not part of the committed prototype schema yet.
+Entity: Suggestion
+```bash
+{
+  "id": "Serial integer (primary key)",
+  "user_id": "Integer (ref: users.id, required)",
+  "title": "String (required)",
+  "author": "String (default empty string)",
+  "reason": "Text (default empty string)",
+  "status": "String (default: 'pending')",
+  "created_at": "Timestamp with timezone"
+}
+```
+
+Donation logging, fine tracking, and additional reporting tables remain future schema extensions.
 
 ### 5.4 System Architecture
 
@@ -732,68 +755,68 @@ Component Diagram:
 
 ```bash
 ┌──────────────────────┐      ┌───────────────────────────┐
-│ Kiosk UI / Web Portal│─────►│ NiceGUI + FastAPI App     │
-└──────────────────────┘      │ - auth/session handling   │
-                              │ - catalog workflows        │
-┌──────────────────────┐      │ - checkout / return / renew│
-│ USB Scanner / Manual │─────►│ - Open Library lookups    │
-│ Text Entry           │      └──────────────┬────────────┘
-└──────────────────────┘                     │
-                                             ▼
-                              ┌───────────────────────────┐
-                              │ SQLite Data Layer         │
-                              │ users / books / loans /   │
-                              │ holds + local cover cache │
-                              └───────────────────────────┘
+│ Kiosk Browser / Pi   │─────►│ Kiosk Express Client      │
+│ + USB Scanner Input  │      │ - local session/cart      │
+└──────────────────────┘      │ - proxy to cloud API      │
+                              └──────────────┬────────────┘
                                              │
-                                             ▼
-                              ┌───────────────────────────┐
-                              │ Open Library API          │
-                              │ (metadata and cover data) │
-                              └───────────────────────────┘
+┌──────────────────────┐                     ▼
+│ Web Portal Browser   │─────►┌───────────────────────────┐
+└──────────────────────┘      │ Node.js + Express App     │
+                              │ - auth/session handling   │
+                              │ - catalog workflows       │
+                              │ - checkout/return/renew   │
+                              │ - admin + reports         │
+                              └──────────────┬────────────┘
+                                             │
+                           ┌─────────────────┴─────────────────┐
+                           ▼                                   ▼
+              ┌───────────────────────────┐      ┌───────────────────────────┐
+              │ PostgreSQL Data Layer     │      │ Open Library API          │
+              │ users/books/loans/holds/  │      │ metadata and cover data   │
+              │ suggestions + sessions    │      └───────────────────────────┘
+              └───────────────────────────┘
 ```
 
 Request/Response Flow:
 
-    Input Event: Student scans or types a student ID / ISBN, or uses the touchscreen UI
+    Input Event: Student scans or types a student ID / ISBN, or uses the touchscreen / portal UI
 
-    Event Dispatch: NiceGUI page handler receives the event
+    Event Dispatch: The kiosk client or web route receives the request in the Express application
 
     Business Logic Processing:
 
         Input helpers normalize student IDs and ISBNs
 
-        Database helpers query SQLite for users, books, loans, and holds
+        Drizzle ORM queries PostgreSQL for users, books, loans, holds, and suggestions
 
-        Open Library metadata is requested when a scanned ISBN is not already cached locally
+        Open Library metadata is requested when a scanned ISBN is not already in the local catalog
 
-        Checkout, return, renewal, and account provisioning logic updates the data model
+        Checkout, return, renewal, hold, suggestion, and admin workflows update the data model
 
-    UI Update: NiceGUI components refresh the current view
+    UI Update: EJS-rendered pages and client-side JavaScript refresh the current view
 
-    Data Persistence: SQLite commits the transaction locally
+    Data Persistence: PostgreSQL commits the transaction on the shared server
 
-    Asset Cache: Cover images are cached locally when available
-
-    Response: Visual feedback shown on kiosk or web UI
+    Response: Visual feedback is shown on kiosk or web UI
 
 Security Layer:
 
     Authentication:
 
-        Student: Student ID validation against the local database, with auto-provisioning for kiosk use
+        Student: Student ID validation against the shared users table for kiosk sign-in
 
-        Admin: Password authentication with bcrypt hashing
+        Web/Admin: Email/password authentication with bcrypt hashing
 
-        Session timeout and stricter lockout rules remain planned admin hardening work
+        Optional OAuth: Google and Microsoft sign-in supported when configured
+
+        Admin login lockout: 5 failed attempts trigger a temporary lockout
 
     Authorization:
 
         Role-based permissions (student vs. admin)
 
-        Browse-only restrictions for the remote portal
-
-        Expanded admin role controls planned for final phase
+        Shared route guards for kiosk API, web dashboard, and admin pages
 
     Input Validation:
 
@@ -807,13 +830,13 @@ Security Layer:
 
     Data Protection:
 
-        Local SQLite data file permissions
+        Environment-based secret management
 
         Secure logging (no sensitive data in logs)
 
-        Planned automated backups before deployment
+        Session data stored server-side in PostgreSQL
 
-        File system permissions (restricted access to data files)
+        Reverse-proxy TLS termination planned in front of the Node.js service
 
 ---
 
@@ -829,7 +852,7 @@ Security Layer:
 
 **Tasks:**
 - Amilcar: Project planning, research, and early hardware investigation
-- Kenny: Initial NiceGUI kiosk interface and student sign-in flow
+- Kenny: Initial kiosk interface and student sign-in flow
 - Jose: Baseline data model, user registration, and authentication support
 
 **Deliverables:**
@@ -861,7 +884,7 @@ Security Layer:
 **Tasks:**
 - Amilcar: Continue hardware planning and deployment research
 - Kenny: Refine kiosk dashboard flow, renewals, and responsive UI behavior
-- Jose: Improve portal auth flow, data persistence, and supporting backend logic
+- Jose: Improve portal auth flow, database persistence, and supporting backend logic
 
 **Deliverables:**
 - PR2-ready prototype with kiosk and web portal workflows
@@ -875,7 +898,7 @@ Security Layer:
 **Status:** In progress
 
 **Tasks:**
-- Team: Admin dashboard completion, hold / donation workflow work, hardware validation, regression testing, and final documentation
+- Team: Admin dashboard completion, hold / donation workflow work, VM deployment, hardware validation, regression testing, and final documentation
 
 ---
 
@@ -886,12 +909,12 @@ Security Layer:
 **Risk 1: SD Card Corruption**
 - **Impact:** High
 - **Likelihood:** Medium
-- **Mitigation:** Raspberry Pi SD cards are prone to failure under heavy loads. We will implement daily automated backups that mirror the database to a USB hard drive.
+- **Mitigation:** The kiosk device should remain stateless where possible, with primary application data stored on the server-side PostgreSQL database. Raspberry Pi configuration and kiosk assets should still be backed up regularly.
 
 **Risk 2: Network Dependencies and Database Outages**
 - **Impact:** High
-- **Likelihood:** Low
-- **Mitigation:** The prototype uses a local SQLite database so students can still browse the catalog even if external network access is unavailable.
+- **Likelihood:** Medium
+- **Mitigation:** The kiosk app should provide graceful failure messaging, fast health checks, and operational restart scripts. Automated backups and service monitoring are required because the current architecture depends on the shared VM and PostgreSQL service.
 
 **Risk 3: Campus IT Approval**
 - **Impact:** High
@@ -901,7 +924,7 @@ Security Layer:
 **Risk 4: Barcode Error Hardware Failure**
 - **Impact:** Medium
 - **Likelihood:** High
-- **Mitigation:** The Kiosk UI includes the ability for manual text-entry fall back. If the physical USB scanner drops, you could still manual touchscreen typing.
+- **Mitigation:** The kiosk UI includes manual text-entry fallback. If the physical USB scanner fails, users can continue by typing student IDs and ISBNs directly on the touchscreen.
 
 **Risk 5: Hardware Integration / Delays**
 - **Impact:** High
@@ -920,8 +943,8 @@ Security Layer:
 ### 9.1 Testing Overview
 
 - The project is tested at three levels: unit, integration, and system.
-- The current PR2 workflow uses smoke tests against a temporary copy of the SQLite database so application data is not corrupted during verification.
-- Final-phase validation will expand this into a repeatable regression suite before delivery.
+- The current workflow relies primarily on manual smoke testing of the Node.js routes, kiosk flows, and admin pages against a non-production PostgreSQL instance.
+- Final-phase validation will expand this into a repeatable automated regression suite before delivery.
 
 ### 9.2 Unit Testing
 
@@ -930,12 +953,12 @@ Targeted units include:
 - student ID and ISBN normalization / validation helpers
 - user registration and email authentication logic
 - checkout, renewal, and return logic
-- local catalog lookup behavior
+- catalog lookup and hold logic
 
 Planned tooling:
 
-- `pytest`
-- `pytest-asyncio`
+- `vitest` or `jest`
+- `supertest`
 
 ### 9.3 Integration Testing
 
@@ -944,8 +967,8 @@ Integration tests focus on:
 - registration followed by successful authentication
 - checkout followed by correct appearance in My Books
 - return followed by correct borrowing-history updates
-- kiosk auto-provisioning for unknown student IDs
-- Open Library lookup when an ISBN is not already in the local catalog
+- kiosk login against the shared database
+- Open Library lookup when an ISBN is not already in the server catalog
 
 ### 9.4 System Testing
 
@@ -959,25 +982,26 @@ System tests cover:
 
 ### 9.5 Current PR2 Status
 
-- Unit smoke checks executed: 6 passed
-- Integration smoke checks executed: 4 passed
-- System smoke checks executed: 2 passed
-- Remaining work: broader end-to-end UI coverage, hardware scanner validation, and final regression automation
+- Manual smoke checks completed for core auth, catalog, checkout, return, renewal, and admin CRUD flows
+- Automated TypeScript test coverage has not been implemented yet
+- Remaining work: broader end-to-end UI coverage, hardware scanner validation, deployment verification, and final regression automation
 
 ## 10. Appendix
 
 ### A. Glossary
 - **ISBN:** International Standard Book Number - A unique numeric commercial book identifier
-- **NiceGUI:** Python-based web-UI
-- **SQLite:** Embedded relational database used by the current prototype
+- **EJS:** Embedded JavaScript templating engine used to render server-side views
+- **Drizzle ORM:** Type-safe TypeScript ORM used for PostgreSQL access and schema management
+- **PostgreSQL:** Relational database used by the current application
 
 ### B. References
 
 **Technical References**
 - Raspberry Pi Foundation. (2024). Raspberry Pi Documentation. https://www.raspberrypi.com/documentation/
 - Open Library API Documentation. https://openlibrary.org/developers/api
-- FastAPI Documentation. https://fastapi.tiangolo.com/
-- NiceGUI Documentation: https://nicegui.io/documentation
+- Express Documentation. https://expressjs.com/
+- PostgreSQL Documentation. https://www.postgresql.org/docs/
+- Drizzle ORM Documentation. https://orm.drizzle.team/
 
 ### C. Change Log
 | Date | Version | Changes | Author |
@@ -985,12 +1009,13 @@ System tests cover:
 | Feb 6, 2026 | v1.0 | Initial submission | Team |
 | Mar 2, 2026 | v2.0 | PR1 revisions and requirement updates | Team |
 | Mar 30, 2026 | v3.0 | PR2 revisions, aligned architecture and schema to current prototype, refreshed sprint plan, and added detailed testing strategy | Team |
+| Apr 8, 2026 | v3.1 | Updated the document to reflect the Node.js/Express/TypeScript refactor, PostgreSQL deployment model, current schema, and revised testing/deployment language | Team |
 
 
 ---
 
 **Document Status:** Review
-**Next Review Date:** April 6, 2026
+**Next Review Date:** April 15, 2026
 
 Prepared by: CS Library Team
 Course: CSC400 - Computer Science Project Seminar 

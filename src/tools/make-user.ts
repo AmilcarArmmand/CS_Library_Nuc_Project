@@ -25,7 +25,7 @@ async function makeUser() {
   const email = process.argv[2];
 
   if (!email) {
-    console.error('Usage: npx tsx src/scripts/make-user.ts <email>');
+    console.error('Usage: npx tsx src/tools/make-user.ts <email>');
     process.exit(1);
   }
 

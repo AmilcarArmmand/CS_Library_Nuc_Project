@@ -532,6 +532,7 @@
       grid.innerHTML = page.map((b, i) => {
         const avail = b.status === 'Available';
         const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
+        const statusLabel = b.status === 'On Hold' ? 'ON HOLD' : (avail ? 'AVAILABLE' : 'CHECKED OUT');
         let holdBtn = '';
         if (!avail && !isBorrower) {
           holdBtn = `<button class="catalog-add-btn" onclick="event.stopPropagation(); placeHold('${esc(b.isbn)}')" style="margin-top:0.4rem;padding:0.3rem 0.75rem;border-radius:0.35rem;font-family:inherit;font-size:0.62rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.15);color:#c084fc;transition:all 0.2s;">PLACE HOLD</button>`;
@@ -549,7 +550,7 @@
               <p class="book-author">${esc(b.author)}</p>
               <p class="book-isbn">ISBN ${esc(b.isbn || '')}</p>
               <span class="badge ${avail ? 'badge-avail' : 'badge-out'}">
-                ${avail ? 'AVAILABLE' : 'CHECKED OUT'}
+                ${statusLabel}
               </span>
               ${holdBtn}
             </div>

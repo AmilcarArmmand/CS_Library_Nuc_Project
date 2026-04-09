@@ -6,6 +6,16 @@ import bcrypt from 'bcryptjs';
 import { db } from '../db/database.js';
 import { users } from '../db/schema/schema.js';
 import { eq } from 'drizzle-orm';
+import { config } from './env.js';
+
+const hasGoogleAuth = Boolean(process.env['GOOGLE_CLIENT_ID'] && process.env['GOOGLE_CLIENT_SECRET']);
+const hasMicrosoftAuth = Boolean(process.env['MICROSOFT_CLIENT_ID'] && process.env['MICROSOFT_CLIENT_SECRET']);
+
+export const authProviders = {
+  local: true,
+  google: hasGoogleAuth,
+  microsoft: hasMicrosoftAuth,
+};
 
 // SERIALIZE AND DESERIALIZE
 
@@ -42,93 +52,121 @@ passport.deserializeUser(async (id: number, done) => {
 
 // GOOGLE OAUTH STRATEGY
 
-passport.use(new GoogleStrategy(
-  {
-    clientID:     process.env['GOOGLE_CLIENT_ID']!,
-    clientSecret: process.env['GOOGLE_CLIENT_SECRET']!,
-    callbackURL:  process.env['GOOGLE_CALLBACK_URL'] ?? '/auth/google/callback',
-  },
-  async (_accessToken, _refreshToken, profile, done) => {
-    try {
-      const googleId = profile.id;
-      const email    = (profile.emails?.[0]?.value ?? '').toLowerCase().trim();
-      const name     = profile.displayName ?? email;
-      const picture  = profile.photos?.[0]?.value ?? null;
+if (hasGoogleAuth) {
+  passport.use(new GoogleStrategy(
+    {
+      clientID:     process.env['GOOGLE_CLIENT_ID']!,
+      clientSecret: process.env['GOOGLE_CLIENT_SECRET']!,
+      callbackURL:  process.env['GOOGLE_CALLBACK_URL'] ?? '/auth/google/callback',
+    },
+    async (_accessToken, _refreshToken, profile, done) => {
+      try {
+        const googleId = profile.id;
+        const email    = (profile.emails?.[0]?.value ?? '').toLowerCase().trim();
+        const name     = profile.displayName ?? email;
+        const picture  = profile.photos?.[0]?.value ?? null;
 
-      if (!email) return done(new Error('Google account has no email address'));
+        if (!email) return done(new Error('Google account has no email address'));
 
-      // Find by Google ID first
-      let [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.googleId, googleId))
-        .limit(1);
+        // Find by Google ID first
+        let [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.googleId, googleId))
+          .limit(1);
 
-      if (user) {
-        await db.update(users)
-          .set({ lastLogin: new Date(), picture, updatedAt: new Date() })
-          .where(eq(users.id, user.id));
-        return done(null, user as Express.User);
+        if (user) {
+          await db.update(users)
+            .set({ lastLogin: new Date(), picture, updatedAt: new Date() })
+            .where(eq(users.id, user.id));
+          return done(null, user as Express.User);
+        }
+
+        // Find by email (link Google to existing local account)
+        [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+
+        if (user) {
+          await db.update(users)
+            .set({ googleId, picture, lastLogin: new Date(), updatedAt: new Date() })
+            .where(eq(users.id, user.id));
+          return done(null, { ...user, googleId, picture } as Express.User);
+        }
+
+        // Create new Google user
+        const [newUser] = await db
+          .insert(users)
+          .values({ googleId, email, name, picture, active: true, lastLogin: new Date() })
+          .returning();
+
+        console.log(`[Auth] New Google user: ${email}`);
+        return done(null, newUser as Express.User);
+
+      } catch (err) {
+        return done(err as Error);
       }
-
-      // Find by email (link Google to existing local account)
-      [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
-
-      if (user) {
-        await db.update(users)
-          .set({ googleId, picture, lastLogin: new Date(), updatedAt: new Date() })
-          .where(eq(users.id, user.id));
-        return done(null, { ...user, googleId, picture } as Express.User);
-      }
-
-      // Create new Google user
-      const [newUser] = await db
-        .insert(users)
-        .values({ googleId, email, name, picture, active: true, lastLogin: new Date() })
-        .returning();
-
-      console.log(`[Auth] New Google user: ${email}`);
-      return done(null, newUser as Express.User);
-
-    } catch (err) {
-      return done(err as Error);
     }
-  }
-));
+  ));
+} else {
+  console.warn('[Auth] Google OAuth disabled: missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET');
+}
 
 // MICROSOFT (OUTLOOK) OAUTH STRATEGY
 
-passport.use(new MicrosoftStrategy(
-  {
-    clientID:     process.env['MICROSOFT_CLIENT_ID'] ?? 'placeholder',
-    clientSecret: process.env['MICROSOFT_CLIENT_SECRET'] ?? 'placeholder',
-    callbackURL:  process.env['MICROSOFT_CALLBACK_URL'] ?? 'http://localhost:8080/auth/outlook/callback',
-    scope:        ['user.read'],
-    tenant:       'common',
-  },
-  async (_accessToken, _refreshToken, profile, done) => {
-    try {
-      const email = (profile.emails?.[0]?.value ?? '').toLowerCase().trim();
-      const name  = profile.displayName ?? email;
-      if (!email) return done(new Error('Microsoft account has no email address'));
+function getMicrosoftEmail(profile: any): string {
+  const candidates = [
+    profile?.emails?.[0]?.value,
+    profile?._json?.mail,
+    profile?._json?.userPrincipalName,
+    profile?._json?.preferred_username,
+    profile?._json?.upn,
+    profile?.username,
+  ];
 
-      let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      if (user) {
-        await db.update(users).set({ lastLogin: new Date(), updatedAt: new Date() }).where(eq(users.id, user.id));
-        return done(null, user as Express.User);
-      }
-
-      const [newUser] = await db.insert(users).values({ email, name, active: true, lastLogin: new Date() }).returning();
-      return done(null, newUser as Express.User);
-    } catch (err) {
-      return done(err as Error);
+  for (const value of candidates) {
+    const email = String(value ?? '').trim().toLowerCase();
+    if (email) {
+      return email;
     }
   }
-));
+
+  return '';
+}
+
+if (hasMicrosoftAuth) {
+  passport.use(new MicrosoftStrategy(
+    {
+      clientID:     process.env['MICROSOFT_CLIENT_ID']!,
+      clientSecret: process.env['MICROSOFT_CLIENT_SECRET']!,
+      callbackURL:  config.oauth.microsoftCallbackURL,
+      scope:        ['openid', 'profile', 'email', 'User.Read'],
+      tenant:       config.oauth.microsoftTenantId,
+    },
+    async (_accessToken, _refreshToken, profile, done) => {
+      try {
+        const email = getMicrosoftEmail(profile);
+        const name  = profile.displayName ?? email;
+        if (!email) return done(new Error('Microsoft account has no email address'));
+
+        let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        if (user) {
+          await db.update(users).set({ lastLogin: new Date(), updatedAt: new Date() }).where(eq(users.id, user.id));
+          return done(null, user as Express.User);
+        }
+
+        const [newUser] = await db.insert(users).values({ email, name, active: true, lastLogin: new Date() }).returning();
+        return done(null, newUser as Express.User);
+      } catch (err) {
+        return done(err as Error);
+      }
+    }
+  ));
+} else {
+  console.warn('[Auth] Microsoft OAuth disabled: missing MICROSOFT_CLIENT_ID/MICROSOFT_CLIENT_SECRET');
+}
 
 // LOCAL STRATEGY
 

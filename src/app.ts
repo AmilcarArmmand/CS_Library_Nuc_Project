@@ -5,7 +5,7 @@ import { config } from './config/env.js';
 import type { ErrorRequestHandler } from 'express';
 
 import { connectDatabase } from './db/database.js';
-import passport from './config/passport.js';
+import passport, { authProviders } from './config/passport.js';
 import sessionConfig from './config/session.js';
 
 import authRoutes         from './routes/auth.js';
@@ -23,11 +23,9 @@ const HOST     = '0.0.0.0';   // Accept connections on all network interfaces
 const NODE_ENV = config.nodeEnv;
 const IS_PROD  = NODE_ENV === 'production';
 
-// ── TRUST GCP's LOAD BALANCER / PROXY
-// GCP puts a load balancer in front of your VM that terminates HTTPS.
-// Without this, req.secure and req.ip will be wrong, and session cookies
-// with secure:true won't work.
-if (IS_PROD) {
+// Allow proxy trust to be controlled from the environment so the app can run
+// directly on HTTP during initial bring-up and later behind Nginx/TLS.
+if (config.trustProxy) {
   app.set('trust proxy', 1);
 }
 
@@ -50,6 +48,10 @@ app.use(sessionConfig);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(attachUser);
+app.use((_req, res, next) => {
+  res.locals.authProviders = authProviders;
+  next();
+});
 
 // ROUTES
 app.use('/auth',          authRoutes);
@@ -101,7 +103,13 @@ app.listen(PORT, HOST, () => {
   console.log(`\n✅ CS Library running on: http://${HOST}:${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
   console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
+  console.log(`   Outlook OAuth: ${authProviders.microsoft ? 'Configured ✓' : 'Not set'}`);
+  if (authProviders.microsoft) {
+    console.log(`   Outlook callback: ${config.oauth.microsoftCallbackURL}`);
+    console.log(`   Outlook tenant : ${config.oauth.microsoftTenantId}`);
+  }
   console.log(`   PostgreSQL  : ${config.postgresdb.password  ? 'Configured ✓' : 'Not configured'}`);
+  console.log(`   Secure cookie: ${config.session.cookieSecure ? 'Enabled' : 'Disabled'}`);
   if (!IS_PROD) {
     console.log(`\n   Home        : http://${HOST}:${PORT}/`);
     console.log(`   Web login   : http://${HOST}:${PORT}/auth/login`);

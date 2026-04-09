@@ -180,6 +180,15 @@
       background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
       margin-bottom: 0.75rem;
     }
+    .status-msg {
+      font-size: 0.75rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.2);
+      color: #6ee7b7;
+    }
 
     /* Submit button */
     .btn-primary {
@@ -208,6 +217,21 @@
       font-size: 0.75rem;
     }
     .back-link:hover { color: #60a5fa; }
+    .field-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -0.4rem;
+      margin-bottom: 1rem;
+    }
+    .inline-link {
+      color: #93c5fd;
+      font-size: 0.72rem;
+      text-decoration: none;
+    }
+    .inline-link:hover {
+      color: #dbeafe;
+      text-decoration: underline;
+    }
 
     /* Clock */
     .clock-row {
@@ -316,19 +340,19 @@
         <div class="accent-bar-form"></div>
         <p class="subtitle">Sign in to access the CS Library</p>
 
-        <!-- Tab toggle -->
-        <div class="auth-tabs">
-          <button class="tab-btn active" onclick="switchTab('email')">Email &amp; Password</button>
-          <button class="tab-btn" onclick="switchTab('outlook')">Outlook</button>
-        </div>
+        <% const microsoftEnabled = Boolean(authProviders?.microsoft); %>
+        <% if (microsoftEnabled) { %>
+          <div class="auth-tabs">
+            <button class="tab-btn active" type="button" onclick="switchTab('email')">Email &amp; Password</button>
+            <button class="tab-btn" type="button" onclick="switchTab('outlook')">Outlook</button>
+          </div>
+        <% } %>
 
         <% if (error) { %>
           <div class="error-msg"><%= error %></div>
         <% } %>
-        <% if (message === 'logged_out') { %>
-          <div class="error-msg" style="color:#34d399; background:rgba(52,211,153,0.1); border-color:rgba(52,211,153,0.2);">
-            You have been signed out.
-          </div>
+        <% if (message) { %>
+          <div class="status-msg"><%= message %></div>
         <% } %>
 
         <!-- Email/password panel -->
@@ -353,31 +377,36 @@
               </div>
               <input type="password" name="password" placeholder="Enter your password" required />
             </div>
+            <div class="field-actions">
+              <a href="/auth/forgot-password" class="inline-link">Forgot password?</a>
+            </div>
 
             <button type="submit" class="btn-primary">Sign In</button>
           </form>
 
-          <div class="links-row">
-            <span>Don't have an account?</span>
-            <a href="/auth/register" class="alt-link">Create one</a>
-          </div>
+        <div class="links-row">
+          <span>Don't have an account?</span>
+          <a href="/auth/register" class="back-link">Create one</a>
+        </div>
         </div>
 
         <!-- Outlook panel -->
-        <div class="auth-panel" id="panel-outlook">
-          <a href="/auth/outlook" class="btn-outlook">
-            <svg viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
-              <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
-              <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
-              <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
-            </svg>
-            Continue with Outlook
-          </a>
-          <p style="color:rgba(148,163,184,0.6); font-size:0.72rem; text-align:center;">
-            Sign in using your Outlook account. A CS Library account will be created automatically.
-          </p>
-        </div>
+        <% if (microsoftEnabled) { %>
+          <div class="auth-panel" id="panel-outlook">
+            <a href="/auth/outlook" class="btn-outlook">
+              <svg viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+              </svg>
+              Continue with Outlook
+            </a>
+            <p style="color:rgba(148,163,184,0.6); font-size:0.72rem; text-align:center;">
+              Sign in using your Outlook account. A CS Library account will be created automatically.
+            </p>
+          </div>
+        <% } %>
 
         <!-- Clock -->
         <div class="clock-row">
@@ -397,7 +426,10 @@
         b.classList.toggle('active', (i === 0 && tab === 'email') || (i === 1 && tab === 'outlook'));
       });
       document.getElementById('panel-email').classList.toggle('active', tab === 'email');
-      document.getElementById('panel-outlook').classList.toggle('active', tab === 'outlook');
+      const outlookPanel = document.getElementById('panel-outlook');
+      if (outlookPanel) {
+        outlookPanel.classList.toggle('active', tab === 'outlook');
+      }
     }
 
     // Live clock

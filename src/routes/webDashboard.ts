@@ -2,7 +2,8 @@ import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
 import { books, loans, holds, suggestions } from '../db/schema/schema.js';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, or } from 'drizzle-orm';
+import { normalizeIsbn } from '../utils/openLibrary.js';
 
 const router = express.Router();
 
@@ -87,7 +88,7 @@ router.get('/api/my-loans', async (req: Request, res: Response) => {
 router.post('/api/hold', async (req: Request, res: Response) => {
   try {
     const userId = (req.user as any).id as number;
-    const isbn   = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
 
     if (!isbn) { res.status(400).json({ error: 'ISBN is required.' }); return; }
 
@@ -110,7 +111,11 @@ router.post('/api/hold', async (req: Request, res: Response) => {
 
     // Check duplicate hold
     const [existingHold] = await db.select().from(holds)
-      .where(and(eq(holds.userId, userId), eq(holds.isbn, isbn), eq(holds.status, 'pending')))
+      .where(and(
+        eq(holds.userId, userId),
+        eq(holds.isbn, isbn),
+        or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+      ))
       .limit(1);
     if (existingHold) {
       res.status(409).json({ error: 'You already have a hold on this book.' });

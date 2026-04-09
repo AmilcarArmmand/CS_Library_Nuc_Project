@@ -12,6 +12,10 @@ echo ""
 echo "CS Library — Web Server"
 echo "========================"
 
+# Load nvm if available (needed on some Linux setups)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
 # Check Node.js is available
 if ! command -v node &> /dev/null; then
     echo "Node.js not found. Install it with:"
@@ -24,10 +28,6 @@ fi
 echo "Node  : $(node -v)"
 echo "npm   : $(npm -v)"
 echo ""
-
-# Load nvm if available (needed on some Linux setups)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 # Install dependencies if node_modules is missing
 if [ ! -d "node_modules" ]; then

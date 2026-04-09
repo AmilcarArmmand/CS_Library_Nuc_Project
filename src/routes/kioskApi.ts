@@ -8,11 +8,15 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { users, books, loans, holds } from '../db/schema/schema.js';
-import { eq, and } from 'drizzle-orm';
+import { users, books, loans, holds, donations } from '../db/schema/schema.js';
+import { eq, and, asc, count, or } from 'drizzle-orm';
 import { addDays } from 'date-fns';
+import { sendCheckoutConfirmationEmail, sendHoldAvailableEmail } from '../utils/emailService.js';
+import { fetchOpenLibraryBookByIsbn, normalizeIsbn } from '../utils/openLibrary.js';
 
 const router = express.Router();
+const LOAN_PERIOD_DAYS = 14;
+const HOLD_PICKUP_DAYS = 7;
 
 // API KEY GUARD
 
@@ -26,6 +30,25 @@ function requireKioskKey(req: Request, res: Response, next: NextFunction): void 
 }
 
 router.use(requireKioskKey);
+
+async function findActiveHoldForBook(isbn: string) {
+  const [hold] = await db
+    .select({
+      id: holds.id,
+      userId: holds.userId,
+      status: holds.status,
+      createdAt: holds.createdAt,
+    })
+    .from(holds)
+    .where(and(
+      eq(holds.isbn, isbn),
+      or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+    ))
+    .orderBy(asc(holds.createdAt))
+    .limit(1);
+
+  return hold ?? null;
+}
 
 // POST /api/kiosk/login
 
@@ -95,8 +118,7 @@ router.get(['/books', '/catalog'], async (_req: Request, res: Response) => {
 
 router.get('/books/:isbn', async (req: Request, res: Response) => {
   try {
-    const rawIsbn = req.params['isbn'] ?? '';
-    const isbn    = rawIsbn.replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn = normalizeIsbn(req.params['isbn'] ?? '');
 
     if (!isbn) {
       res.status(400).json({ error: 'Invalid ISBN.' });
@@ -110,26 +132,18 @@ router.get('/books/:isbn', async (req: Request, res: Response) => {
       return;
     }
 
-    // ── FALLBACK: Fetch from Open Library API ──
-    const olRes = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
-    const olData = await olRes.json().catch(() => ({}));
-    const bookData = olData[`ISBN:${isbn}`];
-
-    if (!bookData) {
+    const metadata = await fetchOpenLibraryBookByIsbn(isbn);
+    if (!metadata) {
       res.status(404).json({ error: 'Book not found locally or on Open Library.' });
       return;
     }
 
-    const title  = bookData.title || `Unknown Title (${isbn})`;
-    const author = bookData.authors?.[0]?.name || 'Unknown Author';
-    const cover  = bookData.cover?.large || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
-
     // Automatically add the new book to the local database
     const [newBook] = await db.insert(books).values({
-      isbn,
-      title,
-      author,
-      cover,
+      isbn: metadata.isbn,
+      title: metadata.title,
+      author: metadata.author,
+      cover: metadata.cover,
       status: 'Available',
       shelf: 'Unsorted',
     }).returning();
@@ -148,30 +162,156 @@ router.post('/checkout', async (req: Request, res: Response) => {
   try {
     const userId: number = Number(req.body.userId);
     const isbns: string[] = (Array.isArray(req.body.isbns) ? req.body.isbns : [])
-      .map((i: string) => i.replace(/[^0-9Xx]/g, '').toUpperCase());
+      .map((i: string) => normalizeIsbn(i))
+      .filter(Boolean) as string[];
 
     if (!userId || !isbns.length) {
       res.status(400).json({ error: 'userId and isbns are required.' });
       return;
     }
 
-    const dueDate = addDays(new Date(), 14);
-    let count = 0;
+    const [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        active: users.active,
+        borrowingLimit: users.borrowingLimit,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found.' });
+      return;
+    }
+
+    if (!user.active) {
+      res.status(403).json({ error: 'Account is disabled.' });
+      return;
+    }
+
+    const [activeLoanSummary] = await db
+      .select({ count: count() })
+      .from(loans)
+      .where(and(eq(loans.userId, userId), eq(loans.returned, false)));
+
+    const activeLoanCount = Number(activeLoanSummary?.count ?? 0);
+    const borrowingLimit = Number(user.borrowingLimit ?? 5);
+    const remainingSlots = Math.max(0, borrowingLimit - activeLoanCount);
+
+    if (remainingSlots <= 0) {
+      res.status(409).json({ error: `Borrowing limit reached (${borrowingLimit} books).` });
+      return;
+    }
+
+    const dueDate = addDays(new Date(), LOAN_PERIOD_DAYS);
+    let checkedOutCount = 0;
+    const checkedOutBooks: Array<{ title: string; author: string }> = [];
+    const blocked: Array<{ isbn: string; reason: string }> = [];
 
     for (const isbn of isbns) {
+      if (checkedOutCount >= remainingSlots) {
+        blocked.push({ isbn, reason: 'Borrowing limit reached.' });
+        continue;
+      }
+
+      const [book] = await db
+        .select({
+          isbn: books.isbn,
+          title: books.title,
+          author: books.author,
+          status: books.status,
+        })
+        .from(books)
+        .where(eq(books.isbn, isbn))
+        .limit(1);
+
+      if (!book) {
+        blocked.push({ isbn, reason: 'Book not found.' });
+        continue;
+      }
+
+      if (book.status === 'Checked Out') {
+        blocked.push({ isbn, reason: 'Book is already checked out.' });
+        continue;
+      }
+
+      const activeHold = await findActiveHoldForBook(isbn);
+      if (activeHold && activeHold.userId !== userId) {
+        blocked.push({
+          isbn,
+          reason: activeHold.status === 'ready'
+            ? 'Book is reserved for another student.'
+            : 'Another student is first in the hold queue.',
+        });
+        continue;
+      }
+
+      if (book.status === 'On Hold' && !activeHold) {
+        blocked.push({ isbn, reason: 'Book is currently reserved.' });
+        continue;
+      }
+
       const result = await db
         .update(books)
         .set({ status: 'Checked Out' })
-        .where(and(eq(books.isbn, isbn), eq(books.status, 'Available')))
-        .returning({ isbn: books.isbn });
+        .where(and(
+          eq(books.isbn, isbn),
+          or(eq(books.status, 'Available'), eq(books.status, 'On Hold')),
+        ))
+        .returning({
+          isbn: books.isbn,
+          title: books.title,
+          author: books.author,
+        });
 
-      if (result.length === 0) continue;
+      if (result.length === 0) {
+        blocked.push({ isbn, reason: 'Book could not be checked out.' });
+        continue;
+      }
 
       await db.insert(loans).values({ userId, isbn, dueDate });
-      count++;
+      if (activeHold?.userId === userId) {
+        await db
+          .update(holds)
+          .set({ status: 'fulfilled', pickupDate: null })
+          .where(eq(holds.id, activeHold.id));
+      }
+
+      checkedOutBooks.push({
+        title: result[0]?.title ?? 'Unknown Title',
+        author: result[0]?.author ?? 'Unknown Author',
+      });
+      checkedOutCount++;
     }
 
-    res.json({ checkedOut: count, requested: isbns.length, dueDate });
+    if (checkedOutCount > 0) {
+      void sendCheckoutConfirmationEmail({
+        to: user.email,
+        name: user.name,
+        books: checkedOutBooks,
+        dueDate,
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.warn(`[Kiosk API] Checkout email was not delivered for ${user.email}.`);
+          }
+        })
+        .catch((error) => {
+          console.error('[Kiosk API] Checkout confirmation email failed:', error);
+        });
+    }
+
+    res.json({
+      checkedOut: checkedOutCount,
+      requested: isbns.length,
+      dueDate,
+      blocked,
+      borrowingLimit,
+      activeLoans: activeLoanCount + checkedOutCount,
+    });
 
   } catch (err) {
     console.error('[Kiosk API] /checkout error:', err);
@@ -183,7 +323,7 @@ router.post('/checkout', async (req: Request, res: Response) => {
 
 router.post('/return', async (req: Request, res: Response) => {
   try {
-    const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn = normalizeIsbn(String(req.body.isbn ?? ''));
 
     if (!isbn) {
       res.status(400).json({ error: 'isbn is required.' });
@@ -202,16 +342,64 @@ router.post('/return', async (req: Request, res: Response) => {
       return;
     }
 
+    const returnedDate = new Date();
+
     await db
       .update(loans)
-      .set({ returned: true, returnedDate: new Date() })
+      .set({ returned: true, returnedDate })
       .where(eq(loans.id, loan.id));
 
-    await db.update(books).set({ status: 'Available' }).where(eq(books.isbn, isbn));
+    const [nextHold] = await db
+      .select({
+        id: holds.id,
+        userId: holds.userId,
+        name: users.name,
+        email: users.email,
+        title: books.title,
+        author: books.author,
+      })
+      .from(holds)
+      .innerJoin(users, eq(holds.userId, users.id))
+      .innerJoin(books, eq(holds.isbn, books.isbn))
+      .where(and(eq(holds.isbn, isbn), eq(holds.status, 'pending')))
+      .orderBy(asc(holds.createdAt))
+      .limit(1);
+
+    let holdReady: { userId: number; pickupDate: Date } | null = null;
+    if (nextHold) {
+      const pickupDate = addDays(returnedDate, HOLD_PICKUP_DAYS);
+      await db
+        .update(holds)
+        .set({ status: 'ready', pickupDate })
+        .where(eq(holds.id, nextHold.id));
+
+      await db.update(books).set({ status: 'On Hold' }).where(eq(books.isbn, isbn));
+      holdReady = { userId: nextHold.userId, pickupDate };
+
+      void sendHoldAvailableEmail({
+        to: nextHold.email,
+        name: nextHold.name,
+        book: {
+          title: nextHold.title,
+          author: nextHold.author,
+        },
+        pickupDate,
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.warn(`[Kiosk API] Hold-ready email was not delivered for ${nextHold.email}.`);
+          }
+        })
+        .catch((error) => {
+          console.error('[Kiosk API] Hold-ready email failed:', error);
+        });
+    } else {
+      await db.update(books).set({ status: 'Available' }).where(eq(books.isbn, isbn));
+    }
 
     // Return the updated book so the kiosk dashboard can show the title/cover
     const [book] = await db.select().from(books).where(eq(books.isbn, isbn)).limit(1);
-    res.json({ ok: true, book });
+    res.json({ ok: true, book, holdReady });
 
   } catch (err) {
     console.error('[Kiosk API] /return error:', err);
@@ -260,14 +448,25 @@ router.post('/renew', async (req: Request, res: Response) => {
     if (!loanId) { res.status(400).json({ error: 'loanId is required.' }); return; }
 
     const [loan] = await db
-      .select({ id: loans.id, userId: loans.userId })
+      .select({ id: loans.id, userId: loans.userId, isbn: loans.isbn, dueDate: loans.dueDate })
       .from(loans)
       .where(and(eq(loans.id, loanId), eq(loans.returned, false)))
       .limit(1);
 
     if (!loan) { res.status(404).json({ error: 'Loan not found.' }); return; }
 
-    const newDueDate = addDays(new Date(), 14);
+    if (loan.dueDate < new Date()) {
+      res.status(409).json({ error: 'Overdue books cannot be renewed.' });
+      return;
+    }
+
+    const activeHold = await findActiveHoldForBook(loan.isbn);
+    if (activeHold) {
+      res.status(409).json({ error: 'This book cannot be renewed because it has an active hold.' });
+      return;
+    }
+
+    const newDueDate = addDays(new Date(loan.dueDate), LOAN_PERIOD_DAYS);
     await db.update(loans).set({ dueDate: newDueDate }).where(eq(loans.id, loanId));
 
     res.json({ ok: true, newDueDate });
@@ -281,11 +480,13 @@ router.post('/renew', async (req: Request, res: Response) => {
 
 router.post('/donate', async (req: Request, res: Response) => {
   try {
-    const isbn   = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
     const title  = String(req.body.title ?? '').trim();
     const author = String(req.body.author ?? '').trim();
     const cover  = String(req.body.cover ?? '').trim();
+    const donorUserId = Number(req.body.userId);
     const donorName = String(req.body.donorName ?? '').trim();
+    const donorEmail = String(req.body.donorEmail ?? '').trim().toLowerCase();
 
     if (!isbn || !title) {
       res.status(400).json({ error: 'ISBN and title are required.' });
@@ -308,8 +509,35 @@ router.post('/donate', async (req: Request, res: Response) => {
       shelf:  'Donations',
     }).returning();
 
-    console.log(`[Kiosk API] Book donated: "${title}" by ${donorName || 'Anonymous'}`);
-    res.json({ ok: true, book: newBook });
+    let resolvedDonorUserId: number | null = null;
+    let resolvedDonorName = donorName || 'Anonymous';
+    let resolvedDonorEmail = donorEmail || null;
+
+    if (donorUserId) {
+      const [donorUser] = await db
+        .select({ id: users.id, name: users.name, email: users.email })
+        .from(users)
+        .where(eq(users.id, donorUserId))
+        .limit(1);
+
+      if (donorUser) {
+        resolvedDonorUserId = donorUser.id;
+        resolvedDonorName = donorName || donorUser.name;
+        resolvedDonorEmail = donorEmail || donorUser.email;
+      }
+    }
+
+    const [donation] = await db.insert(donations).values({
+      donorUserId: resolvedDonorUserId,
+      donorName: resolvedDonorName,
+      donorEmail: resolvedDonorEmail,
+      isbn,
+      title,
+      author: author || 'Unknown Author',
+    }).returning();
+
+    console.log(`[Kiosk API] Book donated: "${title}" by ${resolvedDonorName}`);
+    res.json({ ok: true, book: newBook, donation });
 
   } catch (err) {
     console.error('[Kiosk API] /donate error:', err);
@@ -322,10 +550,26 @@ router.post('/donate', async (req: Request, res: Response) => {
 router.post('/hold', async (req: Request, res: Response) => {
   try {
     const userId = Number(req.body.userId);
-    const isbn   = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
+    const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
 
     if (!userId || !isbn) {
       res.status(400).json({ error: 'userId and isbn are required.' });
+      return;
+    }
+
+    const [user] = await db
+      .select({ id: users.id, active: users.active })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found.' });
+      return;
+    }
+
+    if (!user.active) {
+      res.status(403).json({ error: 'Account is disabled.' });
       return;
     }
 
@@ -339,12 +583,23 @@ router.post('/hold', async (req: Request, res: Response) => {
       return;
     }
 
+    const [activeLoan] = await db
+      .select({ id: loans.id })
+      .from(loans)
+      .where(and(eq(loans.isbn, isbn), eq(loans.returned, false), eq(loans.userId, userId)))
+      .limit(1);
+
+    if (activeLoan) {
+      res.status(409).json({ error: 'You already have this book checked out.' });
+      return;
+    }
+
     // Check duplicate hold
     const [existingHold] = await db.select().from(holds)
       .where(and(
         eq(holds.userId, userId),
         eq(holds.isbn, isbn),
-        eq(holds.status, 'pending'),
+        or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
       )).limit(1);
 
     if (existingHold) {

@@ -81,6 +81,7 @@
       <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>Loans</a>
       <a href="/admin/users" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</a>
       <a href="/admin/reports" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/donations" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"/><path d="M7 8h10"/><path d="M8 21h8"/></svg>Donations</a>
       <a href="/admin/suggestions" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
     </div>
     <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
@@ -96,7 +97,7 @@
       <div class="panel-title">All Users (<%= users.length %>)</div>
       <div class="search-bar"><input type="text" placeholder="Search by name, email, or student ID…" oninput="filterUsers(this.value)" /></div>
       <table>
-        <thead><tr><th>Name</th><th>Email</th><th>Student ID</th><th>Role</th><th>Active Loans</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Student ID</th><th>Role</th><th>Active Loans</th><th>Limit</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="userTable">
           <% users.forEach(u => { %>
           <tr data-search="<%= (u.name||'').toLowerCase() %> <%= (u.email||'').toLowerCase() %> <%= (u.studentId||'').toLowerCase() %>">
@@ -105,10 +106,12 @@
             <td style="font-family:monospace;font-size:0.72rem;"><%= u.studentId || '—' %></td>
             <td><span class="badge <%= u.role === 'admin' ? 'badge-admin' : 'badge-user' %>"><%= u.role.toUpperCase() %></span></td>
             <td style="text-align:center;font-weight:700;<%= u.activeLoans > 0 ? 'color:#fbbf24;' : '' %>"><%= u.activeLoans %></td>
+            <td style="text-align:center;font-weight:700;"><%= u.borrowingLimit %></td>
             <td><span class="badge <%= u.active ? 'badge-active' : 'badge-disabled' %>"><%= u.active ? 'ACTIVE' : 'DISABLED' %></span></td>
             <td style="display:flex;gap:0.35rem;flex-wrap:wrap;">
               <button class="btn btn-toggle" onclick="toggleUser(<%= u.id %>)"><%= u.active ? 'DISABLE' : 'ENABLE' %></button>
               <button class="btn btn-role" onclick="toggleRole(<%= u.id %>, '<%= u.role %>')"><%= u.role === 'admin' ? 'DEMOTE' : 'PROMOTE' %></button>
+              <button class="btn btn-hist" onclick="setBorrowingLimit(<%= u.id %>, <%= u.borrowingLimit %>, '<%= u.name %>')">LIMIT</button>
               <button class="btn btn-hist" onclick="viewHistory(<%= u.id %>, '<%= u.name %>')">HISTORY</button>
             </td>
           </tr>
@@ -170,6 +173,29 @@
       });
       if (!r.ok) { toast('Failed.', 'negative'); return; }
       toast(`Role changed to ${newRole}.`);
+      setTimeout(() => location.reload(), 600);
+    } catch { toast('Error.', 'negative'); }
+  }
+
+  async function setBorrowingLimit(userId, currentLimit, name) {
+    const raw = prompt(`Set borrowing limit for ${name}`, String(currentLimit));
+    if (raw === null) return;
+
+    const borrowingLimit = Number(raw);
+    if (!Number.isInteger(borrowingLimit) || borrowingLimit < 1 || borrowingLimit > 25) {
+      toast('Borrowing limit must be a whole number between 1 and 25.', 'negative');
+      return;
+    }
+
+    try {
+      const r = await fetch('/admin/users/set-limit', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ userId, borrowingLimit }),
+      });
+      const d = await r.json();
+      if (!r.ok) { toast(d.error ?? 'Failed.', 'negative'); return; }
+      toast(`Borrowing limit updated to ${borrowingLimit}.`);
       setTimeout(() => location.reload(), 600);
     } catch { toast('Error.', 'negative'); }
   }

@@ -22,7 +22,10 @@ import { users, books } from './db/schema/schema.js';
 
 // Connect to the database
 
-const pool = new Pool({ connectionString: process.env['DATABASE_URL'] });
+const connectionString = process.env['DATABASE_URL']
+  ?? `postgresql://${process.env['POSTGRES_USER']}:${process.env['POSTGRES_PASSWORD']}@${process.env['POSTGRES_HOST']}:${process.env['POSTGRES_PORT'] ?? '5432'}/${process.env['POSTGRES_DB']}`;
+
+const pool = new Pool({ connectionString });
 const db   = drizzle(pool, { schema: { users, books } });
 
 // Pre-existing books
