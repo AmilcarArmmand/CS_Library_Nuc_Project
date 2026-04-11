@@ -82,4 +82,13 @@
     document.getElementById('hamburgerBtn').classList.remove('open');
     document.getElementById('mobileMenu').classList.remove('open');
   }
+
+  // Close the mobile menu automatically when the window is resized
+  // wide enough that the hamburger button is no longer visible.
+  window.addEventListener('resize', function() {
+    const btn = document.getElementById('hamburgerBtn');
+    if (btn && getComputedStyle(btn).display === 'none') {
+      closeMobileMenu();
+    }
+  });
 </script>

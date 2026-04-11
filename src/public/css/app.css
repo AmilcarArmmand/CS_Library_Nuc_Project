@@ -269,6 +269,8 @@ body::before {
 /* ── My Books panel ── */
 .mybooks-panel { width: 100%; max-width: 52rem; padding: 1.75rem; animation: slideUp 0.4s ease-out; }
 
+.suggest-panel { width: 100%; max-width: 500px; padding: 2rem; animation: slideUp 0.4s ease-out; }
+
 .loans-summary { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .summary-card {
   flex: 1; min-width: 130px; padding: 1rem 1.25rem;
