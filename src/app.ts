@@ -1,3 +1,7 @@
+import { db } from './db/database.js';
+import { books } from './db/schema/schema.js';
+import { desc } from 'drizzle-orm';
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -61,13 +65,39 @@ app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
 app.use('/admin', adminRoutes);
 
 // HOME
-app.get('/', (req, res) => {
-  res.render('pages/index', {
-    title:       'CS Library',
-    message:     req.query['message'] === 'logged_out' ? 'You have been signed out.' : null,
-    user:        req.user ?? null,
-    projectName: 'CS Library Project',
-  });
+
+// The homepage.
+// This is made so it shows some stats and the 5 newest books. 
+// It also has a login/logout button in the header.
+app.get('/', async (req, res) => {
+  try {
+    const allBooks = await db.select().from(books);
+    const newest   = allBooks
+      .slice()
+      .sort((a, b) => b.isbn.localeCompare(a.isbn))
+      // Show only top 5 newest books on homepage
+      .slice(0, 5);
+
+    const total     = allBooks.length;
+    const available = allBooks.filter(b => b.status === 'Available').length;
+
+    res.render('pages/index', {
+      title:          'CS Library',
+      message:        req.query['message'] === 'logged_out' ? 'You have been signed out.' : null,
+      user:           req.user ?? null,
+      projectName:    'CS Library Project',
+      newestBooks:    newest,
+      totalBooks:     total,
+      availableBooks: available,
+      checkedOutBooks: total - available,
+    });
+  } catch {
+    res.render('pages/index', {
+      title: 'CS Library', message: null, user: req.user ?? null,
+      projectName: 'CS Library Project',
+      newestBooks: [], totalBooks: 0, availableBooks: 0, checkedOutBooks: 0,
+    });
+  }
 });
 
 // CHECK HEALTH

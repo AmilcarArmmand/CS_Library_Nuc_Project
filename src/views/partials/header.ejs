@@ -1,56 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %> | CS Library Project</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="icon" href="/favicon1.ico">
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container">
-            <a class="navbar-brand" href="/"><%= typeof projectName !== 'undefined' ? projectName : 'CS400 Project' %></a>
+<%
+  // pageMode controls how nav items render:
+  //   'dashboard' — <button> elements that call showView() via JS
+  //   'index'     — <a> links that navigate to /web-dashboard?view=...
+  // Defaults to 'index' (safe for any non-dashboard page)
+  // Use this header for any new pages you create, and set pageMode as needed when including it.
+  
+  var _mode = (typeof pageMode !== 'undefined') ? pageMode : 'index';
+%>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+<header class="top-header">
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="navbar-nav me-auto">
-                    <% if (locals.isAuthenticated) { %>
-                        <a class="nav-link" href="/dashboard">Dashboard</a>
-                        <a class="nav-link" href="/features">Features</a>
-                        <a class="nav-link" href="/analytics">Analytics</a>
-                    <% } %>
-                </div>
+  <!-- Brand — always links to home -->
+  <a href="/" class="header-brand">
+    <img src="/images/scsu_logo.png" alt="SCSU" onerror="this.style.display='none'" />
+    <div class="brand-text">
+      <span class="brand-cs">CS_LIBRARY</span>
+      <span class="brand-sep">|</span>
+      <span class="brand-scsu">SCSU</span>
+    </div>
+  </a>
 
-                <div class="navbar-nav ms-auto">
-                    <% if (locals.isAuthenticated && locals.user) { %>
-                        <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                <img src="<%= user.picture %>" alt="Profile" class="rounded-circle me-2" width="24" height="24">
-                                <%= user.firstName %>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="/dashboard">Dashboard</a></li>
-                                <li><a class="dropdown-item" href="/dashboard/profile">Profile</a></li>
-                                <li><a class="dropdown-item" href="/dashboard/settings">Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="/auth/logout">Sign Out</a></li>
-                            </ul>
-                        </div>
-                    <% } else { %>
-                        <a class="nav-link btn btn-outline-light ms-2" href="<%= locals.authProviders?.google ? '/auth/google' : '/auth/login' %>">
-                            <i class="<%= locals.authProviders?.google ? 'fab fa-google' : 'fas fa-user' %> me-1"></i>
-                            <%= locals.authProviders?.google ? 'Sign In with Google' : 'Sign In' %>
-                        </a>
-                    <% } %>
-                </div>
-            </div>
-        </div>
-    </nav>
-    <main class="container mt-4">
-    
+  <div class="hdr-pipe"></div>
+
+  <!-- Desktop nav -->
+  <nav class="header-nav">
+    <% if (_mode === 'dashboard') { %>
+      <button class="hdr-nav-btn active" id="nav-catalog" onclick="showView('catalog')">My Library</button>
+      <button class="hdr-nav-btn"        id="nav-mybooks" onclick="showView('mybooks')">My Books</button>
+      <button class="hdr-nav-btn"        id="nav-suggest" onclick="showView('suggest')">Suggest</button>
+    <% } else { %>
+      <a href="/web-dashboard?view=catalog" class="hdr-nav-btn">My Library</a>
+      <a href="/web-dashboard?view=mybooks" class="hdr-nav-btn">My Books</a>
+      <a href="/web-dashboard?view=suggest" class="hdr-nav-btn">Suggest</a>
+    <% } %>
+  </nav>
+
+  <!-- Right side — user info or sign in/register -->
+  <div class="header-right">
+    <% if (user) { %>
+      <span class="header-user-name"><%= user.name %></span>
+      <a href="/auth/logout" class="logout-btn">Sign out</a>
+    <% } else { %>
+      <a href="/auth/login"    class="sign-in-link">Sign in</a>
+    <% } %>
+  </div>
+
+  <!-- Hamburger — mobile only -->
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Mobile dropdown -->
+  <div class="mobile-menu" id="mobileMenu">
+    <% if (_mode === 'dashboard') { %>
+      <button class="mobile-item active" id="mnav-catalog" onclick="showView('catalog');closeMobileMenu()">My Library</button>
+      <button class="mobile-item"        id="mnav-mybooks" onclick="showView('mybooks');closeMobileMenu()">My Books</button>
+      <button class="mobile-item"        id="mnav-suggest" onclick="showView('suggest');closeMobileMenu()">Suggest</button>
+    <% } else { %>
+      <a href="/web-dashboard?view=catalog" class="mobile-item">My Library</a>
+      <a href="/web-dashboard?view=mybooks" class="mobile-item">My Books</a>
+      <a href="/web-dashboard?view=suggest" class="mobile-item">Suggest</a>
+    <% } %>
+    <div class="mobile-divider"></div>
+    <% if (user) { %>
+      <span class="mobile-user"><%= user.name %></span>
+      <a href="/auth/logout" class="mobile-item mobile-signout">Sign Out</a>
+    <% } else { %>
+      <a href="/auth/login"    class="mobile-item">Sign In</a>
+      <a href="/auth/register" class="mobile-item" style="color:#60a5fa;font-weight:700;">Create Account</a>
+    <% } %>
+  </div>
+
+</header>
+
+<script>
+  function toggleMobileMenu() {
+    document.getElementById('hamburgerBtn').classList.toggle('open');
+    document.getElementById('mobileMenu').classList.toggle('open');
+  }
+  function closeMobileMenu() {
+    document.getElementById('hamburgerBtn').classList.remove('open');
+    document.getElementById('mobileMenu').classList.remove('open');
+  }
+</script>

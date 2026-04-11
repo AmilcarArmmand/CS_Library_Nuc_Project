@@ -1,41 +1,133 @@
-<%- include('../partials/header') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- Starfield layers -->
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
 
-<div class="row">
-    <div class="col-lg-6 mx-auto text-center mt-5">
+  <!-- ── Header ── -->
+  <%- include('../partials/header', { pageMode: 'index' }) %>
 
-        <img src="/images/scsu_logo.png" alt="SCSU Logo"
-             style="height:60px; object-fit:contain; margin-bottom:1.5rem;"
-             onerror="this.style.display='none'" />
+  <div class="page">
 
-        <h1 class="display-5 fw-bold mb-2">CS Library</h1>
-        <p class="text-muted mb-5">Southern Connecticut State University — Department of Computer Science</p>
+    <!-- ── Logout notice ── -->
+    <% if (message) { %>
+      <div class="notice-bar">
+        <span class="notice">You have been signed out.</span>
+      </div>
+    <% } %>
 
-        <% if (message) { %>
-            <div class="alert alert-success mb-4"><%= message %></div>
-        <% } %>
-
-        <div class="d-grid gap-3 mb-5">
-
-            <a href="/auth/login" class="btn btn-primary btn-lg py-3">
-                <span style="font-size:1.3rem;">🌐</span>
-                <strong>Web Login</strong>
-                <div class="small opacity-75 mt-1">Email &amp; Password or Google — for students and staff</div>
-            </a>
-
-            <a href="/kiosk" class="btn btn-outline-secondary btn-lg py-3">
-                <span style="font-size:1.3rem;">🪪</span>
-                <strong>Kiosk Login</strong>
-                <div class="small opacity-75 mt-1">Student ID scan — for the library kiosk terminal</div>
-            </a>
-
-        </div>
-
-        <p class="text-muted small">
-            Don't have an account?
-            <a href="/auth/register">Create one here</a>
+    <!-- ── Welcome banner — RYM style ── -->
+    <div class="welcome-banner">
+      <div class="welcome-text">
+        <h1>Welcome to the <span>CS Library</span></h1>
+        <p>
+          The CS Library is a book collection maintained by the
+          Department of Computer Science at Southern Connecticut State University.
+          Browse the catalog, check out books at the kiosk, and track your loans online.
+          
+          We are located in Morril Hall 122.
         </p>
-
+      </div>
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <!-- ── Stats bar ── -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-num"><%= totalBooks %></span>
+        <span class="stat-label">Books</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num"><%= availableBooks %></span>
+        <span class="stat-label">Available</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num"><%= checkedOutBooks %></span>
+        <span class="stat-label">Checked Out</span>
+      </div>
+    </div>
+
+    <!-- ── Book list ── -->
+    <div class="main-layout">
+      <div class="section-header">
+        <h2>Recently Added</h2>
+        <span>Showing latest <%= newestBooks.length %> additions</span>
+      </div>
+
+      <div class="book-list">
+        <% if (newestBooks && newestBooks.length > 0) { %>
+          <% newestBooks.forEach(function(book, i) { %>
+            <div class="book-row">
+              <span class="book-num"><%= i + 1 %></span>
+
+              <div class="book-cover">
+                <img src="<%= book.cover || '' %>"
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'"
+                     alt="<%= book.title %>" />
+              </div>
+
+              <div class="book-info">
+                <span class="book-title-link"><%= book.title %></span>
+                <span class="book-author-link"><%= book.author %></span>
+                <div class="book-meta">
+                  <% if (book.shelf) { %>
+                    <span class="book-shelf"><%= book.shelf %></span>
+                    <span>·</span>
+                  <% } %>
+                  <span class="book-isbn-meta">ISBN <%= book.isbn %></span>
+                </div>
+              </div>
+
+              <span class="book-status <%= book.status === 'Available' ? 'status-available' : 'status-out' %>">
+                <%= book.status %>
+              </span>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state">No books in the catalog yet.</div>
+        <% } %>
+      </div>
+
+      <!-- CTA for logged-out users -->
+      <% if (!user) { %>
+        <div class="cta-block">
+          <p><strong>Want to borrow books?</strong> Create a free account to track your loans and request renewals from the kiosk.</p>
+          <a href="/auth/register" class="cta-btn">Create Account →</a>
+        </div>
+      <% } %>
+    </div>
+
+    
+  </div>
+
+  <%- include('../partials/footer') %>
+
+  <script>
+    function toggleMenu() {
+      const btn  = document.getElementById('hamburgerBtn');
+      const menu = document.getElementById('mobileMenu');
+      btn.classList.toggle('open');
+      menu.classList.toggle('open');
+    }
+
+    // Close menu when a link is tapped
+    document.querySelectorAll('.mobile-item').forEach(function(link) {
+      link.addEventListener('click', function() {
+        document.getElementById('hamburgerBtn').classList.remove('open');
+        document.getElementById('mobileMenu').classList.remove('open');
+      });
+    });
+  </script>
+</body>
+</html>

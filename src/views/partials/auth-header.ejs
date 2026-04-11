@@ -1,0 +1,25 @@
+<%
+  // Minimal header for auth pages (login, register, forgot-password, reset-password).
+  // No nav buttons — users are not authenticated yet so those links don't apply.
+  // Just the brand and a back-to-home link.
+  // Use this header for any new auth-related pages you create.
+%>
+<div style="
+  position: absolute; top: 0; left: 0; right: 0; z-index: 100;
+  height: 3.25rem; display: flex; align-items: center;
+  padding: 0 1.5rem; gap: 1rem;
+">
+  <a href="/" style="
+    display: flex; align-items: center; gap: 0.6rem;
+    text-decoration: none; opacity: 0.7; transition: opacity 0.2s;
+  " onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+    <img src="/images/scsu_logo.png" alt="SCSU"
+         onerror="this.style.display='none'"
+         style="height:1.4rem; filter:brightness(0) invert(1);" />
+    <div style="display:flex; align-items:center; gap:0.2rem; font-size:0.75rem; font-weight:900; letter-spacing:0.12em;">
+      <span style="color:white;">CS_LIBRARY</span>
+      <span style="color:rgba(255,255,255,0.25); margin:0 0.1rem;">|</span>
+      <span style="color:#60a5fa; font-weight:300;">SCSU</span>
+    </div>
+  </a>
+</div>

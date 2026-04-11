@@ -1,12 +1,78 @@
-<%- include('../partials/header') %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= title || 'Error' %> — CS Library</title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- Starfield layers -->
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
 
-<div class="row">
-    <div class="col-lg-6 mx-auto text-center">
-        <h1 class="display-1 text-danger">⚠️</h1>
-        <h2 class="mb-3">Oops! Something went wrong</h2>
-        <p class="lead mb-4"><%= error %></p>
-        <a href="/" class="btn btn-primary">Return Home</a>
+  <%- include('../partials/header', { pageMode: 'index' }) %>
+
+  <div class="page">
+    <div style="
+      min-height: calc(100vh - 3.25rem);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 2rem 1.5rem;
+      position: relative; z-index: 1;
+    ">
+
+      <!-- Error Image -->
+      <img
+        src="/images/error.png"
+        alt="CS Library"
+        onerror="this.style.display='none'"
+        style="
+          width: 300px; height: 300px; object-fit: contain;
+          filter: brightness(1); opacity: 1;
+          margin-bottom: 2rem;
+        "
+      />
+
+      <!-- Error code -->
+      <p style="
+        font-size: 0.7rem; font-weight: 700; letter-spacing: 0.3em;
+        text-transform: uppercase; color: #1d4ed8; margin-bottom: 0.75rem;
+      ">Error</p>
+
+      <!-- Error message -->
+      <h1 style="
+        font-size: clamp(1.5rem, 4vw, 2.5rem); font-weight: 900;
+        color: white; letter-spacing: -0.02em; line-height: 1.2;
+        max-width: 520px; margin-bottom: 1rem;
+      "><%= title || 'Something went wrong' %></h1>
+
+      <p style="
+        font-size: 0.9rem; color: #475569; max-width: 400px;
+        line-height: 1.7; margin-bottom: 2.5rem;
+      "><%= error || 'An unexpected error occurred. Please try again.' %></p>
+
+      <!-- Back to home button -->
+      <a href="/" style="
+        padding: 0.75rem 2rem; border-radius: 9999px;
+        font-family: inherit; font-size: 0.875rem; font-weight: 700;
+        text-decoration: none; letter-spacing: 0.04em;
+        color: #60a5fa; border: 1px solid rgba(59,130,246,0.4);
+        background: rgba(59,130,246,0.1); transition: all 0.25s;
+      "
+      onmouseover="this.style.background='rgba(59,130,246,0.25)';this.style.borderColor='#60a5fa'"
+      onmouseout="this.style.background='rgba(59,130,246,0.1)';this.style.borderColor='rgba(59,130,246,0.4)'">
+        ← Back to Home
+      </a>
+
     </div>
-</div>
 
-<%- include('../partials/footer') %>
+    <%- include('../partials/footer') %>
+  </div>
+
+</body>
+</html>
