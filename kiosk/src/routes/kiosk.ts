@@ -118,6 +118,7 @@ router.post('/login', async (req: Request, res: Response) => {
     res.render('pages/kiosk-login', {
       title: 'CS Library Kiosk',
       error: 'Scan a valid student ID barcode to continue.',
+      notice: null,
     });
     return;
   }
