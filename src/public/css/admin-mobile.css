@@ -1,0 +1,121 @@
+.admin-mobile-topbar,
+.admin-sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+
+  .admin-mobile-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-height: calc(4rem + env(safe-area-inset-top));
+    padding: calc(0.85rem + env(safe-area-inset-top)) 1rem 0.85rem;
+    background: rgba(8, 12, 24, 0.94);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(24px);
+  }
+
+  .admin-mobile-menu-btn {
+    width: 2.7rem;
+    height: 2.7rem;
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.28rem;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 0.85rem;
+    background: rgba(255,255,255,0.04);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .admin-mobile-menu-btn span {
+    width: 1rem;
+    height: 2px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    margin: 0 auto;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+
+  body.admin-nav-open .admin-mobile-menu-btn span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  body.admin-nav-open .admin-mobile-menu-btn span:nth-child(2) {
+    opacity: 0;
+  }
+
+  body.admin-nav-open .admin-mobile-menu-btn span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .admin-mobile-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #e2e8f0;
+  }
+
+  .admin-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    background: rgba(2, 6, 23, 0.62);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .sidebar {
+    display: flex !important;
+    width: min(82vw, 280px) !important;
+    transform: translateX(-110%);
+    transition: transform 0.22s ease;
+    z-index: 90 !important;
+    box-shadow: 18px 0 48px -28px rgba(2, 6, 23, 0.95);
+  }
+
+  body.admin-nav-open .sidebar {
+    transform: translateX(0);
+  }
+
+  body.admin-nav-open .admin-sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+    display: block;
+  }
+
+  body.admin-nav-open {
+    overflow: hidden;
+  }
+
+  .main {
+    margin-left: 0 !important;
+    padding: 5.4rem 1rem 1.2rem !important;
+  }
+
+  .page-title {
+    font-size: 1.3rem !important;
+  }
+
+  .page-sub {
+    font-size: 0.78rem !important;
+    margin-bottom: 1.1rem !important;
+  }
+
+  .panel {
+    padding: 1rem !important;
+  }
+}

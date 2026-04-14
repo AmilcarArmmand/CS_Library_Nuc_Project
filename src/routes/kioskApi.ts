@@ -11,7 +11,11 @@ import { db } from '../db/database.js';
 import { users, books, loans, holds, donations } from '../db/schema/schema.js';
 import { eq, and, asc, count, or } from 'drizzle-orm';
 import { addDays } from 'date-fns';
-import { sendCheckoutConfirmationEmail, sendHoldAvailableEmail } from '../utils/emailService.js';
+import {
+  sendCheckoutConfirmationEmail,
+  sendDonationReceiptEmail,
+  sendHoldAvailableEmail,
+} from '../utils/emailService.js';
 import { fetchOpenLibraryBookByIsbn, normalizeIsbn } from '../utils/openLibrary.js';
 
 const router = express.Router();
@@ -93,6 +97,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
 router.get(['/books', '/catalog'], async (_req: Request, res: Response) => {
   try {
+    const requestedUserId = Number(_req.query['userId']);
     const allBooks = await db.select().from(books).orderBy(books.title);
 
     // Include borrower userId for checked-out books
@@ -103,9 +108,22 @@ router.get(['/books', '/catalog'], async (_req: Request, res: Response) => {
 
     const borrowerMap = new Map(activeLoans.map(l => [l.isbn, l.userId]));
 
+    const activeHolds = requestedUserId
+      ? await db
+          .select({ isbn: holds.isbn })
+          .from(holds)
+          .where(and(
+            eq(holds.userId, requestedUserId),
+            or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+          ))
+      : [];
+
+    const heldIsbns = new Set(activeHolds.map(h => h.isbn));
+
     const enriched = allBooks.map(b => ({
       ...b,
       borrowerUserId: borrowerMap.get(b.isbn) ?? null,
+      heldByCurrentUser: heldIsbns.has(b.isbn),
     }));
 
     res.json({ books: enriched });
@@ -323,15 +341,16 @@ router.post('/checkout', async (req: Request, res: Response) => {
 
 router.post('/return', async (req: Request, res: Response) => {
   try {
+    const userId = Number(req.body.userId);
     const isbn = normalizeIsbn(String(req.body.isbn ?? ''));
 
-    if (!isbn) {
-      res.status(400).json({ error: 'isbn is required.' });
+    if (!userId || !isbn) {
+      res.status(400).json({ error: 'userId and isbn are required.' });
       return;
     }
 
     const [loan] = await db
-      .select({ id: loans.id })
+      .select({ id: loans.id, userId: loans.userId })
       .from(loans)
       .where(and(eq(loans.isbn, isbn), eq(loans.returned, false)))
       .orderBy(loans.checkedOut)
@@ -339,6 +358,11 @@ router.post('/return', async (req: Request, res: Response) => {
 
     if (!loan) {
       res.status(404).json({ error: 'No active loan found for this ISBN.' });
+      return;
+    }
+
+    if (loan.userId !== userId) {
+      res.status(403).json({ error: 'You can only return books checked out on your account.' });
       return;
     }
 
@@ -534,7 +558,25 @@ router.post('/donate', async (req: Request, res: Response) => {
       isbn,
       title,
       author: author || 'Unknown Author',
+      status: 'pending',
     }).returning();
+
+    if (resolvedDonorEmail) {
+      void sendDonationReceiptEmail({
+        to: resolvedDonorEmail,
+        name: resolvedDonorName,
+        title,
+        author: author || 'Unknown Author',
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.warn(`[Kiosk API] Donation receipt email was not delivered for ${resolvedDonorEmail}.`);
+          }
+        })
+        .catch((error) => {
+          console.error('[Kiosk API] Donation receipt email failed:', error);
+        });
+    }
 
     console.log(`[Kiosk API] Book donated: "${title}" by ${resolvedDonorName}`);
     res.json({ ok: true, book: newBook, donation });

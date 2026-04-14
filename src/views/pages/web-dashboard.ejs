@@ -43,6 +43,7 @@
         <button class="filter-btn active" data-filter="all"         onclick="setFilter('all')">ALL</button>
         <button class="filter-btn"        data-filter="available"   onclick="setFilter('available')">AVAILABLE</button>
         <button class="filter-btn"        data-filter="checked_out" onclick="setFilter('checked_out')">CHECKED OUT</button>
+        <button class="filter-btn"        data-filter="on_hold"     onclick="setFilter('on_hold')">ON HOLD</button>
       </div>
 
       <div class="catalog-grid" id="catalogGrid"></div>
@@ -108,6 +109,32 @@
 
   </main>
 
+  <div class="book-modal" id="bookModal" onclick="maybeCloseBookModal(event)">
+    <div class="book-modal-card">
+      <button class="book-modal-close" type="button" aria-label="Close book details" onclick="closeBookModal()">×</button>
+      <div class="book-modal-content">
+        <div class="book-modal-layout">
+          <div>
+            <img class="book-modal-cover" id="bookModalCover" src="/assets/book-placeholder.svg" alt="" />
+          </div>
+          <div>
+            <div class="book-modal-head">
+              <h2 class="book-modal-title" id="bookModalTitle">Book details</h2>
+              <p class="book-modal-author" id="bookModalAuthor"></p>
+              <p class="book-modal-subline" id="bookModalSubline"></p>
+            </div>
+            <div class="book-modal-actions">
+              <span class="badge" id="bookModalStatus"></span>
+              <div class="book-modal-hold" id="bookModalHold"></div>
+            </div>
+            <div class="book-modal-meta" id="bookModalMeta"></div>
+            <div class="book-modal-copy" id="bookModalCopy"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating nav -->
   <%- include('../partials/footer') %>
 
@@ -121,6 +148,7 @@
     let searchQuery   = '';
     let searchTimer   = null;
     let currentUserId = null;
+    let activeDetailIsbn = null;
 
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
@@ -198,13 +226,132 @@
         b = b.filter(x =>
           x.title.toLowerCase().includes(searchQuery)  ||
           x.author.toLowerCase().includes(searchQuery) ||
-          (x.isbn || '').toLowerCase().includes(searchQuery));
+          (x.isbn || '').toLowerCase().includes(searchQuery) ||
+          (x.publisher || '').toLowerCase().includes(searchQuery) ||
+          (x.subjects || '').toLowerCase().includes(searchQuery) ||
+          (x.description || '').toLowerCase().includes(searchQuery) ||
+          (x.identifier || '').toLowerCase().includes(searchQuery));
       if (currentFilter === 'available')   b = b.filter(x => x.status === 'Available');
-      if (currentFilter === 'checked_out') b = b.filter(x => x.status !== 'Available');
+      if (currentFilter === 'checked_out') b = b.filter(x => x.status === 'Checked Out');
+      if (currentFilter === 'on_hold')
+        b = b.filter(x => x.status === 'On Hold' || x.heldByCurrentUser);
       filtered = b;
       const tp = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
       if (currentPage > tp) currentPage = tp;
       renderCatalog(); renderPagination(tp);
+    }
+
+    function getHoldState(b, isBorrower) {
+      if (isBorrower) {
+        return { label: 'YOU HAVE THIS BOOK', className: 'hold-state-note muted' };
+      }
+      if (b.heldByCurrentUser && b.status === 'On Hold') {
+        return { label: 'READY FOR PICKUP', className: 'hold-state-note ready' };
+      }
+      if (b.heldByCurrentUser) {
+        return { label: 'YOUR HOLD IS ACTIVE', className: 'hold-state-note active' };
+      }
+      return null;
+    }
+
+    function getBookByIsbn(isbn) {
+      return allBooks.find(book => book.isbn === isbn) || null;
+    }
+
+    function valueOrDash(value) {
+      return String(value ?? '').trim() || '—';
+    }
+
+    function renderMetaCard(label, value) {
+      return `
+        <div class="book-meta-card">
+          <span class="book-meta-label">${esc(label)}</span>
+          <span class="book-meta-value ${value ? '' : 'empty'}">${esc(valueOrDash(value))}</span>
+        </div>`;
+    }
+
+    function renderCopyCard(label, value, full = false) {
+      return `
+        <div class="book-copy-card ${full ? 'full' : ''}">
+          <h3>${esc(label)}</h3>
+          <p class="${value ? '' : 'empty'}">${esc(valueOrDash(value))}</p>
+        </div>`;
+    }
+
+    function renderBookModal(book) {
+      const cover = book.cover || '/assets/book-placeholder.svg';
+      const statusBadge = document.getElementById('bookModalStatus');
+      const modalHold = document.getElementById('bookModalHold');
+      const isBorrower = book.borrowerUserId && book.borrowerUserId === currentUserId;
+      const holdState = getHoldState(book, isBorrower);
+      const badgeClass = book.status === 'On Hold'
+        ? 'badge-hold'
+        : (book.status === 'Available' ? 'badge-avail' : 'badge-out');
+
+      document.getElementById('bookModalCover').src = cover;
+      document.getElementById('bookModalCover').alt = book.title || 'Book cover';
+      document.getElementById('bookModalTitle').textContent = book.title || 'Untitled book';
+      document.getElementById('bookModalAuthor').textContent = book.author || 'Unknown creator';
+      document.getElementById('bookModalSubline').textContent = [
+        book.publisher,
+        book.creationDate,
+        book.source,
+      ].filter(Boolean).join(' · ') || 'No additional publishing data yet';
+
+      statusBadge.className = `badge ${badgeClass}`;
+      statusBadge.textContent = (book.status || 'Unknown').toUpperCase();
+
+      if (book.status !== 'Available' && !isBorrower && !holdState) {
+        modalHold.innerHTML = `<button class="book-modal-hold-btn" type="button" onclick="placeHoldFromModal('${esc(book.isbn)}')">PLACE HOLD</button>`;
+      } else if (holdState) {
+        modalHold.innerHTML = `<span class="${holdState.className}">${holdState.label}</span>`;
+      } else {
+        modalHold.innerHTML = '';
+      }
+
+      document.getElementById('bookModalMeta').innerHTML = [
+        renderMetaCard('ISBN', book.isbn),
+        renderMetaCard('Shelf', book.shelf),
+        renderMetaCard('Edition', book.edition),
+        renderMetaCard('Language', book.language),
+        renderMetaCard('Type', book.bookType),
+        renderMetaCard('Identifier', book.identifier),
+        renderMetaCard('MMS ID', book.mmsId),
+        renderMetaCard('NZ MMS ID', book.nzMmsId),
+      ].join('');
+
+      document.getElementById('bookModalCopy').innerHTML = [
+        renderCopyCard('Description', book.description, true),
+        renderCopyCard('Physical Description', book.physicalDescription),
+        renderCopyCard('Subjects', book.subjects),
+        renderCopyCard('Contents', book.contents),
+        renderCopyCard('Series', book.series),
+      ].join('');
+    }
+
+    function openBookModal(isbn) {
+      const book = getBookByIsbn(isbn);
+      if (!book) return;
+      activeDetailIsbn = isbn;
+      renderBookModal(book);
+      document.getElementById('bookModal').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeBookModal() {
+      document.getElementById('bookModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+      activeDetailIsbn = null;
+    }
+
+    function maybeCloseBookModal(event) {
+      if (event.target.id === 'bookModal') closeBookModal();
+    }
+
+    async function placeHoldFromModal(isbn) {
+      await placeHold(isbn);
+      const refreshed = getBookByIsbn(isbn);
+      if (refreshed) renderBookModal(refreshed);
     }
 
     function renderCatalog() {
@@ -220,28 +367,34 @@
 
       grid.innerHTML = page.map((b, i) => {
         const avail = b.status === 'Available';
+        const isOnHold = b.status === 'On Hold';
         const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
+        const holdState = getHoldState(b, isBorrower);
         const statusLabel = b.status === 'On Hold' ? 'ON HOLD' : (avail ? 'AVAILABLE' : 'CHECKED OUT');
         let holdBtn = '';
-        if (!avail && !isBorrower) {
+        if (!avail && !isBorrower && !holdState) {
           holdBtn = `<button class="catalog-add-btn" onclick="event.stopPropagation(); placeHold('${esc(b.isbn)}')" style="margin-top:0.4rem;padding:0.3rem 0.75rem;border-radius:0.35rem;font-family:inherit;font-size:0.62rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;border:1px solid rgba(168,85,247,0.3);background:rgba(168,85,247,0.15);color:#c084fc;transition:all 0.2s;">PLACE HOLD</button>`;
-        } else if (!avail && isBorrower) {
-          holdBtn = `<span style="margin-top:0.4rem;font-size:0.6rem;color:#64748b;font-weight:700;">YOU HAVE THIS BOOK</span>`;
+        } else if (!avail && holdState) {
+          holdBtn = `<span class="${holdState.className}">${holdState.label}</span>`;
         }
         return `
-          <div class="book-card ${avail ? '' : 'checked-out'}"
+          <div class="book-card ${avail ? '' : 'checked-out'} ${b.heldByCurrentUser ? 'held-for-user' : ''}"
+               onclick="openBookModal('${esc(b.isbn)}')"
+               role="button"
+               tabindex="0"
                style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
-            <img src="${esc(b.cover || '')}" loading="lazy"
-                 onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'"
+            <img src="${esc(b.cover || '/assets/book-placeholder.svg')}" loading="lazy"
+                 onerror="this.src='/assets/book-placeholder.svg'"
                  alt="${esc(b.title)}" />
             <div class="book-overlay">
               <p class="book-title">${esc(b.title)}</p>
               <p class="book-author">${esc(b.author)}</p>
               <p class="book-isbn">ISBN ${esc(b.isbn || '')}</p>
-              <span class="badge ${avail ? 'badge-avail' : 'badge-out'}">
+              <span class="badge ${isOnHold ? 'badge-hold' : (avail ? 'badge-avail' : 'badge-out')}">
                 ${statusLabel}
               </span>
               ${holdBtn}
+              <p class="book-card-hint">Tap for details</p>
             </div>
           </div>`;
       }).join('');
@@ -300,6 +453,7 @@
           const due     = new Date(loan.dueDate);
           const diffMs  = due - now;
           const diffDay = Math.ceil(diffMs / 86400000);
+          const renewalStatus = loan.renewalRequestStatus || '';
           let badgeClass, dueClass, dueLabel;
           if (diffMs < 0) {
             badgeClass = 'overdue'; dueClass = 'due-overdue';
@@ -312,18 +466,43 @@
             dueLabel   = `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
           }
           const fullDue = due.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+          let extensionUi = '';
+          if (renewalStatus === 'pending') {
+            extensionUi = `
+              <div class="loan-status-stack">
+                <span class="due-badge pending">REQUEST PENDING</span>
+                <p class="loan-extension-note">Library staff is reviewing this request.</p>
+              </div>`;
+          } else if (renewalStatus === 'approved') {
+            extensionUi = `
+              <div class="loan-status-stack">
+                <span class="due-badge approved">EXTENSION APPROVED</span>
+                <p class="loan-extension-note">The due date above has been updated.</p>
+              </div>`;
+          } else if (renewalStatus === 'rejected') {
+            extensionUi = `
+              <div class="loan-status-stack">
+                <span class="due-badge rejected">REQUEST DECLINED</span>
+                <p class="loan-extension-note">This loan was not approved for an extension.</p>
+              </div>`;
+          } else if (diffMs >= 0) {
+            extensionUi = `<button class="loan-extension-btn" onclick="requestExtension(${loan.id}, this)">REQUEST EXTENSION</button>`;
+          }
           return `
             <div class="loan-row">
               <img src="${esc(loan.cover || '')}"
-                   onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'" alt="" />
+                   onerror="this.src='/assets/book-placeholder.svg'" alt="" />
               <div class="loan-info">
                 <p class="loan-title">${esc(loan.title)}</p>
                 <p class="loan-author">${esc(loan.author)}</p>
                 <p class="loan-isbn">ISBN ${esc(loan.isbn || '')}</p>
               </div>
-              <div class="loan-due">
-                <span class="due-badge ${badgeClass}">${dueLabel}</span>
-                <p class="loan-due ${dueClass}" style="font-size:0.65rem;margin-top:0.2rem;">${fullDue}</p>
+              <div class="loan-actions">
+                <div class="loan-status-stack">
+                  <span class="due-badge ${badgeClass}">${dueLabel}</span>
+                  <p class="loan-due ${dueClass}" style="font-size:0.65rem;margin-top:0.2rem;">${fullDue}</p>
+                </div>
+                ${extensionUi}
               </div>
             </div>`;
         }).join('');
@@ -337,7 +516,7 @@
           return `
             <div class="loan-row history">
               <img src="${esc(loan.cover || '')}"
-                   onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'" alt="" />
+                   onerror="this.src='/assets/book-placeholder.svg'" alt="" />
               <div class="loan-info">
                 <p class="loan-title">${esc(loan.title)}</p>
                 <p class="loan-author">${esc(loan.author)}</p>
@@ -366,6 +545,14 @@
         });
         const d = await r.json();
         if (!r.ok) { toast(d.error ?? 'Could not place hold.', r.status === 409 ? 'warning' : 'negative'); return; }
+        allBooks = allBooks.map(book =>
+          book.isbn === isbn ? { ...book, heldByCurrentUser: true } : book
+        );
+        applyFilters();
+        if (activeDetailIsbn === isbn) {
+          const refreshed = getBookByIsbn(isbn);
+          if (refreshed) renderBookModal(refreshed);
+        }
         toast('Hold placed! You\u2019ll be notified when available.', 'positive');
       } catch { toast('Server error.', 'negative'); }
     }
@@ -390,11 +577,34 @@
       } catch { toast('Server error.', 'negative'); }
     }
 
+    async function requestExtension(loanId, btn) {
+      if (btn) btn.disabled = true;
+      try {
+        const r = await fetch('/web-dashboard/api/renewal-request', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ loanId }),
+        });
+        const d = await r.json();
+        if (!r.ok) {
+          toast(d.error ?? 'Could not submit extension request.', r.status === 409 ? 'warning' : 'negative');
+          if (btn) btn.disabled = false;
+          return;
+        }
+        toast('Extension request submitted. We will email you with the decision.', 'positive');
+        await loadMyBooks(false);
+      } catch {
+        toast('Server error.', 'negative');
+        if (btn) btn.disabled = false;
+      }
+    }
+
     // ── Helper ──────────────────────────────────────────────────────────────────
     function esc(s) {
       return String(s ?? '')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
     }
 
     // ── Boot ────────────────────────────────────────────────────────────────────

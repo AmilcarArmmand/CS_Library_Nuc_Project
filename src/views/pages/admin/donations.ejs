@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <link rel="icon" href="/favicon1.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin-mobile.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
@@ -32,6 +33,19 @@
     td { font-size: 0.78rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid rgba(71,85,105,0.2); color: #cbd5e1; vertical-align: top; }
     tr:hover td { background: rgba(255,255,255,0.02); }
     .muted { color: #94a3b8; font-size: 0.72rem; }
+    .toolbar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-btn { padding: 0.35rem 0.85rem; border-radius: 9999px; font-family: inherit; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #94a3b8; transition: all 0.2s; }
+    .filter-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+    .filter-btn.active { background: rgba(59,130,246,0.2); color: white; border-color: rgba(59,130,246,0.5); }
+    .badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; }
+    .badge-pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-approved { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .badge-rejected { background: rgba(239,68,68,0.15); color: #f87171; }
+    .btn { padding: 0.3rem 0.65rem; border-radius: 0.35rem; font-family: inherit; font-size: 0.65rem; font-weight: 700; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+    .btn-approve { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .btn-approve:hover { background: rgba(34,197,94,0.25); }
+    .btn-reject { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.25); }
+    .btn-reject:hover { background: rgba(239,68,68,0.2); }
     @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
   </style>
 </head>
@@ -51,22 +65,31 @@
     <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
   </nav>
 
+  <%- include('../../partials/admin-mobile-shell', { mobileTitle: 'Donations' }) %>
+
   <main class="main">
     <h1 class="page-title">Donation Log</h1>
     <p class="page-sub">Track donated books with donor information and timestamps.</p>
+
+    <div class="toolbar">
+      <button class="filter-btn active" onclick="filterDonations('all')">ALL (<%= donations.length %>)</button>
+      <button class="filter-btn" onclick="filterDonations('pending')">PENDING (<%= donations.filter(d => d.status === 'pending').length %>)</button>
+      <button class="filter-btn" onclick="filterDonations('approved')">APPROVED</button>
+      <button class="filter-btn" onclick="filterDonations('rejected')">REJECTED</button>
+    </div>
 
     <div class="panel">
       <div class="panel-title">All Donations (<%= donations.length %>)</div>
       <table>
         <thead>
-          <tr><th>Book</th><th>ISBN</th><th>Donor</th><th>Contact</th><th>Logged</th></tr>
+          <tr><th>Book</th><th>ISBN</th><th>Donor</th><th>Contact</th><th>Status</th><th>Logged</th><th>Action</th></tr>
         </thead>
         <tbody>
           <% if (!donations.length) { %>
-            <tr><td colspan="5" class="muted" style="text-align:center;padding:1rem;">No donations logged yet.</td></tr>
+            <tr><td colspan="7" class="muted" style="text-align:center;padding:1rem;">No donations logged yet.</td></tr>
           <% } %>
           <% donations.forEach(d => { %>
-            <tr>
+            <tr class="donation-row" data-status="<%= d.status %>">
               <td>
                 <div style="font-weight:700;"><%= d.title %></div>
                 <div class="muted"><%= d.author %></div>
@@ -74,7 +97,23 @@
               <td style="font-family:monospace;font-size:0.72rem;"><%= d.isbn %></td>
               <td><%= d.donorUserName || d.donorName || 'Anonymous' %></td>
               <td class="muted"><%= d.donorUserEmail || d.donorEmail || '—' %></td>
+              <td>
+                <span class="badge badge-<%= d.status %>"><%= d.status.toUpperCase() %></span>
+                <% if (d.reviewNote) { %>
+                  <div class="muted" style="margin-top:0.35rem;"><%= d.reviewNote %></div>
+                <% } %>
+              </td>
               <td><%= new Date(d.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) %></td>
+              <td>
+                <% if (d.status === 'pending') { %>
+                  <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+                    <button class="btn btn-approve" onclick="updateDonation(<%= d.id %>, 'approved', this)">APPROVE</button>
+                    <button class="btn btn-reject" onclick="updateDonation(<%= d.id %>, 'rejected', this)">REJECT</button>
+                  </div>
+                <% } else { %>
+                  <span class="muted">Reviewed</span>
+                <% } %>
+              </td>
             </tr>
           <% }); %>
         </tbody>
@@ -82,5 +121,36 @@
     </div>
   </main>
 </div>
+<script src="/js/admin-mobile.js"></script>
+<script>
+  function filterDonations(status) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.donation-row').forEach(row => {
+      row.style.display = (status === 'all' || row.dataset.status === status) ? '' : 'none';
+    });
+  }
+
+  async function updateDonation(id, status, btn) {
+    try {
+      btn.disabled = true;
+      const r = await fetch('/admin/donations/update', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, status }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        alert(d.error || 'Failed to update donation.');
+        btn.disabled = false;
+        return;
+      }
+      location.reload();
+    } catch {
+      alert('Could not update donation.');
+      btn.disabled = false;
+    }
+  }
+</script>
 </body>
 </html>

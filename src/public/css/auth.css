@@ -132,6 +132,20 @@ body::before {
 
 .form-box { width: 400px; }
 
+.form-top-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.form-top-link:hover { color: #dbeafe; }
+
 h1 {
   font-size: 3rem; font-weight: 900; color: white;
   letter-spacing: -0.03em; line-height: 1; margin-bottom: 0.3rem;

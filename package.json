@@ -14,6 +14,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:email": "tsx src/tools/migrate-email-features.ts",
     "db:migrate:library": "tsx src/tools/migrate-email-features.ts",
+    "db:migrate:details": "tsx src/tools/migrate-book-details.ts",
+    "db:migrate:microsoft-auth": "tsx src/tools/migrate-microsoft-auth.ts",
     "db:seed": "tsx src/mock-data.ts",
     "books:import": "tsx src/tools/import-books.ts",
     "books:enrich": "tsx src/tools/enrich-books.ts",

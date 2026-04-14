@@ -5,7 +5,7 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcryptjs';
 import { db } from '../db/database.js';
 import { users } from '../db/schema/schema.js';
-import { eq } from 'drizzle-orm';
+import { eq, or } from 'drizzle-orm';
 import { config } from './env.js';
 
 const hasGoogleAuth = Boolean(process.env['GOOGLE_CLIENT_ID'] && process.env['GOOGLE_CLIENT_SECRET']);
@@ -35,6 +35,7 @@ passport.deserializeUser(async (id: number, done) => {
         active:        users.active,
         picture:       users.picture,
         googleId:      users.googleId,
+        microsoftId:   users.microsoftId,
         passwordHash:  users.passwordHash,
         lastLogin:     users.lastLogin,
         createdAt:     users.createdAt,
@@ -136,6 +137,46 @@ function getMicrosoftEmail(profile: any): string {
   return '';
 }
 
+function getMicrosoftId(profile: any): string {
+  const candidates = [
+    profile?.id,
+    profile?._json?.id,
+    profile?._json?.oid,
+    profile?._json?.sub,
+  ];
+
+  for (const value of candidates) {
+    const microsoftId = String(value ?? '').trim();
+    if (microsoftId) {
+      return microsoftId;
+    }
+  }
+
+  return '';
+}
+
+function normalizeStudentId(raw: unknown): string {
+  return String(raw ?? '').replace(/\s+/g, '').toUpperCase();
+}
+
+function getMicrosoftStudentId(profile: any): string | null {
+  const candidates = [
+    profile?._json?.employeeId,
+    profile?._json?.employeeid,
+    profile?._json?.employeeNumber,
+    profile?._json?.extension_employeeId,
+  ];
+
+  for (const value of candidates) {
+    const studentId = normalizeStudentId(value);
+    if (/^[A-Z0-9]{5,16}$/.test(studentId)) {
+      return studentId;
+    }
+  }
+
+  return null;
+}
+
 if (hasMicrosoftAuth) {
   passport.use(new MicrosoftStrategy(
     {
@@ -147,17 +188,52 @@ if (hasMicrosoftAuth) {
     },
     async (_accessToken, _refreshToken, profile, done) => {
       try {
+        const microsoftId = getMicrosoftId(profile);
         const email = getMicrosoftEmail(profile);
+        const studentId = getMicrosoftStudentId(profile);
         const name  = profile.displayName ?? email;
         if (!email) return done(new Error('Microsoft account has no email address'));
 
-        let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+        let [user] = microsoftId
+          ? await db.select().from(users).where(eq(users.microsoftId, microsoftId)).limit(1)
+          : [];
+
         if (user) {
-          await db.update(users).set({ lastLogin: new Date(), updatedAt: new Date() }).where(eq(users.id, user.id));
-          return done(null, user as Express.User);
+          const updates: Record<string, unknown> = {
+            lastLogin: new Date(),
+            updatedAt: new Date(),
+          };
+          if (!user.studentId && studentId) updates.studentId = studentId;
+          if (!user.microsoftId && microsoftId) updates.microsoftId = microsoftId;
+          await db.update(users).set(updates).where(eq(users.id, user.id));
+          return done(null, { ...user, ...updates } as Express.User);
         }
 
-        const [newUser] = await db.insert(users).values({ email, name, active: true, lastLogin: new Date() }).returning();
+        const lookupConditions = [eq(users.email, email)];
+        if (studentId) {
+          lookupConditions.push(eq(users.studentId, studentId));
+        }
+
+        [user] = await db.select().from(users).where(or(...lookupConditions)).limit(1);
+        if (user) {
+          const updates: Record<string, unknown> = {
+            microsoftId: microsoftId || user.microsoftId,
+            lastLogin: new Date(),
+            updatedAt: new Date(),
+          };
+          if (!user.studentId && studentId) updates.studentId = studentId;
+          await db.update(users).set(updates).where(eq(users.id, user.id));
+          return done(null, { ...user, ...updates } as Express.User);
+        }
+
+        const [newUser] = await db.insert(users).values({
+          email,
+          name,
+          studentId,
+          microsoftId: microsoftId || null,
+          active: true,
+          lastLogin: new Date(),
+        }).returning();
         return done(null, newUser as Express.User);
       } catch (err) {
         return done(err as Error);
@@ -183,7 +259,7 @@ passport.use(new LocalStrategy(
       if (!user) return done(null, false, { message: 'Invalid email or password.' });
       if (!user.active) return done(null, false, { message: 'Account is disabled.' });
       if (!user.passwordHash) {
-        return done(null, false, { message: 'This account uses Google Sign-In.' });
+        return done(null, false, { message: 'This account uses single sign-on.' });
       }
 
       const match = await bcrypt.compare(password, user.passwordHash);

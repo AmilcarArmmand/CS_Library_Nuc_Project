@@ -1,0 +1,16 @@
+[Unit]
+Description=CS Library Kiosk App
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=__KIOSK_USER__
+WorkingDirectory=__KIOSK_ROOT__
+Environment=HOME=__KIOSK_HOME__
+ExecStart=/bin/bash __KIOSK_ROOT__/start.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

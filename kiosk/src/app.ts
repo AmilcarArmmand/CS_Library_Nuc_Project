@@ -20,6 +20,8 @@ const __dirname  = path.dirname(__filename);
 
 const app  = express();
 const PORT = Number(process.env['KIOSK_PORT'] ?? 3000);
+const KIOSK_IDLE_TIMEOUT_MINUTES = Number(process.env['KIOSK_IDLE_TIMEOUT_MINUTES'] ?? 3);
+const KIOSK_IDLE_TIMEOUT_MS = Math.max(1, KIOSK_IDLE_TIMEOUT_MINUTES) * 60 * 1000;
 
 // VALIDATE REQUIRED .ENV VARIABLES
 const CLOUD_PROTOCOL = process.env['CLOUD_PROTOCOL'] ?? 'http';
@@ -60,10 +62,11 @@ app.use(session({
   secret:            process.env['KIOSK_SESSION_SECRET'] ?? 'kiosk-change-me',
   resave:            false,
   saveUninitialized: false,
+  rolling:           true,
   cookie: {
     secure:   false,   // Pi runs HTTP on the local network — fine for localhost
     httpOnly: true,
-    maxAge:   30 * 60 * 1000,  // 30-minute idle timeout
+    maxAge:   KIOSK_IDLE_TIMEOUT_MS,
   },
 }));
 

@@ -164,6 +164,15 @@
       font-size: 0.75rem; color: #f87171;
       min-height: 1rem; margin-bottom: 0.5rem;
     }
+    .notice-msg {
+      font-size: 0.75rem;
+      color: #bfdbfe;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.24);
+      margin-bottom: 0.75rem;
+    }
     .error-msg.server {
       padding: 8px 12px; border-radius: 8px;
       background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
@@ -236,6 +245,9 @@
         <% if (error) { %>
           <div class="error-msg server"><%= error %></div>
         <% } %>
+        <% if (notice) { %>
+          <div class="notice-msg"><%= notice %></div>
+        <% } %>
 
         <form method="POST" action="/login">
           <div class="field-group">
@@ -245,7 +257,7 @@
               </span>
               <span>Student ID</span>
             </div>
-            <input type="text" name="studentId"
+            <input type="text" name="studentId" id="studentIdInput"
               placeholder="Enter or scan your ID..."
               autofocus autocomplete="off" />
           </div>
@@ -264,9 +276,70 @@
   </div>
 
   <script>
-    document.querySelector('input[name="studentId"]').addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') e.target.closest('form').submit();
+    const studentIdInput = document.getElementById('studentIdInput');
+    const loginForm = studentIdInput.closest('form');
+    const scannerState = { buffer: '', lastAt: 0 };
+    const SCANNER_CHAR_GAP_MS = 45;
+    const MIN_SCANNER_LENGTH = 5;
+
+    function focusStudentId() {
+      requestAnimationFrame(() => studentIdInput.focus());
+    }
+
+    function submitLoginFromScanner() {
+      if (studentIdInput.value.trim()) {
+        loginForm.requestSubmit();
+      }
+    }
+
+    studentIdInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        submitLoginFromScanner();
+      }
     });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+
+      const { key } = event;
+      const isPrintable = key.length === 1;
+      const isTerminator = key === 'Enter' || key === 'Tab';
+      if (!isPrintable && !isTerminator) return;
+
+      const now = performance.now();
+      if (!isTerminator) {
+        if (!scannerState.lastAt || now - scannerState.lastAt > SCANNER_CHAR_GAP_MS) {
+          scannerState.buffer = '';
+        }
+        scannerState.buffer += key;
+        scannerState.lastAt = now;
+        return;
+      }
+
+      if (scannerState.buffer.length >= MIN_SCANNER_LENGTH) {
+        event.preventDefault();
+        studentIdInput.value = scannerState.buffer;
+        scannerState.buffer = '';
+        scannerState.lastAt = 0;
+        submitLoginFromScanner();
+        return;
+      }
+
+      scannerState.buffer = '';
+      scannerState.lastAt = 0;
+    }, true);
+
+    window.addEventListener('pageshow', focusStudentId);
+    window.addEventListener('focus', focusStudentId);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') focusStudentId();
+    });
+    document.addEventListener('pointerdown', () => {
+      setTimeout(focusStudentId, 0);
+    });
+
+    focusStudentId();
 
     function updateClock() {
       const now = new Date();

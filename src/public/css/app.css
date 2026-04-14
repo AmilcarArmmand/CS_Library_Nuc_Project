@@ -235,11 +235,12 @@ body::before {
 .book-card {
   position: relative; border-radius: 1rem; overflow: hidden;
   border: 1px solid rgba(71,85,105,0.5); background: rgba(21,25,36,0.8);
-  cursor: default; transition: transform 0.3s, opacity 0.3s;
+  cursor: pointer; transition: transform 0.3s, opacity 0.3s, border-color 0.3s, box-shadow 0.3s;
   animation: cardIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
 }
-.book-card:hover       { transform: scale(1.025); }
+.book-card:hover       { transform: scale(1.025); border-color: rgba(96,165,250,0.38); box-shadow: 0 16px 36px -24px rgba(37,99,235,0.5); }
 .book-card.checked-out { opacity: 0.6; filter: grayscale(1); border-color: rgba(239,68,68,0.5); }
+.book-card.held-for-user { opacity: 1; filter: none; border-color: rgba(168,85,247,0.55); box-shadow: 0 0 0 1px rgba(168,85,247,0.18), 0 18px 36px -26px rgba(168,85,247,0.5); }
 .book-card img         { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; }
 .book-overlay {
   position: absolute; bottom: 0; left: 0; right: 0;
@@ -252,6 +253,172 @@ body::before {
 .badge       { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
 .badge-avail { background: rgba(34,197,94,0.2); color: #4ade80; }
 .badge-out   { background: rgba(239,68,68,0.2);  color: #f87171; }
+.badge-hold  { background: rgba(168,85,247,0.2); color: #c084fc; }
+.hold-state-note {
+  display: inline-block;
+  margin-top: 0.4rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.hold-state-note.active { color: #c084fc; }
+.hold-state-note.ready  { color: #fbbf24; }
+.hold-state-note.muted  { color: #64748b; }
+.book-card-hint {
+  margin-top: 0.45rem;
+  font-size: 0.58rem;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body.modal-open { overflow: hidden; }
+.book-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(2,6,23,0.82);
+  backdrop-filter: blur(16px);
+}
+.book-modal.open { display: flex; }
+.book-modal-card {
+  width: min(960px, 100%);
+  max-height: calc(100vh - 2.5rem);
+  overflow: auto;
+  border-radius: 1.2rem;
+  border: 1px solid rgba(71,85,105,0.55);
+  background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9));
+  box-shadow: 0 36px 64px -32px rgba(2,6,23,0.95);
+}
+.book-modal-close {
+  position: sticky;
+  top: 1rem;
+  margin-left: auto;
+  margin-right: 1rem;
+  margin-top: 1rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9999px;
+  background: rgba(15,23,42,0.8);
+  color: #cbd5e1;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.book-modal-content { padding: 0.5rem 1.4rem 1.5rem; }
+.book-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 1.4rem;
+}
+.book-modal-cover {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 1rem;
+  border: 1px solid rgba(71,85,105,0.55);
+  background: rgba(15,23,42,0.72);
+}
+.book-modal-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-bottom: 1rem;
+}
+.book-modal-title {
+  font-size: clamp(1.4rem, 2.6vw, 2.1rem);
+  font-weight: 800;
+  line-height: 1.1;
+}
+.book-modal-author {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+.book-modal-subline {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+.book-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.book-modal-hold {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.book-modal-hold-btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(168,85,247,0.35);
+  background: rgba(168,85,247,0.14);
+  color: #c084fc;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.book-modal-meta {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  margin-bottom: 1rem;
+}
+.book-meta-card,
+.book-copy-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 0.9rem;
+}
+.book-meta-card { padding: 0.85rem 0.9rem; }
+.book-meta-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.35rem;
+}
+.book-meta-value {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #e2e8f0;
+  word-break: break-word;
+}
+.book-modal-copy {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.book-copy-card { padding: 1rem; }
+.book-copy-card.full { grid-column: 1 / -1; }
+.book-copy-card h3 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 0.55rem;
+}
+.book-copy-card p {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+}
+.book-copy-card p.empty,
+.book-meta-value.empty { color: #475569; }
 
 /* Pagination */
 .pagination { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 2rem; flex-wrap: wrap; }
@@ -303,6 +470,47 @@ body::before {
 .loan-author      { font-size: 0.72rem; color: #94a3b8; margin-top: 0.1rem; }
 .loan-isbn        { font-size: 0.62rem; color: #475569; letter-spacing: 0.05em; margin-top: 0.1rem; }
 .loan-due         { font-size: 0.72rem; font-weight: 700; flex-shrink: 0; text-align: right; }
+.loan-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+.loan-status-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+.loan-extension-btn {
+  padding: 0.45rem 0.8rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(59,130,246,0.35);
+  background: rgba(59,130,246,0.18);
+  color: #93c5fd;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.loan-extension-btn:hover {
+  background: rgba(59,130,246,0.28);
+  border-color: rgba(96,165,250,0.5);
+  transform: translateY(-1px);
+}
+.loan-extension-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.loan-extension-note {
+  font-size: 0.62rem;
+  color: #64748b;
+  letter-spacing: 0.04em;
+}
 .due-ok           { color: #60a5fa; }
 .due-soon         { color: #facc15; }
 .due-overdue      { color: #f87171; }
@@ -316,6 +524,26 @@ body::before {
 .due-badge.ok      { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
 .due-badge.soon    { background: rgba(234,179,8,0.15);  color: #facc15; border: 1px solid rgba(234,179,8,0.3); }
 .due-badge.overdue { background: rgba(239,68,68,0.15);  color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+.due-badge.pending { background: rgba(168,85,247,0.14); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.3); }
+.due-badge.approved { background: rgba(34,197,94,0.16); color: #86efac; border: 1px solid rgba(34,197,94,0.32); }
+.due-badge.rejected { background: rgba(148,163,184,0.16); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.28); }
+
+@media (max-width: 768px) {
+  .loan-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .loan-actions {
+    width: 100%;
+    align-items: flex-start;
+    padding-left: 4rem;
+  }
+
+  .loan-status-stack {
+    align-items: flex-start;
+  }
+}
 
 .empty-state      { display: flex; flex-direction: column; align-items: center; padding: 2rem; text-align: center; }
 .empty-state img  { width: 3rem; height: 3rem; opacity: 0.25; margin-bottom: 0.75rem; filter: brightness(0) invert(1); }
@@ -468,6 +696,8 @@ footer {
   .header-nav  { display: none; }
   .header-right .header-user-name { display: none; }
   .hamburger   { display: flex; }
+  .book-modal-layout { grid-template-columns: 1fr; }
+  .book-modal-content { padding: 0.4rem 1rem 1.2rem; }
   .welcome-banner { padding: 1.5rem 1rem; gap: 1rem; }
   .stats-bar   { padding: 0.75rem 1rem; gap: 1rem; }
   .main-layout { padding: 1.5rem 1rem 3rem; }

@@ -248,4 +248,154 @@ export async function sendHoldAvailableEmail({ to, name, book, pickupDate }) {
   return await sendEmail({ to, subject, text, html });
 }
 
+export async function sendSuggestionStatusEmail({ to, name, title, author, status }) {
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author || 'Unknown Author');
+  const verdict = status === 'approved' ? 'approved' : 'not approved';
+  const subject = `Your CS Library suggestion was ${status}`;
+  const text = [
+    `Hi ${name || 'there'},`,
+    '',
+    `Your suggestion for "${title}" by ${author || 'Unknown Author'} was ${verdict}.`,
+    status === 'approved'
+      ? 'Thank you for helping us improve the CS Library catalog.'
+      : 'Thank you for the suggestion. The library team reviewed it and cannot add it at this time.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+      <h2 style="margin-bottom:12px;">Suggestion update</h2>
+      <p>Hi ${safeName},</p>
+      <p>Your suggestion for <strong>${safeTitle}</strong> by ${safeAuthor} was <strong>${escapeHtml(verdict)}</strong>.</p>
+      <p>${status === 'approved'
+        ? 'Thank you for helping us improve the CS Library catalog.'
+        : 'Thank you for the suggestion. The library team reviewed it and cannot add it at this time.'}</p>
+    </div>
+  `;
+
+  return await sendEmail({ to, subject, text, html });
+}
+
+export async function sendDonationReceiptEmail({ to, name, title, author }) {
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author || 'Unknown Author');
+  const subject = 'We received your CS Library donation';
+  const text = [
+    `Hi ${name || 'there'},`,
+    '',
+    `We received your donation submission for "${title}" by ${author || 'Unknown Author'}.`,
+    'The library team will review it and email you again once a decision is made.',
+    '',
+    'Thank you for supporting the CS Library.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+      <h2 style="margin-bottom:12px;">Donation received</h2>
+      <p>Hi ${safeName},</p>
+      <p>We received your donation submission for <strong>${safeTitle}</strong> by ${safeAuthor}.</p>
+      <p>The library team will review it and email you again once a decision is made.</p>
+      <p>Thank you for supporting the CS Library.</p>
+    </div>
+  `;
+
+  return await sendEmail({ to, subject, text, html });
+}
+
+export async function sendDonationStatusEmail({ to, name, title, author, status }) {
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author || 'Unknown Author');
+  const subject = `Your CS Library donation was ${status}`;
+  const approved = status === 'approved';
+  const text = [
+    `Hi ${name || 'there'},`,
+    '',
+    approved
+      ? `Your donation of "${title}" by ${author || 'Unknown Author'} was accepted into the CS Library.`
+      : `Your donation of "${title}" by ${author || 'Unknown Author'} was not accepted into the CS Library at this time.`,
+    'Thank you for thinking of the CS Library.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+      <h2 style="margin-bottom:12px;">Donation update</h2>
+      <p>Hi ${safeName},</p>
+      <p>${approved
+        ? `Your donation of <strong>${safeTitle}</strong> by ${safeAuthor} was accepted into the CS Library.`
+        : `Your donation of <strong>${safeTitle}</strong> by ${safeAuthor} was not accepted into the CS Library at this time.`}</p>
+      <p>Thank you for thinking of the CS Library.</p>
+    </div>
+  `;
+
+  return await sendEmail({ to, subject, text, html });
+}
+
+export async function sendRenewalRequestReceivedEmail({ to, name, title, author, dueDate }) {
+  const due = new Date(dueDate).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author || 'Unknown Author');
+  const safeDue = escapeHtml(due);
+  const subject = 'We received your CS Library extension request';
+  const text = [
+    `Hi ${name || 'there'},`,
+    '',
+    `We received your extension request for "${title}" by ${author || 'Unknown Author'}.`,
+    `Current due date: ${due}`,
+    'The library team will review your request and email you with a decision.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+      <h2 style="margin-bottom:12px;">Extension request received</h2>
+      <p>Hi ${safeName},</p>
+      <p>We received your extension request for <strong>${safeTitle}</strong> by ${safeAuthor}.</p>
+      <p><strong>Current due date:</strong> ${safeDue}</p>
+      <p>The library team will review your request and email you with a decision.</p>
+    </div>
+  `;
+
+  return await sendEmail({ to, subject, text, html });
+}
+
+export async function sendRenewalRequestStatusEmail({ to, name, title, author, status, dueDate }) {
+  const due = dueDate
+    ? new Date(dueDate).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+  const approved = status === 'approved';
+  const safeName = escapeHtml(name || 'there');
+  const safeTitle = escapeHtml(title);
+  const safeAuthor = escapeHtml(author || 'Unknown Author');
+  const subject = `Your CS Library extension request was ${status}`;
+  const decisionLine = approved
+    ? `Your extension request for "${title}" by ${author || 'Unknown Author'} was approved.${due ? ` New due date: ${due}.` : ''}`
+    : `Your extension request for "${title}" by ${author || 'Unknown Author'} was not approved.`;
+  const htmlDecisionLine = approved
+    ? `Your extension request for <strong>${safeTitle}</strong> by ${safeAuthor} was approved.${due ? ` <strong>New due date:</strong> ${escapeHtml(due)}.` : ''}`
+    : `Your extension request for <strong>${safeTitle}</strong> by ${safeAuthor} was not approved.`;
+  const text = [
+    `Hi ${name || 'there'},`,
+    '',
+    decisionLine,
+    'Thank you for using the CS Library.',
+  ].join('\n');
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+      <h2 style="margin-bottom:12px;">Extension request update</h2>
+      <p>Hi ${safeName},</p>
+      <p>${htmlDecisionLine}</p>
+      <p>Thank you for using the CS Library.</p>
+    </div>
+  `;
+
+  return await sendEmail({ to, subject, text, html });
+}
+
 export { sendEmail };

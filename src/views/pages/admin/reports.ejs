@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <link rel="icon" href="/favicon1.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin-mobile.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
@@ -77,6 +78,8 @@
     </div>
     <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
   </nav>
+
+  <%- include('../../partials/admin-mobile-shell', { mobileTitle: 'Reports' }) %>
 
   <main class="main">
     <h1 class="page-title">Usage Reports</h1>
@@ -163,5 +166,6 @@
     </div>
   </main>
 </div>
+<script src="/js/admin-mobile.js"></script>
 </body>
 </html>

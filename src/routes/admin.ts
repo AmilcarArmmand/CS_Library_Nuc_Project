@@ -14,15 +14,69 @@ import type { Request, Response, NextFunction } from 'express';
 import passport from '../config/passport.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { db } from '../db/database.js';
-import { users, books, loans, holds, suggestions, donations } from '../db/schema/schema.js';
-import { eq, count, and, lt, gt, desc, asc, sql } from 'drizzle-orm';
+import { users, books, loans, holds, suggestions, donations, renewalRequests } from '../db/schema/schema.js';
+import { eq, count, and, lt, gt, desc, asc, sql, or } from 'drizzle-orm';
+import { addDays } from 'date-fns';
 import {
   fetchOpenLibraryBookByIsbn,
   mergeCatalogBookMetadata,
   normalizeIsbn,
 } from '../utils/openLibrary.js';
+import {
+  sendSuggestionStatusEmail,
+  sendDonationStatusEmail,
+  sendRenewalRequestStatusEmail,
+} from '../utils/emailService.js';
 
 const router = express.Router();
+
+type BookFormPayload = {
+  title: string;
+  author: string;
+  publisher: string;
+  creationDate: string;
+  edition: string;
+  language: string;
+  physicalDescription: string;
+  subjects: string;
+  contents: string;
+  description: string;
+  series: string;
+  source: string;
+  bookType: string;
+  mmsId: string;
+  nzMmsId: string;
+  identifier: string;
+  cover: string;
+  shelf: string;
+};
+
+function readBookField(body: Record<string, unknown>, key: string): string {
+  return String(body[key] ?? '').trim();
+}
+
+function readBookFormPayload(body: Record<string, unknown>): BookFormPayload {
+  return {
+    title: readBookField(body, 'title'),
+    author: readBookField(body, 'author'),
+    publisher: readBookField(body, 'publisher'),
+    creationDate: readBookField(body, 'creationDate'),
+    edition: readBookField(body, 'edition'),
+    language: readBookField(body, 'language'),
+    physicalDescription: readBookField(body, 'physicalDescription'),
+    subjects: readBookField(body, 'subjects'),
+    contents: readBookField(body, 'contents'),
+    description: readBookField(body, 'description'),
+    series: readBookField(body, 'series'),
+    source: readBookField(body, 'source'),
+    bookType: readBookField(body, 'bookType'),
+    mmsId: readBookField(body, 'mmsId'),
+    nzMmsId: readBookField(body, 'nzMmsId'),
+    identifier: readBookField(body, 'identifier'),
+    cover: readBookField(body, 'cover'),
+    shelf: readBookField(body, 'shelf') || 'Unsorted',
+  };
+}
 
 // ── Login lockout state (in-memory — resets on server restart) ────────────────
 
@@ -192,12 +246,9 @@ router.get('/books', async (_req: Request, res: Response) => {
 router.post('/books/add', async (req: Request, res: Response) => {
   try {
     const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
-    const title  = String(req.body.title ?? '').trim();
-    const author = String(req.body.author ?? '').trim();
-    const cover  = String(req.body.cover ?? '').trim();
-    const shelf  = String(req.body.shelf ?? '').trim() || 'Unsorted';
+    const payload = readBookFormPayload(req.body);
 
-    if (!isbn || !title || !author) {
+    if (!isbn || !payload.title || !payload.author) {
       return res.status(400).json({ error: 'ISBN, title, and author are required.' });
     }
 
@@ -208,7 +259,9 @@ router.post('/books/add', async (req: Request, res: Response) => {
     }
 
     const [newBook] = await db.insert(books).values({
-      isbn, title, author, cover, shelf, status: 'Available',
+      isbn,
+      ...payload,
+      status: 'Available',
     }).returning();
 
     res.json({ ok: true, book: newBook });
@@ -278,12 +331,13 @@ router.post('/books/enrich', async (req: Request, res: Response) => {
 router.post('/books/edit', async (req: Request, res: Response) => {
   try {
     const isbn   = normalizeIsbn(String(req.body.isbn ?? ''));
-    const title  = String(req.body.title ?? '').trim();
-    const author = String(req.body.author ?? '').trim();
-    const cover  = String(req.body.cover ?? '').trim();
-    const shelf  = String(req.body.shelf ?? '').trim();
+    const payload = readBookFormPayload(req.body);
 
-    await db.update(books).set({ title, author, cover, shelf }).where(eq(books.isbn, isbn));
+    if (!isbn || !payload.title || !payload.author) {
+      return res.status(400).json({ error: 'ISBN, title, and author are required.' });
+    }
+
+    await db.update(books).set(payload).where(eq(books.isbn, isbn));
     res.json({ ok: true });
   } catch (err) {
     console.error('[Admin] /books/edit error:', err);
@@ -334,9 +388,28 @@ router.get('/loans', async (_req: Request, res: Response) => {
     .innerJoin(users, eq(loans.userId, users.id))
     .orderBy(desc(loans.checkedOut));
 
+  const pendingRenewalRequests = await db
+    .select({
+      id: renewalRequests.id,
+      loanId: renewalRequests.loanId,
+      requestedAt: renewalRequests.requestedAt,
+      dueDate: loans.dueDate,
+      title: books.title,
+      author: books.author,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(renewalRequests)
+    .innerJoin(loans, eq(renewalRequests.loanId, loans.id))
+    .innerJoin(books, eq(loans.isbn, books.isbn))
+    .innerJoin(users, eq(renewalRequests.userId, users.id))
+    .where(eq(renewalRequests.status, 'pending'))
+    .orderBy(desc(renewalRequests.requestedAt));
+
   res.render('pages/admin/loans', {
     title: 'Loan Management — CS Library Admin',
     loans: allLoans,
+    renewalRequests: pendingRenewalRequests,
   });
 });
 
@@ -386,10 +459,13 @@ router.get('/donations', async (_req: Request, res: Response) => {
       isbn: donations.isbn,
       title: donations.title,
       author: donations.author,
+      status: donations.status,
       donorName: donations.donorName,
       donorEmail: donations.donorEmail,
       donorUserName: users.name,
       donorUserEmail: users.email,
+      reviewedAt: donations.reviewedAt,
+      reviewNote: donations.reviewNote,
       createdAt: donations.createdAt,
     })
     .from(donations)
@@ -400,6 +476,97 @@ router.get('/donations', async (_req: Request, res: Response) => {
     title: 'Donation Log — CS Library Admin',
     donations: donationRows,
   });
+});
+
+router.post('/donations/update', async (req: Request, res: Response) => {
+  try {
+    const donationId = Number(req.body.id);
+    const status = String(req.body.status ?? '');
+    const reviewNote = String(req.body.reviewNote ?? '').trim();
+    const adminUserId = Number((req.user as any)?.id);
+
+    if (!donationId || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid donation update.' });
+    }
+
+    const [donation] = await db
+      .select({
+        id: donations.id,
+        isbn: donations.isbn,
+        title: donations.title,
+        author: donations.author,
+        status: donations.status,
+        donorName: donations.donorName,
+        donorEmail: donations.donorEmail,
+      })
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    if (!donation) {
+      return res.status(404).json({ error: 'Donation not found.' });
+    }
+
+    if (donation.status !== 'pending') {
+      return res.status(409).json({ error: 'This donation has already been reviewed.' });
+    }
+
+    if (status === 'rejected') {
+      const [activeLoan] = await db
+        .select({ id: loans.id })
+        .from(loans)
+        .where(and(eq(loans.isbn, donation.isbn), eq(loans.returned, false)))
+        .limit(1);
+
+      const [activeHold] = await db
+        .select({ id: holds.id })
+        .from(holds)
+        .where(and(
+          eq(holds.isbn, donation.isbn),
+          or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+        ))
+        .limit(1);
+
+      if (activeLoan || activeHold) {
+        return res.status(409).json({ error: 'Cannot reject a donation once the book is in circulation.' });
+      }
+
+      await db.delete(books).where(eq(books.isbn, donation.isbn));
+    }
+
+    await db
+      .update(donations)
+      .set({
+        status,
+        reviewedAt: new Date(),
+        reviewedByUserId: adminUserId || null,
+        reviewNote,
+      })
+      .where(eq(donations.id, donationId));
+
+    if (donation.donorEmail) {
+      void sendDonationStatusEmail({
+        to: donation.donorEmail,
+        name: donation.donorName,
+        title: donation.title,
+        author: donation.author,
+        status,
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.warn(`[Admin] Donation status email was not delivered for ${donation.donorEmail}.`);
+          }
+        })
+        .catch((error) => {
+          console.error('[Admin] Donation status email failed:', error);
+        });
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Admin] /donations/update error:', err);
+    res.status(500).json({ error: 'Failed to update donation.' });
+  }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -464,6 +631,15 @@ router.post('/users/set-role', async (req: Request, res: Response) => {
     const userId = Number(req.body.userId);
     const role   = String(req.body.role ?? 'user');
     if (!['user', 'admin'].includes(role)) return res.status(400).json({ error: 'Invalid role.' });
+
+    const [targetUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (targetUser.role === 'admin' && role === 'user') {
+      return res.status(403).json({ error: 'Admin accounts cannot be demoted through the dashboard.' });
+    }
 
     await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, userId));
     res.json({ ok: true });
@@ -644,10 +820,162 @@ router.post('/suggestions/update', async (req: Request, res: Response) => {
     if (!['approved', 'rejected'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status.' });
     }
+
+    const [suggestion] = await db
+      .select({
+        id: suggestions.id,
+        title: suggestions.title,
+        author: suggestions.author,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(suggestions)
+      .innerJoin(users, eq(suggestions.userId, users.id))
+      .where(eq(suggestions.id, id))
+      .limit(1);
+
+    if (!suggestion) {
+      return res.status(404).json({ error: 'Suggestion not found.' });
+    }
+
     await db.update(suggestions).set({ status }).where(eq(suggestions.id, id));
+
+    void sendSuggestionStatusEmail({
+      to: suggestion.userEmail,
+      name: suggestion.userName,
+      title: suggestion.title,
+      author: suggestion.author,
+      status,
+    })
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.warn(`[Admin] Suggestion status email was not delivered for ${suggestion.userEmail}.`);
+        }
+      })
+      .catch((error) => {
+        console.error('[Admin] Suggestion status email failed:', error);
+      });
+
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update suggestion.' });
+  }
+});
+
+router.post('/loans/renewals/update', async (req: Request, res: Response) => {
+  try {
+    const requestId = Number(req.body.id);
+    const status = String(req.body.status ?? '');
+    const adminUserId = Number((req.user as any)?.id);
+
+    if (!requestId || !['approved', 'rejected'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid renewal update.' });
+    }
+
+    const [requestRow] = await db
+      .select({
+        id: renewalRequests.id,
+        loanId: renewalRequests.loanId,
+        status: renewalRequests.status,
+        isbn: loans.isbn,
+        dueDate: loans.dueDate,
+        returned: loans.returned,
+        title: books.title,
+        author: books.author,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(renewalRequests)
+      .innerJoin(loans, eq(renewalRequests.loanId, loans.id))
+      .innerJoin(books, eq(loans.isbn, books.isbn))
+      .innerJoin(users, eq(renewalRequests.userId, users.id))
+      .where(eq(renewalRequests.id, requestId))
+      .limit(1);
+
+    if (!requestRow || requestRow.status !== 'pending') {
+      return res.status(404).json({ error: 'Pending extension request not found.' });
+    }
+
+    if (requestRow.returned) {
+      return res.status(409).json({ error: 'This loan has already been returned.' });
+    }
+
+    if (status === 'approved') {
+      const [activeHold] = await db
+        .select({ id: holds.id })
+        .from(holds)
+        .where(and(
+          eq(holds.isbn, requestRow.isbn),
+          or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+        ))
+        .limit(1);
+
+      if (activeHold) {
+        return res.status(409).json({ error: 'This book has an active hold and cannot be extended.' });
+      }
+
+      const newDueDate = addDays(new Date(requestRow.dueDate), 14);
+      await db.update(loans).set({ dueDate: newDueDate }).where(eq(loans.id, requestRow.loanId));
+
+      await db
+        .update(renewalRequests)
+        .set({
+          status,
+          reviewedAt: new Date(),
+          reviewedByUserId: adminUserId || null,
+        })
+        .where(eq(renewalRequests.id, requestId));
+
+      void sendRenewalRequestStatusEmail({
+        to: requestRow.userEmail,
+        name: requestRow.userName,
+        title: requestRow.title,
+        author: requestRow.author,
+        status,
+        dueDate: newDueDate,
+      })
+        .then((emailResult) => {
+          if (!emailResult.success) {
+            console.warn(`[Admin] Renewal approval email was not delivered for ${requestRow.userEmail}.`);
+          }
+        })
+        .catch((error) => {
+          console.error('[Admin] Renewal approval email failed:', error);
+        });
+
+      return res.json({ ok: true, dueDate: newDueDate });
+    }
+
+    await db
+      .update(renewalRequests)
+      .set({
+        status,
+        reviewedAt: new Date(),
+        reviewedByUserId: adminUserId || null,
+      })
+      .where(eq(renewalRequests.id, requestId));
+
+    void sendRenewalRequestStatusEmail({
+      to: requestRow.userEmail,
+      name: requestRow.userName,
+      title: requestRow.title,
+      author: requestRow.author,
+      status,
+      dueDate: requestRow.dueDate,
+    })
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.warn(`[Admin] Renewal rejection email was not delivered for ${requestRow.userEmail}.`);
+        }
+      })
+      .catch((error) => {
+        console.error('[Admin] Renewal rejection email failed:', error);
+      });
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Admin] /loans/renewals/update error:', err);
+    res.status(500).json({ error: 'Failed to update extension request.' });
   }
 });
 

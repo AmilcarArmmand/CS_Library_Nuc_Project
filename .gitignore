@@ -20,3 +20,5 @@ package-lock.json
 /drizzle
 /.clj-kondo
 /.lsp
+.playwright-cli/
+output/

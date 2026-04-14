@@ -6,6 +6,7 @@
   <title><%= title %></title>
   <link rel="icon" href="/favicon1.ico" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin-mobile.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
@@ -50,6 +51,15 @@
     .overdue-days { font-size: 0.65rem; color: #f87171; font-weight: 700; }
     .search-input { padding: 0.4rem 0.85rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: white; font-family: inherit; font-size: 0.78rem; outline: none; margin-left: auto; width: 220px; }
     .search-input:focus { border-color: rgba(59,130,246,0.5); }
+    .request-grid { display: grid; gap: 0.85rem; }
+    .request-card { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem; border-radius: 0.85rem; border: 1px solid rgba(71,85,105,0.35); background: rgba(255,255,255,0.02); }
+    .request-title { font-size: 0.85rem; font-weight: 700; color: #f8fafc; }
+    .request-meta { font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem; line-height: 1.5; }
+    .request-actions { display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-end; flex-shrink: 0; }
+    .btn-blue { background: rgba(59,130,246,0.16); color: #93c5fd; border-color: rgba(59,130,246,0.35); }
+    .btn-blue:hover { background: rgba(59,130,246,0.28); }
+    .btn-red { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.25); }
+    .btn-red:hover { background: rgba(239,68,68,0.2); }
 
     @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
   </style>
@@ -70,6 +80,8 @@
     <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
   </nav>
 
+  <%- include('../../partials/admin-mobile-shell', { mobileTitle: 'Loans' }) %>
+
   <main class="main">
     <h1 class="page-title">Loan Management</h1>
     <p class="page-sub">View and manage all checkout activity</p>
@@ -81,6 +93,32 @@
       <button class="filter-btn" onclick="filterLoans('returned')">RETURNED</button>
       <a href="/admin/loans/csv" class="btn btn-green" style="margin-left:auto;">EXPORT CSV</a>
       <input type="text" class="search-input" placeholder="Search by name or title…" oninput="searchLoans(this.value)" />
+    </div>
+
+    <div class="panel" style="margin-bottom:1rem;">
+      <div class="panel-title">Pending Extension Requests (<%= renewalRequests.length %>)</div>
+      <% if (!renewalRequests.length) { %>
+        <p style="color:#64748b;font-size:0.8rem;">No extension requests are waiting for review.</p>
+      <% } else { %>
+        <div class="request-grid">
+          <% renewalRequests.forEach(request => { %>
+            <div class="request-card" id="request-<%= request.id %>">
+              <div>
+                <div class="request-title"><%= request.title %></div>
+                <div class="request-meta">
+                  <div><strong><%= request.userName %></strong> (<%= request.userEmail %>)</div>
+                  <div>Current due date: <%= new Date(request.dueDate).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) %></div>
+                  <div>Requested: <%= new Date(request.requestedAt).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) %></div>
+                </div>
+              </div>
+              <div class="request-actions">
+                <button class="btn btn-blue" onclick="updateRenewalRequest(<%= request.id %>, 'approved', this)">APPROVE</button>
+                <button class="btn btn-red" onclick="updateRenewalRequest(<%= request.id %>, 'rejected', this)">REJECT</button>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
     </div>
 
     <div class="panel">
@@ -126,6 +164,7 @@
   </main>
 </div>
 
+<script src="/js/admin-mobile.js"></script>
 <script>
   function filterLoans(status) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -153,6 +192,27 @@
     });
     sortDir *= -1;
     rows.forEach(r => tbody.appendChild(r));
+  }
+
+  async function updateRenewalRequest(id, status, btn) {
+    try {
+      btn.disabled = true;
+      const r = await fetch('/admin/loans/renewals/update', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ id, status }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        alert(d.error || 'Failed to update extension request.');
+        btn.disabled = false;
+        return;
+      }
+      location.reload();
+    } catch {
+      alert('Could not update extension request.');
+      btn.disabled = false;
+    }
   }
 </script>
 </body>

@@ -86,11 +86,26 @@ function requireLogin(req: Request, res: Response, next: NextFunction): void {
   res.redirect('/');
 }
 
+function getIdleTimeoutMs(): number {
+  const minutes = Number(process.env['KIOSK_IDLE_TIMEOUT_MINUTES'] ?? 3);
+  return Math.max(1, minutes) * 60 * 1000;
+}
+
+function getIdleWarningMs(): number {
+  const seconds = Number(process.env['KIOSK_IDLE_WARNING_SECONDS'] ?? 30);
+  return Math.max(10, seconds) * 1000;
+}
+
 // ── GET / — Login page ────────────────────────────────────────────────────────
 
 router.get('/', (req: Request, res: Response) => {
   if (getUser(req)) { res.redirect('/dashboard'); return; }
-  res.render('pages/kiosk-login', { title: 'CS Library Kiosk', error: null });
+  const timedOut = String(req.query['timedOut'] ?? '') === '1';
+  res.render('pages/kiosk-login', {
+    title: 'CS Library Kiosk',
+    error: null,
+    notice: timedOut ? 'Signed out after inactivity. Scan your ID to continue.' : null,
+  });
 });
 
 // ── POST /login — Student ID lookup ──────────────────────────────────────────
@@ -114,7 +129,7 @@ router.post('/login', async (req: Request, res: Response) => {
       status === 404 ? 'Student ID not found. Please register an account first.' :
       status === 403 ? 'This student ID is disabled. Please contact library staff.' :
       data.error ?? 'Could not reach the server. Please try again.';
-    res.render('pages/kiosk-login', { title: 'CS Library Kiosk', error });
+    res.render('pages/kiosk-login', { title: 'CS Library Kiosk', error, notice: null });
     return;
   }
 
@@ -135,13 +150,18 @@ router.get('/dashboard', requireLogin, (req: Request, res: Response) => {
     user,
     cart:    getCart(req),
     welcome,
+    idleTimeoutMs: getIdleTimeoutMs(),
+    idleWarningMs: getIdleWarningMs(),
   });
 });
 
 // ── GET /logout ───────────────────────────────────────────────────────────────
 
 router.get('/logout', (req: Request, res: Response) => {
-  req.session.destroy(() => res.redirect('/'));
+  const reason = String(req.query['reason'] ?? '');
+  req.session.destroy(() => {
+    res.redirect(reason === 'idle' ? '/?timedOut=1' : '/');
+  });
 });
 
 // ── API PROXY ROUTES ──────────────────────────────────────────────────────────
@@ -150,8 +170,9 @@ router.get('/logout', (req: Request, res: Response) => {
 // This keeps the CLOUD_API_KEY out of the browser entirely.
 
 // GET /api/catalog
-router.get('/api/catalog', requireLogin, async (_req: Request, res: Response) => {
-  const { ok, data } = await cloudFetch('GET', '/books');
+router.get('/api/catalog', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, data } = await cloudFetch('GET', `/books?userId=${user.id}`);
   if (ok) data.books = data.books ?? [];
   if (!ok) { res.status(502).json(data); return; }
   res.json(data);
@@ -210,6 +231,12 @@ router.post('/api/cart/remove', requireLogin, (req: Request, res: Response) => {
   res.json({ ok: true, cartCount: cart.length });
 });
 
+// POST /api/session/ping
+router.post('/api/session/ping', requireLogin, (req: Request, res: Response) => {
+  req.session.touch();
+  res.json({ ok: true });
+});
+
 // POST /api/checkout
 router.post('/api/checkout', requireLogin, async (req: Request, res: Response) => {
   const user  = getUser(req)!;
@@ -235,7 +262,8 @@ router.post('/api/checkout', requireLogin, async (req: Request, res: Response) =
 // POST /api/return
 router.post('/api/return', requireLogin, async (req: Request, res: Response) => {
   const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
-  const { ok, status, data } = await cloudFetch('POST', '/return', { isbn });
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('POST', '/return', { userId: user.id, isbn });
   res.status(ok ? 200 : status).json(data);
 });
 

@@ -1,0 +1,18 @@
+[Unit]
+Description=CS Library Chromium Kiosk
+Wants=graphical.target cs-library-kiosk-app.service
+After=graphical.target cs-library-kiosk-app.service
+
+[Service]
+Type=simple
+User=__KIOSK_USER__
+WorkingDirectory=__KIOSK_ROOT__
+Environment=HOME=__KIOSK_HOME__
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=__KIOSK_HOME__/.Xauthority
+ExecStart=/bin/bash __KIOSK_ROOT__/pi/launch-chromium-kiosk.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical.target

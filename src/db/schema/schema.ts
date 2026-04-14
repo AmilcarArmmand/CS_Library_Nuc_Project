@@ -22,7 +22,7 @@ import { relations } from 'drizzle-orm';
 
 // student_id is the barcode/ID card value — always uppercase, 5-16 chars.
 // password_hash is null for Google-only users.
-// google_id is null for local (email/password) users.
+// google_id / microsoft_id are null unless the account has been linked to that provider.
 
 export const users = pgTable('users', {
   id:               serial('id').primaryKey(),
@@ -31,6 +31,7 @@ export const users = pgTable('users', {
   email:            varchar('email', { length: 255 }).unique().notNull(),
   passwordHash:     text('password_hash'),                      // null for Google users
   googleId:         varchar('google_id', { length: 255 }).unique(), // null for local users
+  microsoftId:      varchar('microsoft_id', { length: 255 }).unique(),
   picture:          varchar('picture', { length: 500 }),
   role:             varchar('role', { length: 50 }).notNull().default('user'),
   active:           boolean('active').notNull().default(true),
@@ -42,6 +43,7 @@ export const users = pgTable('users', {
   idxEmail:     index('idx_users_email').on(table.email),
   idxStudentId: index('idx_users_student_id').on(table.studentId),
   idxGoogleId:  index('idx_users_google_id').on(table.googleId),
+  idxMicrosoftId: index('idx_users_microsoft_id').on(table.microsoftId),
 }));
 
 // BOOKS TABLE
@@ -51,12 +53,26 @@ export const users = pgTable('users', {
 // status: 'Available' | 'Checked Out' | 'On Hold'
 
 export const books = pgTable('books', {
-  isbn:   varchar('isbn', { length: 20 }).primaryKey(),
-  title:  varchar('title', { length: 500 }).notNull(),
-  author: varchar('author', { length: 255 }).notNull(),
-  cover:  text('cover').notNull().default(''),
-  status: varchar('status', { length: 20 }).notNull().default('Available'),
-  shelf:  varchar('shelf', { length: 50 }).notNull().default(''),
+  isbn:                varchar('isbn', { length: 20 }).primaryKey(),
+  title:               varchar('title', { length: 500 }).notNull(),
+  author:              varchar('author', { length: 255 }).notNull(),
+  publisher:           varchar('publisher', { length: 255 }).notNull().default(''),
+  creationDate:        varchar('creation_date', { length: 100 }).notNull().default(''),
+  edition:             varchar('edition', { length: 255 }).notNull().default(''),
+  language:            varchar('language', { length: 255 }).notNull().default(''),
+  physicalDescription: text('physical_description').notNull().default(''),
+  subjects:            text('subjects').notNull().default(''),
+  contents:            text('contents').notNull().default(''),
+  description:         text('description').notNull().default(''),
+  series:              text('series').notNull().default(''),
+  source:              varchar('source', { length: 255 }).notNull().default(''),
+  bookType:            varchar('book_type', { length: 100 }).notNull().default(''),
+  mmsId:               varchar('mms_id', { length: 100 }).notNull().default(''),
+  nzMmsId:             varchar('nz_mms_id', { length: 100 }).notNull().default(''),
+  identifier:          text('identifier').notNull().default(''),
+  cover:               text('cover').notNull().default(''),
+  status:              varchar('status', { length: 20 }).notNull().default('Available'),
+  shelf:               varchar('shelf', { length: 50 }).notNull().default(''),
 }, (table) => ({
   idxStatus: index('idx_books_status').on(table.status),
   idxTitle:  index('idx_books_title').on(table.title),
@@ -148,15 +164,44 @@ export const donations = pgTable('donations', {
   isbn:        varchar('isbn', { length: 20 }).notNull(),
   title:       varchar('title', { length: 500 }).notNull(),
   author:      varchar('author', { length: 255 }).notNull().default('Unknown Author'),
+  status:      varchar('status', { length: 20 }).notNull().default('pending'),
+  reviewedAt:  timestamp('reviewed_at', { withTimezone: true }),
+  reviewedByUserId: integer('reviewed_by_user_id').references(() => users.id),
+  reviewNote:  text('review_note').notNull().default(''),
   createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   idxDonorUserId: index('idx_donations_donor_user_id').on(table.donorUserId),
   idxCreatedAt:   index('idx_donations_created_at').on(table.createdAt),
   idxIsbn:        index('idx_donations_isbn').on(table.isbn),
+  idxStatus:      index('idx_donations_status').on(table.status),
 }));
 
 export const donationsRelations = relations(donations, ({ one }) => ({
   donor: one(users, { fields: [donations.donorUserId], references: [users.id] }),
+  reviewer: one(users, { fields: [donations.reviewedByUserId], references: [users.id] }),
+}));
+
+// RENEWAL REQUESTS TABLE
+
+// status: 'pending' | 'approved' | 'rejected'
+
+export const renewalRequests = pgTable('renewal_requests', {
+  id:          serial('id').primaryKey(),
+  loanId:      integer('loan_id').notNull().references(() => loans.id),
+  userId:      integer('user_id').notNull().references(() => users.id),
+  status:      varchar('status', { length: 20 }).notNull().default('pending'),
+  requestedAt: timestamp('requested_at', { withTimezone: true }).defaultNow().notNull(),
+  reviewedAt:  timestamp('reviewed_at', { withTimezone: true }),
+  reviewedByUserId: integer('reviewed_by_user_id').references(() => users.id),
+}, (table) => ({
+  idxLoanStatus: index('idx_renewal_requests_loan_status').on(table.loanId, table.status),
+  idxUserRequestedAt: index('idx_renewal_requests_user_requested_at').on(table.userId, table.requestedAt),
+}));
+
+export const renewalRequestsRelations = relations(renewalRequests, ({ one }) => ({
+  loan: one(loans, { fields: [renewalRequests.loanId], references: [loans.id] }),
+  user: one(users, { fields: [renewalRequests.userId], references: [users.id] }),
+  reviewer: one(users, { fields: [renewalRequests.reviewedByUserId], references: [users.id] }),
 }));
 
 // PASSWORD RESET TOKENS TABLE
@@ -187,4 +232,5 @@ export type Loan       = typeof loans.$inferSelect;
 export type Hold       = typeof holds.$inferSelect;
 export type Suggestion = typeof suggestions.$inferSelect;
 export type Donation   = typeof donations.$inferSelect;
+export type RenewalRequest = typeof renewalRequests.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;

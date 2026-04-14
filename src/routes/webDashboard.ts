@@ -1,9 +1,10 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { books, loans, holds, suggestions } from '../db/schema/schema.js';
+import { books, loans, holds, suggestions, renewalRequests, users } from '../db/schema/schema.js';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { normalizeIsbn } from '../utils/openLibrary.js';
+import { sendRenewalRequestReceivedEmail } from '../utils/emailService.js';
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ router.get('/', (req: Request, res: Response) => {
 
 router.get('/api/catalog', async (req: Request, res: Response) => {
   try {
+    const userId = (req.user as any)?.id ?? null;
     const allBooks = await db.select().from(books).orderBy(books.title);
 
     // Get active loans to find who has each checked-out book
@@ -41,12 +43,25 @@ router.get('/api/catalog', async (req: Request, res: Response) => {
 
     const borrowerMap = new Map(activeLoans.map(l => [l.isbn, l.userId]));
 
+    const activeHolds = userId
+      ? await db
+          .select({ isbn: holds.isbn })
+          .from(holds)
+          .where(and(
+            eq(holds.userId, userId),
+            or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+          ))
+      : [];
+
+    const heldIsbns = new Set(activeHolds.map(h => h.isbn));
+
     const enriched = allBooks.map(b => ({
       ...b,
       borrowerUserId: borrowerMap.get(b.isbn) ?? null,
+      heldByCurrentUser: heldIsbns.has(b.isbn),
     }));
 
-    res.json({ books: enriched, currentUserId: (req.user as any)?.id ?? null });
+    res.json({ books: enriched, currentUserId: userId });
   } catch (err) {
     console.error('[WebDashboard] /api/catalog error:', err);
     res.status(500).json({ error: 'Could not load catalog.' });
@@ -76,7 +91,29 @@ router.get('/api/my-loans', async (req: Request, res: Response) => {
       .where(eq(loans.userId, userId))
       .orderBy(desc(loans.checkedOut));
 
-    res.json({ loans: rows });
+    const requestRows = await db
+      .select({
+        loanId: renewalRequests.loanId,
+        status: renewalRequests.status,
+        requestedAt: renewalRequests.requestedAt,
+      })
+      .from(renewalRequests)
+      .where(eq(renewalRequests.userId, userId))
+      .orderBy(desc(renewalRequests.requestedAt));
+
+    const renewalStatusByLoan = new Map<number, string>();
+    for (const request of requestRows) {
+      if (!renewalStatusByLoan.has(request.loanId)) {
+        renewalStatusByLoan.set(request.loanId, request.status);
+      }
+    }
+
+    const enrichedRows = rows.map((loan) => ({
+      ...loan,
+      renewalRequestStatus: renewalStatusByLoan.get(loan.id) ?? null,
+    }));
+
+    res.json({ loans: enrichedRows });
   } catch (err) {
     console.error('[WebDashboard] /api/my-loans error:', err);
     res.status(500).json({ error: 'Could not fetch loans.' });
@@ -152,6 +189,100 @@ router.post('/api/suggest', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[WebDashboard] /api/suggest error:', err);
     res.status(500).json({ error: 'Failed to submit suggestion.' });
+  }
+});
+
+// POST /web-dashboard/api/renewal-request — Request a due-date extension
+
+router.post('/api/renewal-request', async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id as number;
+    const loanId = Number(req.body.loanId);
+
+    if (!loanId) {
+      res.status(400).json({ error: 'loanId is required.' });
+      return;
+    }
+
+    const [loan] = await db
+      .select({
+        id: loans.id,
+        userId: loans.userId,
+        isbn: loans.isbn,
+        dueDate: loans.dueDate,
+        returned: loans.returned,
+        title: books.title,
+        author: books.author,
+        userName: users.name,
+        userEmail: users.email,
+      })
+      .from(loans)
+      .innerJoin(books, eq(loans.isbn, books.isbn))
+      .innerJoin(users, eq(loans.userId, users.id))
+      .where(eq(loans.id, loanId))
+      .limit(1);
+
+    if (!loan || loan.userId !== userId || loan.returned) {
+      res.status(404).json({ error: 'Active loan not found.' });
+      return;
+    }
+
+    if (loan.dueDate < new Date()) {
+      res.status(409).json({ error: 'Overdue books cannot request an extension.' });
+      return;
+    }
+
+    const [activeHold] = await db
+      .select({ id: holds.id })
+      .from(holds)
+      .where(and(
+        eq(holds.isbn, loan.isbn),
+        or(eq(holds.status, 'pending'), eq(holds.status, 'ready')),
+      ))
+      .limit(1);
+
+    if (activeHold) {
+      res.status(409).json({ error: 'This book has an active hold and cannot be extended.' });
+      return;
+    }
+
+    const [existingPending] = await db
+      .select({ id: renewalRequests.id })
+      .from(renewalRequests)
+      .where(and(eq(renewalRequests.loanId, loanId), eq(renewalRequests.status, 'pending')))
+      .limit(1);
+
+    if (existingPending) {
+      res.status(409).json({ error: 'An extension request is already pending for this book.' });
+      return;
+    }
+
+    const [requestRow] = await db.insert(renewalRequests).values({
+      loanId,
+      userId,
+      status: 'pending',
+    }).returning();
+
+    void sendRenewalRequestReceivedEmail({
+      to: loan.userEmail,
+      name: loan.userName,
+      title: loan.title,
+      author: loan.author,
+      dueDate: loan.dueDate,
+    })
+      .then((emailResult) => {
+        if (!emailResult.success) {
+          console.warn(`[WebDashboard] Renewal request email was not delivered for ${loan.userEmail}.`);
+        }
+      })
+      .catch((error) => {
+        console.error('[WebDashboard] Renewal request email failed:', error);
+      });
+
+    res.json({ ok: true, request: requestRow });
+  } catch (err) {
+    console.error('[WebDashboard] /api/renewal-request error:', err);
+    res.status(500).json({ error: 'Failed to submit extension request.' });
   }
 });
 
