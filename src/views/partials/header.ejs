@@ -1,16 +1,15 @@
 <%
   // pageMode controls how nav items render:
-  //   'dashboard' — <button> elements that call showView() via JS
-  //   'index'     — <a> links that navigate to /web-dashboard?view=...
+  //   'dashboard' - <button> elements that call showView() via JS
+  //   'index'     - <a> links that navigate to /web-dashboard?view=...
   // Defaults to 'index' (safe for any non-dashboard page)
   // Use this header for any new pages you create, and set pageMode as needed when including it.
-  
+
   var _mode = (typeof pageMode !== 'undefined') ? pageMode : 'index';
 %>
 
 <header class="top-header">
 
-  <!-- Brand — always links to home -->
   <a href="/" class="header-brand">
     <img src="/images/scsu_logo.png" alt="SCSU" onerror="this.style.display='none'" />
     <div class="brand-text">
@@ -22,7 +21,6 @@
 
   <div class="hdr-pipe"></div>
 
-  <!-- Desktop nav -->
   <nav class="header-nav">
     <% if (_mode === 'dashboard') { %>
       <button class="hdr-nav-btn active" id="nav-catalog" onclick="showView('catalog')">My Library</button>
@@ -35,22 +33,39 @@
     <% } %>
   </nav>
 
-  <!-- Right side — user info or sign in/register -->
   <div class="header-right">
     <% if (user) { %>
-      <span class="header-user-name"><%= user.name %></span>
-      <a href="/auth/logout" class="logout-btn">Sign out</a>
+
+      <!-- User dropdown -->
+      <div class="user-dropdown" id="userDropdown">
+        <button class="user-dropdown-trigger" onclick="toggleUserMenu()" aria-label="Account menu">
+          <span class="header-user-name"><%= user.name %></span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="opacity:0.4;flex-shrink:0;">
+            <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="user-dropdown-menu" id="userDropdownMenu">
+          <div class="user-dropdown-info">
+            <span class="user-dropdown-name"><%= user.name %></span>
+            <span class="user-dropdown-email"><%= user.email %></span>
+          </div>
+          <div class="user-dropdown-divider"></div>
+          <a href="/settings" class="user-dropdown-item">⚙ Account Settings</a>
+          <div class="user-dropdown-divider"></div>
+          <a href="/auth/logout" class="user-dropdown-item user-dropdown-signout">Sign out</a>
+        </div>
+      </div>
+
     <% } else { %>
       <a href="/auth/login"    class="sign-in-link">Sign in</a>
+      <a href="/auth/register" class="sign-up-btn">Create account</a>
     <% } %>
   </div>
 
-  <!-- Hamburger — mobile only -->
   <button class="hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu">
     <span></span><span></span><span></span>
   </button>
 
-  <!-- Mobile dropdown -->
   <div class="mobile-menu" id="mobileMenu">
     <% if (_mode === 'dashboard') { %>
       <button class="mobile-item active" id="mnav-catalog" onclick="showView('catalog');closeMobileMenu()">My Library</button>
@@ -64,7 +79,8 @@
     <div class="mobile-divider"></div>
     <% if (user) { %>
       <span class="mobile-user"><%= user.name %></span>
-      <a href="/auth/logout" class="mobile-item mobile-signout">Sign Out</a>
+      <a href="/settings"      class="mobile-item">Account Settings</a>
+      <a href="/auth/logout"   class="mobile-item mobile-signout">Sign Out</a>
     <% } else { %>
       <a href="/auth/login"    class="mobile-item">Sign In</a>
       <a href="/auth/register" class="mobile-item" style="color:#60a5fa;font-weight:700;">Create Account</a>
@@ -73,22 +89,83 @@
 
 </header>
 
+<style>
+  /* ── User dropdown ── */
+  .user-dropdown { position: relative; }
+  @media (max-width: 640px) {
+  .user-dropdown { display: none; }
+  }
+  .user-dropdown-trigger {
+    display: flex; align-items: center; gap: 0.35rem;
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem; transition: background 0.15s;
+    color: white;
+  }
+  .user-dropdown-trigger:hover { background: rgba(255,255,255,0.06); }
+
+  .user-dropdown-menu {
+    display: none;
+    position: absolute; top: calc(100% + 0.5rem); right: 0;
+    min-width: 200px;
+    background: rgba(8,12,24,0.97);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 0.5rem;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    z-index: 400;
+    overflow: hidden;
+  }
+  .user-dropdown-menu.open { display: block; }
+
+  .user-dropdown-info {
+    padding: 0.75rem 1rem;
+    display: flex; flex-direction: column; gap: 0.15rem;
+  }
+  .user-dropdown-name  { font-size: 0.8rem; font-weight: 700; color: white; }
+  .user-dropdown-email { font-size: 0.7rem; color: #475569; }
+
+  .user-dropdown-divider { height: 1px; background: rgba(255,255,255,0.07); }
+
+  .user-dropdown-item {
+    display: block; padding: 0.65rem 1rem;
+    font-size: 0.8rem; font-weight: 500; color: #94a3b8;
+    text-decoration: none; transition: color 0.15s, background 0.15s;
+  }
+  .user-dropdown-item:hover  { color: white; background: rgba(255,255,255,0.05); }
+  .user-dropdown-signout     { color: #f87171 !important; }
+  .user-dropdown-signout:hover { background: rgba(239,68,68,0.08) !important; }
+</style>
+
 <script>
   function toggleMobileMenu() {
     document.getElementById('hamburgerBtn').classList.toggle('open');
     document.getElementById('mobileMenu').classList.toggle('open');
+    // Close user dropdown if it's open
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    if (dropdownMenu) dropdownMenu.classList.remove('open');
   }
   function closeMobileMenu() {
     document.getElementById('hamburgerBtn').classList.remove('open');
     document.getElementById('mobileMenu').classList.remove('open');
   }
-
-  // Close the mobile menu automatically when the window is resized
-  // wide enough that the hamburger button is no longer visible.
+  function toggleUserMenu() {
+    document.getElementById('userDropdownMenu').classList.toggle('open');
+  }
+  // Close user dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('userDropdown');
+    if (dropdown && !dropdown.contains(e.target)) {
+      document.getElementById('userDropdownMenu').classList.remove('open');
+    }
+  });
   window.addEventListener('resize', function() {
     const btn = document.getElementById('hamburgerBtn');
     if (btn && getComputedStyle(btn).display === 'none') {
       closeMobileMenu();
     }
+    // Also close the user dropdown when resizing to desktop
+    const dropdownMenu = document.getElementById('userDropdownMenu');
+    if (dropdownMenu) dropdownMenu.classList.remove('open');
   });
 </script>

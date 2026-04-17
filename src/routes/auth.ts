@@ -195,12 +195,27 @@ router.get('/outlook/callback', (req: Request, res: Response, next: NextFunction
   }
   next();
 },
-  passport.authenticate('microsoft', { failureRedirect: '/auth/login?error=outlook_failed' }),
-  (req: Request, res: Response) => {
-    console.log(`[Auth] Microsoft login: ${(req.user as any)?.email}`);
-    const redirectTo = req.session['returnTo'] ?? '/web-dashboard';
-    delete req.session['returnTo'];
-    res.redirect(redirectTo);
+  (req: Request, res: Response, next: NextFunction) => {
+    passport.authenticate('microsoft', (err: any, user: any, info: any) => {
+      if (err) return next(err);
+      if (!user) {
+        const msg = info?.message ?? 'outlook_failed';
+        return res.redirect(`/auth/login?error=${encodeURIComponent(msg)}`);
+      }
+      req.logIn(user, (loginErr) => {
+        if (loginErr) return next(loginErr);
+        console.log(`[Auth] Microsoft login: ${user.email}`);
+
+        // New OAuth account — offer optional password setup once
+        if (user._isNewOAuthAccount) {
+          return res.redirect('/auth/setup-password');
+        }
+
+        const redirectTo = req.session['returnTo'] ?? '/web-dashboard';
+        delete req.session['returnTo'];
+        res.redirect(redirectTo);
+      });
+    })(req, res, next);
   }
 );
 
@@ -496,6 +511,61 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
   } catch (err) {
     next(err);
   }
+});
+
+// OPTIONAL PASSWORD SETUP (offered once after first OAuth login)
+
+router.get('/setup-password', (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) return res.redirect('/auth/login');
+  // Skip if they already have a password
+  if ((req.user as any).passwordHash) return res.redirect('/web-dashboard');
+
+  res.render('pages/setup-password', {
+    title: 'Set a Password — CS Library',
+    error: null,
+    user:  req.user,
+  });
+});
+
+router.post('/setup-password', async (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated()) return res.redirect('/auth/login');
+
+  try {
+    const user   = req.user as any;
+    const action = String(req.body.action ?? '');
+
+    // User chooses to skip — go to dashboard, never shown again.
+    if (action === 'skip') {
+      return res.redirect('/web-dashboard');
+    }
+
+    const password = String(req.body.password ?? '');
+    const confirm  = String(req.body.confirm  ?? '');
+
+    if (password.length < 8) {
+      return res.render('pages/setup-password', {
+        title: 'Set a Password — CS Library',
+        error: 'Password must be at least 8 characters.',
+        user,
+      });
+    }
+    if (password !== confirm) {
+      return res.render('pages/setup-password', {
+        title: 'Set a Password — CS Library',
+        error: 'Passwords do not match.',
+        user,
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    await db.update(users)
+      .set({ passwordHash, updatedAt: new Date() })
+      .where(eq(users.id, user.id));
+
+    console.log(`[Auth] Password set for OAuth user: ${user.email}`);
+    res.redirect('/web-dashboard');
+
+  } catch (err) { next(err); }
 });
 
 // LOGOUT

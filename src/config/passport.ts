@@ -188,12 +188,51 @@ if (hasMicrosoftAuth) {
     },
     async (_accessToken, _refreshToken, profile, done) => {
       try {
+        // Fetch extended profile from Graph — passport-microsoft does not
+        // include employeeId in the profile object by default
+        let graphEmail: string | null = null;
+        let graphName:  string | null = null;
+        let graphStudentId: string | null = null;
+
+        try {
+          // WHERE THE MAGIC HAPPENS! Thanks to Microsoft Graph, we can get more 
+          // reliable email and employeeId data than what passport-microsoft provides.
+          // https://learn.microsoft.com/en-us/graph/overview
+
+          // For future maintainers: 
+          // You can still use this especially if you ever actually end up 
+          // creating an app registration via the Azure portal.
+          const graphRes = await fetch(
+            'https://graph.microsoft.com/v1.0/me?$select=displayName,mail,employeeId',
+            { headers: { Authorization: `Bearer ${_accessToken}` } }
+          );
+          const graphData = await graphRes.json() as {
+            displayName?: string;
+            mail?: string;
+            employeeId?: string;
+          };
+
+          graphEmail     = graphData.mail?.toLowerCase().trim() ?? null;
+          graphName      = graphData.displayName ?? null;
+          // employeeId -> studentId after normalization (remove spaces, uppercase)
+          const rawId    = normalizeStudentId(graphData.employeeId ?? '');
+          graphStudentId = /^[A-Z0-9]{5,16}$/.test(rawId) ? rawId : null;
+
+          //console.log(`[Auth] Graph data — email: ${graphEmail}, employeeId: ${graphStudentId}`);
+        } catch (graphErr) {
+          console.warn('[Auth] Graph fetch failed, falling back to profile data:', graphErr);
+        }
+
+        // Use Graph data with fallback to passport-microsoft profile
         const microsoftId = getMicrosoftId(profile);
-        const email = getMicrosoftEmail(profile);
-        const studentId = getMicrosoftStudentId(profile);
-        const name  = profile.displayName ?? email;
+        const email       = graphEmail ?? getMicrosoftEmail(profile);
+        // Use what the graph returned. Fallback if the graph fails.
+        const studentId   = graphStudentId ?? getMicrosoftStudentId(profile);
+        const name        = graphName ?? profile.displayName ?? email;
+
         if (!email) return done(new Error('Microsoft account has no email address'));
 
+        //Stop
         let [user] = microsoftId
           ? await db.select().from(users).where(eq(users.microsoftId, microsoftId)).limit(1)
           : [];
@@ -203,7 +242,13 @@ if (hasMicrosoftAuth) {
             lastLogin: new Date(),
             updatedAt: new Date(),
           };
-          if (!user.studentId && studentId) updates.studentId = studentId;
+          if (studentId && user.studentId !== studentId) {
+            updates.studentId = studentId;
+            if (user.studentId) {
+              // For the students who register in the page and, in a rare case, mistype their ID.
+              console.log(`[Auth] Correcting studentId for ${user.email}: ${user.studentId} → ${studentId}`);
+            }
+          }
           if (!user.microsoftId && microsoftId) updates.microsoftId = microsoftId;
           await db.update(users).set(updates).where(eq(users.id, user.id));
           return done(null, { ...user, ...updates } as Express.User);
@@ -221,7 +266,13 @@ if (hasMicrosoftAuth) {
             lastLogin: new Date(),
             updatedAt: new Date(),
           };
-          if (!user.studentId && studentId) updates.studentId = studentId;
+          if (studentId && user.studentId !== studentId) {
+            updates.studentId = studentId;
+            if (user.studentId) {
+              // For the students who register in the page and, in a rare case, mistype their ID.
+              console.log(`[Auth] Correcting studentId for ${user.email}: ${user.studentId} → ${studentId}`);
+            }
+          }
           await db.update(users).set(updates).where(eq(users.id, user.id));
           return done(null, { ...user, ...updates } as Express.User);
         }
@@ -234,6 +285,8 @@ if (hasMicrosoftAuth) {
           active: true,
           lastLogin: new Date(),
         }).returning();
+        // Flags as a new account so the callback can show the password prompt
+        (newUser as any)._isNewOAuthAccount = true;
         return done(null, newUser as Express.User);
       } catch (err) {
         return done(err as Error);
