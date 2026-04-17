@@ -58,7 +58,6 @@
 
     <% } else { %>
       <a href="/auth/login"    class="sign-in-link">Sign in</a>
-      <a href="/auth/register" class="sign-up-btn">Create account</a>
     <% } %>
   </div>
 
@@ -94,6 +93,7 @@
   .user-dropdown { position: relative; }
   @media (max-width: 640px) {
   .user-dropdown { display: none; }
+  .sign-in-link  { display: none; }
   }
   .user-dropdown-trigger {
     display: flex; align-items: center; gap: 0.35rem;
