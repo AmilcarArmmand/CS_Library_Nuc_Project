@@ -28,9 +28,13 @@ const CLOUD_PROTOCOL = process.env['CLOUD_PROTOCOL'] ?? 'http';
 const CLOUD_HOST     = process.env['CLOUD_HOST'];
 const CLOUD_PORT     = process.env['CLOUD_PORT'] ?? '8080';
 
-const CLOUD_API_URL  = CLOUD_HOST
-  ? `${CLOUD_PROTOCOL}://${CLOUD_HOST}:${CLOUD_PORT}/api/kiosk`
-  : process.env['CLOUD_API_URL'];  // fallback if someone still sets it directly
+const isStandardPort =
+  (CLOUD_PROTOCOL === 'https' && CLOUD_PORT === '443') ||
+  (CLOUD_PROTOCOL === 'http'  && CLOUD_PORT === '80');
+
+const CLOUD_API_URL = CLOUD_HOST
+  ? `${CLOUD_PROTOCOL}://${CLOUD_HOST}${isStandardPort ? '' : `:${CLOUD_PORT}`}/api/kiosk`
+  : process.env['CLOUD_API_URL'];
 const CLOUD_API_KEY = process.env['CLOUD_API_KEY'];
 
 if (!CLOUD_API_URL || !CLOUD_API_KEY) {
