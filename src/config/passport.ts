@@ -8,8 +8,15 @@ import { users } from '../db/schema/schema.js';
 import { eq, or } from 'drizzle-orm';
 import { config } from './env.js';
 
-const hasGoogleAuth = Boolean(process.env['GOOGLE_CLIENT_ID'] && process.env['GOOGLE_CLIENT_SECRET']);
-const hasMicrosoftAuth = Boolean(process.env['MICROSOFT_CLIENT_ID'] && process.env['MICROSOFT_CLIENT_SECRET']);
+const isConfiguredOAuthValue = (value: string | undefined): boolean => {
+  const trimmed = value?.trim();
+  return Boolean(trimmed && !/^your_.+_here$/i.test(trimmed));
+};
+
+const hasGoogleAuth = isConfiguredOAuthValue(process.env['GOOGLE_CLIENT_ID'])
+  && isConfiguredOAuthValue(process.env['GOOGLE_CLIENT_SECRET']);
+const hasMicrosoftAuth = isConfiguredOAuthValue(process.env['MICROSOFT_CLIENT_ID'])
+  && isConfiguredOAuthValue(process.env['MICROSOFT_CLIENT_SECRET']);
 
 export const authProviders = {
   local: true,
@@ -112,7 +119,7 @@ if (hasGoogleAuth) {
     }
   ));
 } else {
-  console.warn('[Auth] Google OAuth disabled: missing GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET');
+  console.warn('[Auth] Google OAuth disabled: missing or placeholder GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET');
 }
 
 // MICROSOFT (OUTLOOK) OAUTH STRATEGY

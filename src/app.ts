@@ -135,7 +135,10 @@ app.use(errorHandler);
 app.listen(PORT, HOST, () => {
   console.log(`\n✅ CS Library running on: http://${HOST}:${PORT}`);
   console.log(`   Environment : ${NODE_ENV}`);
-  console.log(`   Google OAuth: ${config.oauth.googleClientId ? 'Configured ✓' : 'Not set'}`);
+  console.log(`   Google OAuth: ${authProviders.google ? 'Configured ✓' : 'Not set'}`);
+  if (authProviders.google) {
+    console.log(`   Google callback: ${config.oauth.googleCallbackURL}`);
+  }
   console.log(`   Outlook OAuth: ${authProviders.microsoft ? 'Configured ✓' : 'Not set'}`);
   if (authProviders.microsoft) {
     console.log(`   Outlook callback: ${config.oauth.microsoftCallbackURL}`);
