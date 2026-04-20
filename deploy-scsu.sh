@@ -77,6 +77,7 @@ rsync -a --delete \
   --exclude ".kiosk.pid" \
   --exclude "CS_Library_Nuc_Project/" \
   "$REPO_DIR/" "$LIVE_DIR/"
+chmod +x "$LIVE_DIR/deploy-scsu.sh" "$LIVE_DIR/status.sh" "$LIVE_DIR/stop.sh" 2>/dev/null || true
 echo "  OK: Live app folder synced"
 echo ""
 
