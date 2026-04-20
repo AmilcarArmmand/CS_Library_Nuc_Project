@@ -43,11 +43,18 @@
         <div class="accent-bar-form"></div>
         <p class="subtitle">Sign in to access the CS Library</p>
 
+        <% const googleEnabled = Boolean(authProviders?.google); %>
         <% const microsoftEnabled = Boolean(authProviders?.microsoft); %>
-        <% if (microsoftEnabled) { %>
+        <% const oauthEnabled = googleEnabled || microsoftEnabled; %>
+        <% if (oauthEnabled) { %>
           <div class="auth-tabs">
-            <button class="tab-btn active" type="button" onclick="switchTab('email')">Email &amp; Password</button>
-            <button class="tab-btn" type="button" onclick="switchTab('outlook')">Outlook</button>
+            <button class="tab-btn active" type="button" data-tab="email" onclick="switchTab('email')">Email</button>
+            <% if (googleEnabled) { %>
+              <button class="tab-btn" type="button" data-tab="google" onclick="switchTab('google')">Google</button>
+            <% } %>
+            <% if (microsoftEnabled) { %>
+              <button class="tab-btn" type="button" data-tab="outlook" onclick="switchTab('outlook')">Outlook</button>
+            <% } %>
           </div>
         <% } %>
 
@@ -93,6 +100,24 @@
         </div>
         </div>
 
+        <!-- Google panel -->
+        <% if (googleEnabled) { %>
+          <div class="auth-panel" id="panel-google">
+            <a href="/auth/google" class="btn-google">
+              <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.5 0 6.5 1.2 8.9 3.5l6.6-6.6C35.5 2.7 30.2.5 24 .5 14.7.5 6.7 5.8 2.8 13.6l7.8 6.1C12.4 13.7 17.7 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.1 24.6c0-1.7-.2-3.3-.5-4.8H24v9.1h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.2 5.6c4.2-3.9 7.1-9.6 7.1-16.8z"/>
+                <path fill="#FBBC05" d="M10.6 28.3c-.5-1.4-.8-2.8-.8-4.3s.3-2.9.8-4.3l-7.8-6.1C1.2 16.8.3 20.3.3 24s.9 7.2 2.5 10.4l7.8-6.1z"/>
+                <path fill="#34A853" d="M24 47.5c6.2 0 11.4-2 15.2-5.9L32 36c-2 1.3-4.6 2.1-8 2.1-6.3 0-11.6-4.2-13.4-9.9l-7.8 6.1C6.7 42.2 14.7 47.5 24 47.5z"/>
+              </svg>
+              Continue with Google
+            </a>
+            <p style="color:rgba(148,163,184,0.6); font-size:0.72rem; text-align:center;">
+              Sign in using your Google account. A CS Library account will be created automatically.
+            </p>
+          </div>
+        <% } %>
+
         <!-- Outlook panel -->
         <% if (microsoftEnabled) { %>
           <div class="auth-panel" id="panel-outlook">
@@ -125,14 +150,12 @@
   <script>
     // Tab switching
     function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach((b, i) => {
-        b.classList.toggle('active', (i === 0 && tab === 'email') || (i === 1 && tab === 'outlook'));
+      document.querySelectorAll('.tab-btn').forEach((button) => {
+        button.classList.toggle('active', button.dataset.tab === tab);
       });
-      document.getElementById('panel-email').classList.toggle('active', tab === 'email');
-      const outlookPanel = document.getElementById('panel-outlook');
-      if (outlookPanel) {
-        outlookPanel.classList.toggle('active', tab === 'outlook');
-      }
+      document.querySelectorAll('.auth-panel').forEach((panel) => {
+        panel.classList.toggle('active', panel.id === `panel-${tab}`);
+      });
     }
 
     // Live clock

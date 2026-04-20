@@ -231,7 +231,8 @@ input:focus {
   box-shadow: 0 0 30px -5px rgba(59,130,246,0.5);
 }
 
-/* Outlook / OAuth button */
+/* OAuth buttons */
+.btn-google,
 .btn-outlook {
   width: 100%; padding: 10px; border-radius: 12px;
   font-family: inherit; font-size: 0.875rem; font-weight: 600;
@@ -241,10 +242,12 @@ input:focus {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: all 0.2s; text-decoration: none; margin-bottom: 1rem;
 }
+.btn-google:hover,
 .btn-outlook:hover {
   background: rgba(255,255,255,0.10);
   border-color: rgba(255,255,255,0.25);
 }
+.btn-google svg,
 .btn-outlook svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 /* ── Auth tabs (login page) ── */
