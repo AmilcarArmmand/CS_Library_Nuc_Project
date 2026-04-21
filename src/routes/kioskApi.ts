@@ -39,6 +39,11 @@ function extractStudentId(raw: unknown): string {
   const value = String(raw ?? '').trim().toUpperCase();
   const compact = value.replace(/\s+/g, '');
 
+  const scsuCardNumber = value.match(/(?:^|\D)603277(\d{8})\d{2}(?:\D|$)/) ?? compact.match(/^603277(\d{8})\d{2}$/);
+  if (scsuCardNumber?.[1]) {
+    return scsuCardNumber[1];
+  }
+
   if (/^[A-Z0-9]{5,16}$/.test(compact)) {
     return compact;
   }
