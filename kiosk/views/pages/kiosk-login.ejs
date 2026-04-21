@@ -319,8 +319,6 @@
       return value.replace(/[^A-Z0-9]/g, '').match(/[A-Z0-9]{5,16}/)?.[0] ?? '';
     }
 
-    function setScannerStatus(_message, _state = 'ready') {}
-
     function clearScannerTimer() {
       if (scannerState.timer) {
         clearTimeout(scannerState.timer);
@@ -338,7 +336,6 @@
       const studentId = extractStudentId(studentIdInput.value);
       if (studentId) {
         studentIdInput.value = studentId;
-        setScannerStatus('ID scanned. Signing in...', 'scanning');
         loginForm.requestSubmit();
       }
     }
@@ -352,7 +349,6 @@
         return;
       }
       resetScannerBuffer();
-      setScannerStatus('Scanner ready');
     }
 
     studentIdInput.addEventListener('keydown', (e) => {
@@ -378,7 +374,6 @@
         scannerState.buffer += key;
         scannerState.lastAt = now;
         if (scannerState.buffer.length >= MIN_SCANNER_LENGTH) {
-          setScannerStatus('Scanning ID...', 'scanning');
           clearScannerTimer();
           scannerState.timer = setTimeout(finishScannerBuffer, SCANNER_FINISH_MS);
         }
