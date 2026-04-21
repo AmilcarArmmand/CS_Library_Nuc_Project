@@ -8,7 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     body {
       font-family: 'Space Grotesk', sans-serif;
@@ -16,6 +23,19 @@
       overflow-x: hidden;
       min-height: 100vh;
       color: white;
+      touch-action: pan-y;
+      -webkit-touch-callout: none;
+      overscroll-behavior-y: contain;
+    }
+
+    input, textarea {
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: manipulation;
+    }
+
+    button, a, .book-card, .filter-btn, .nav-btn, .nav-search-btn {
+      touch-action: manipulation;
     }
 
     /* ── Starfield ── */
