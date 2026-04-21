@@ -35,6 +35,27 @@ function requireKioskKey(req: Request, res: Response, next: NextFunction): void 
 
 router.use(requireKioskKey);
 
+function extractStudentId(raw: unknown): string {
+  const value = String(raw ?? '').trim().toUpperCase();
+  const compact = value.replace(/\s+/g, '');
+
+  if (/^[A-Z0-9]{5,16}$/.test(compact)) {
+    return compact;
+  }
+
+  const labeled = value.match(/(?:STUDENT\s*ID|STUDENTID|EMPLID|EMPLOYEE\s*ID|EMPLOYEEID|ID)[^A-Z0-9]{0,8}([A-Z0-9]{5,16})/);
+  if (labeled?.[1]) {
+    return labeled[1].replace(/\s+/g, '');
+  }
+
+  const numericCandidate = value.match(/\d{5,16}/);
+  if (numericCandidate?.[0]) {
+    return numericCandidate[0];
+  }
+
+  return value.replace(/[^A-Z0-9]/g, '').match(/[A-Z0-9]{5,16}/)?.[0] ?? '';
+}
+
 async function findActiveHoldForBook(isbn: string) {
   const [hold] = await db
     .select({
@@ -58,8 +79,7 @@ async function findActiveHoldForBook(isbn: string) {
 
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const raw       = String(req.body.studentId ?? '');
-    const studentId = raw.replace(/\s+/g, '').toUpperCase();
+    const studentId = extractStudentId(req.body.studentId);
 
     if (!/^[A-Z0-9]{5,16}$/.test(studentId)) {
       res.status(400).json({ error: 'Invalid student ID format.' });

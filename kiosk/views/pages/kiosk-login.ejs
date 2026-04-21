@@ -178,6 +178,16 @@
       background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
       margin-bottom: 0.75rem;
     }
+    .scanner-status {
+      font-size: 0.68rem;
+      color: rgba(148,163,184,0.72);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      min-height: 1rem;
+      margin-top: 0.4rem;
+    }
+    .scanner-status.ready { color: rgba(96,165,250,0.86); }
+    .scanner-status.scanning { color: #bfdbfe; }
 
     .btn-primary {
       width: 100%; padding: 0.875rem;
@@ -259,7 +269,8 @@
             </div>
             <input type="text" name="studentId" id="studentIdInput"
               placeholder="Enter or scan your ID..."
-              autofocus autocomplete="off" />
+              autofocus autocomplete="off" autocapitalize="characters" spellcheck="false" />
+            <p class="scanner-status ready" id="scannerStatus">Scanner ready</p>
           </div>
 
           <button type="submit" class="btn-primary">Sign In</button>
@@ -277,19 +288,68 @@
 
   <script>
     const studentIdInput = document.getElementById('studentIdInput');
+    const scannerStatus = document.getElementById('scannerStatus');
     const loginForm = studentIdInput.closest('form');
-    const scannerState = { buffer: '', lastAt: 0 };
+    const scannerState = { buffer: '', lastAt: 0, timer: null };
     const SCANNER_CHAR_GAP_MS = 45;
+    const SCANNER_FINISH_MS = 100;
     const MIN_SCANNER_LENGTH = 5;
 
     function focusStudentId() {
       requestAnimationFrame(() => studentIdInput.focus());
     }
 
+    function extractStudentId(raw) {
+      const value = String(raw ?? '').trim().toUpperCase();
+      const compact = value.replace(/\s+/g, '');
+      if (/^[A-Z0-9]{5,16}$/.test(compact)) return compact;
+
+      const labeled = value.match(/(?:STUDENT\s*ID|STUDENTID|EMPLID|EMPLOYEE\s*ID|EMPLOYEEID|ID)[^A-Z0-9]{0,8}([A-Z0-9]{5,16})/);
+      if (labeled?.[1]) return labeled[1].replace(/\s+/g, '');
+
+      const numericCandidate = value.match(/\d{5,16}/);
+      if (numericCandidate?.[0]) return numericCandidate[0];
+
+      return value.replace(/[^A-Z0-9]/g, '').match(/[A-Z0-9]{5,16}/)?.[0] ?? '';
+    }
+
+    function setScannerStatus(message, state = 'ready') {
+      scannerStatus.textContent = message;
+      scannerStatus.className = `scanner-status ${state}`;
+    }
+
+    function clearScannerTimer() {
+      if (scannerState.timer) {
+        clearTimeout(scannerState.timer);
+        scannerState.timer = null;
+      }
+    }
+
+    function resetScannerBuffer() {
+      scannerState.buffer = '';
+      scannerState.lastAt = 0;
+      clearScannerTimer();
+    }
+
     function submitLoginFromScanner() {
-      if (studentIdInput.value.trim()) {
+      const studentId = extractStudentId(studentIdInput.value);
+      if (studentId) {
+        studentIdInput.value = studentId;
+        setScannerStatus('ID scanned. Signing in...', 'scanning');
         loginForm.requestSubmit();
       }
+    }
+
+    function finishScannerBuffer() {
+      const studentId = extractStudentId(scannerState.buffer);
+      if (studentId.length >= MIN_SCANNER_LENGTH) {
+        studentIdInput.value = studentId;
+        resetScannerBuffer();
+        submitLoginFromScanner();
+        return;
+      }
+      resetScannerBuffer();
+      setScannerStatus('Scanner ready');
     }
 
     studentIdInput.addEventListener('keydown', (e) => {
@@ -310,25 +370,36 @@
       const now = performance.now();
       if (!isTerminator) {
         if (!scannerState.lastAt || now - scannerState.lastAt > SCANNER_CHAR_GAP_MS) {
-          scannerState.buffer = '';
+          resetScannerBuffer();
         }
         scannerState.buffer += key;
         scannerState.lastAt = now;
+        if (scannerState.buffer.length >= MIN_SCANNER_LENGTH) {
+          setScannerStatus('Scanning ID...', 'scanning');
+          clearScannerTimer();
+          scannerState.timer = setTimeout(finishScannerBuffer, SCANNER_FINISH_MS);
+        }
         return;
       }
 
-      if (scannerState.buffer.length >= MIN_SCANNER_LENGTH) {
+      const studentId = extractStudentId(scannerState.buffer);
+      if (studentId.length >= MIN_SCANNER_LENGTH) {
         event.preventDefault();
-        studentIdInput.value = scannerState.buffer;
-        scannerState.buffer = '';
-        scannerState.lastAt = 0;
+        studentIdInput.value = studentId;
+        resetScannerBuffer();
         submitLoginFromScanner();
         return;
       }
 
-      scannerState.buffer = '';
-      scannerState.lastAt = 0;
+      resetScannerBuffer();
     }, true);
+
+    studentIdInput.addEventListener('input', () => {
+      const studentId = extractStudentId(studentIdInput.value);
+      if (studentId && studentId !== studentIdInput.value.trim().toUpperCase()) {
+        studentIdInput.value = studentId;
+      }
+    });
 
     window.addEventListener('pageshow', focusStudentId);
     window.addEventListener('focus', focusStudentId);
