@@ -13,7 +13,7 @@ CS Library provides two interfaces over a shared PostgreSQL database:
 
 ---
 
-## Features
+## Core Features
 
 **Web Portal**
 - Microsoft (Outlook) OAuth Ready — signs in with `@southernct.edu` accounts and automatically links the student ID from the user's Microsoft Graph
@@ -36,12 +36,10 @@ CS Library provides two interfaces over a shared PostgreSQL database:
 - Dashboard showing live counts of users, books, and active loans
 - Book management - Add, edit, enrich, and delete books in the library
 - Loan Management - Track all checkout activity and view extension requests
-- User Management - View account data, history, and set a borrowing limit
+- User Management - View account data, history, set a borrowing limit, and promote any user as an admin
 - Track usage reports and view popular books that are currently in the system
 - View logs of donations
 - View user suggestions sent to the server
-- Promote any user to admin via CLI: `npx tsx src/tools/make-admin.ts <email>`
-
 ---
 
 ## Architecture
