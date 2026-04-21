@@ -540,6 +540,58 @@
     @media (max-height: 500px) and (min-width: 700px) {
       .app-header { min-height: 3.85rem; padding-top: max(0.3rem, env(safe-area-inset-top)); padding-bottom: 0.25rem; }
     }
+
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .stars-1, .stars-2, .stars-3 { display: none; }
+      body::before {
+        animation: none;
+        opacity: 0.72;
+      }
+      .app-header,
+      .dash-nav,
+      .nav-search-btn,
+      .search-input,
+      .panel,
+      .toast,
+      .idle-overlay {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+      }
+      .panel,
+      .dash-nav,
+      .nav-search-btn,
+      .book-card,
+      .loan-row.active,
+      .toast,
+      .idle-card {
+        box-shadow: none;
+      }
+      .book-card,
+      .scan-panel,
+      .cart-panel,
+      .return-panel,
+      .mybooks-panel,
+      .toast {
+        animation: none;
+      }
+      .book-card,
+      .nav-btn,
+      .filter-btn,
+      .page-btn,
+      .confirm-btn,
+      .scan-input,
+      .renew-btn,
+      .idle-btn {
+        transition: none;
+      }
+      .book-card:hover {
+        transform: none;
+      }
+      .book-card.checked-out {
+        filter: none;
+        opacity: 0.7;
+      }
+    }
   </style>
 </head>
 <body>
@@ -735,7 +787,7 @@
     let filtered      = [];
     let currentFilter = 'all';
     let currentPage   = 1;
-    const PER_PAGE    = 12;
+    const PER_PAGE    = window.matchMedia('(pointer: coarse)').matches ? 8 : 12;
     let searchQuery   = '';
     let searchTimer   = null;
     const currentUserId = <%= user.id %>;
@@ -945,7 +997,7 @@
         const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
         const holdState = getHoldState(b, isBorrower);
         return `<div class="book-card ${avail ? '' : 'checked-out'} ${b.heldByCurrentUser ? 'held-for-user' : ''}" style="animation-delay:${Math.min(i*.04,.24)}s">
-          <img src="${esc(b.cover||'')}" loading="lazy"
+          <img src="${esc(b.cover||'')}" loading="lazy" decoding="async"
                onerror="this.src='/assets/book-placeholder.svg'" alt="${esc(b.title)}" />
           <div class="book-overlay">
             <p class="book-title">${esc(b.title)}</p>
@@ -1039,7 +1091,7 @@
       empty.style.display = cart.length ? 'none' : 'flex';
       items.innerHTML = cart.map(b=>`
         <div class="cart-item">
-          <img src="${esc(b.cover||'')}" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+          <img src="${esc(b.cover||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
           <div><p class="cart-item-title">${esc(b.title)}</p>
                <p class="cart-item-author">${esc(b.author)}</p>
                <p class="cart-item-due">Due: ${dueShort()}</p></div>
@@ -1149,7 +1201,7 @@
           const dueLabel= overdue ? `OVERDUE: ${dueStr}` : `Due: ${dueStr}`;
           return `
             <div class="loan-row active">
-              <img src="${esc(loan.cover||'')}" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <img src="${esc(loan.cover||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
               <div class="loan-info">
                 <p class="loan-title">${esc(loan.title)}</p>
                 <p class="loan-author">${esc(loan.author)}</p>
@@ -1167,7 +1219,7 @@
             : 'N/A';
           return `
             <div class="loan-row history">
-              <img src="${esc(loan.cover||'')}" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <img src="${esc(loan.cover||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
               <div class="loan-info">
                 <p class="loan-title">${esc(loan.title)}</p>
                 <p class="loan-author">${esc(loan.author)}</p>

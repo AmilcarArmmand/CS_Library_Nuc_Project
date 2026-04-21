@@ -59,9 +59,15 @@ while true; do
     --incognito \
     --noerrdialogs \
     --disable-infobars \
+    --disable-background-networking \
     --disable-session-crashed-bubble \
     --disable-component-update \
+    --disable-default-apps \
+    --disable-extensions \
+    --disable-sync \
     --disable-features=Translate,MediaRouter,OptimizationHints,AutofillServerCommunication \
+    --enable-low-end-device-mode \
+    --num-raster-threads=2 \
     --overscroll-history-navigation=0 \
     --check-for-update-interval=31536000 \
     --disk-cache-dir=/dev/null \

@@ -229,6 +229,24 @@
       .right-panel { width: 100%; min-height: 100vh; }
       .form-box { width: 100%; max-width: 360px; }
     }
+
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .stars-1, .stars-2 { display: none; }
+      body::before { opacity: 0.72; }
+      .stars-1,
+      .stars-2,
+      .left-panel,
+      .btn-primary,
+      input[type="text"] {
+        animation: none;
+        transition: none;
+      }
+      .left-logo .accent-bar,
+      .accent-bar-form,
+      .btn-primary:hover {
+        box-shadow: none;
+      }
+    }
   </style>
 </head>
 <body>
