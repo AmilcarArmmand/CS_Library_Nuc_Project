@@ -197,17 +197,6 @@
       background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);
       margin-bottom: 0.75rem;
     }
-    .scanner-status {
-      font-size: 0.68rem;
-      color: rgba(148,163,184,0.72);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      min-height: 1rem;
-      margin-top: 0.4rem;
-    }
-    .scanner-status.ready { color: rgba(96,165,250,0.86); }
-    .scanner-status.scanning { color: #bfdbfe; }
-
     .btn-primary {
       width: 100%; padding: 0.875rem;
       border-radius: 9999px;
@@ -289,7 +278,6 @@
             <input type="text" name="studentId" id="studentIdInput"
               placeholder="Enter or scan your ID..."
               autofocus autocomplete="off" autocapitalize="characters" spellcheck="false" />
-            <p class="scanner-status ready" id="scannerStatus">Scanner ready</p>
           </div>
 
           <button type="submit" class="btn-primary">Sign In</button>
@@ -307,7 +295,6 @@
 
   <script>
     const studentIdInput = document.getElementById('studentIdInput');
-    const scannerStatus = document.getElementById('scannerStatus');
     const loginForm = studentIdInput.closest('form');
     const scannerState = { buffer: '', lastAt: 0, timer: null };
     const SCANNER_CHAR_GAP_MS = 45;
@@ -332,10 +319,7 @@
       return value.replace(/[^A-Z0-9]/g, '').match(/[A-Z0-9]{5,16}/)?.[0] ?? '';
     }
 
-    function setScannerStatus(message, state = 'ready') {
-      scannerStatus.textContent = message;
-      scannerStatus.className = `scanner-status ${state}`;
-    }
+    function setScannerStatus(_message, _state = 'ready') {}
 
     function clearScannerTimer() {
       if (scannerState.timer) {
