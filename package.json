@@ -41,7 +41,7 @@
     "connect-pg-simple": "^9.0.1",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
-    "drizzle-orm": "^0.31.2",
+    "drizzle-orm": "^0.45.2",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "express-session": "^1.19.0",
@@ -63,7 +63,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/passport-microsoft": "^2.1.1",
     "@types/pg": "^8.11.6",
-    "drizzle-kit": "^0.22.7",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.15.0",
     "typescript": "^5.4.5"
   }
