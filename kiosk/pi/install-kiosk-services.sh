@@ -67,6 +67,11 @@ fi
 python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_USER_CONFIG}"
 
 chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
+
+# Tell labwc to reload its config
+echo "  Reloading labwc config..."
+sudo -u "${KIOSK_USER}" labwc --reconfigure 2>/dev/null || true
+
 echo "Setup complete!"
 echo ""
 echo "Start the new services with:"
