@@ -40,8 +40,9 @@ fi
 # Check .env exists
 if [ ! -f ".env" ]; then
     echo "ERROR: kiosk/.env file not found."
-    echo "  Copy kiosk/.env.example to kiosk/.env and fill in your values."
-    echo "  Use the following command: cp .env.example .env"
+    echo "Copy kiosk/.env.example to kiosk/.env and fill in your values."
+    echo "Use the following command:"
+    echo "cp .env.example .env"
     exit 1
 fi
 
