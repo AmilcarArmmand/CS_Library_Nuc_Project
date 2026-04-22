@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KIOSK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 KIOSK_USER="${SUDO_USER:-$(id -un)}"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
+LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
+LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
 
 if [[ -z "${KIOSK_HOME}" ]]; then
   echo "Could not determine home directory for ${KIOSK_USER}."
@@ -42,8 +44,33 @@ echo "Installed:"
 echo "  /etc/systemd/system/cs-library-kiosk-app.service"
 echo "  /etc/systemd/system/cs-library-kiosk-browser.service"
 echo ""
-echo "Start them with:"
-echo "  sudo systemctl start cs-library-kiosk-app.service"
-echo "  sudo systemctl start cs-library-kiosk-browser.service"
+
+echo "Configuring labwc keyboard shortcuts for kiosk..."
+
+# Backup system config
+if [[ -f "${LABWC_SYSTEM_CONFIG}" ]]; then
+  cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_SYSTEM_CONFIG}.backup"
+  echo "  Backed up: ${LABWC_SYSTEM_CONFIG}.backup"
+fi
+
+# Backup user config if it has real content
+if [[ -f "${LABWC_USER_CONFIG}" ]] && grep -q "<keybind" "${LABWC_USER_CONFIG}"; then
+  cp "${LABWC_USER_CONFIG}" "${LABWC_USER_CONFIG}.backup"
+  echo "  Backed up: ${LABWC_USER_CONFIG}.backup"
+fi
+
+# Start from system config if user config is essentially empty
+if [[ ! -s "${LABWC_USER_CONFIG}" ]] || ! grep -q "<keybind" "${LABWC_USER_CONFIG}"; then
+  cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_USER_CONFIG}"
+fi
+
+python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_USER_CONFIG}"
+
+chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
+echo "Setup complete!"
+echo ""
+echo "Start the new services with:"
+echo "sudo systemctl start cs-library-kiosk-app.service"
+echo "sudo systemctl start cs-library-kiosk-browser.service"
 echo ""
 echo "Or reboot the Pi after confirming kiosk/.env is correct."
