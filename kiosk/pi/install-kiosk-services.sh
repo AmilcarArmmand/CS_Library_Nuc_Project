@@ -90,10 +90,6 @@ EOF
 echo "  Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
 echo ""
 
-# Tell labwc to reload its config
-echo "  Reloading labwc config..."
-pkill -SIGUSR1 labwc 2>/dev/null || true
-
 echo "Setup complete!"
 echo ""
 echo "Start the new services with:"

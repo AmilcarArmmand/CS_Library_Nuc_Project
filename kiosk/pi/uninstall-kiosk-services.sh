@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
+if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
+  echo "CAUTION: DESKTOP ENVIRONMENT DETECTED"
+  echo "  You are running this script via the desktop, not over SSH."
+  echo "  Your session from the desktop will be interrupted during uninstallation."
+  echo "  It is recommended to run this script over SSH instead."
+  echo "  After the installation is complete, you have to login on the computer again."
+  echo ""
+fi
+
 APP_SERVICE="cs-library-kiosk-app.service"
 BROWSER_SERVICE="cs-library-kiosk-browser.service"
 
