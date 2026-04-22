@@ -50,13 +50,14 @@ process.env['CLOUD_API_URL'] = CLOUD_API_URL;
 // VIEW ENGINE
 app.set('view engine', 'ejs');
 // Views live in kiosk/views/ (not compiled — EJS is read at runtime)
-app.set('views', path.join(process.cwd(), 'views'));
+app.set('views', path.join(process.cwd(), 'src', 'views'));
 
 // STATIC ASSETS
 // Adjust the path if your repo structure differs.
-app.use('/assets', express.static(path.join(process.cwd(), '..', 'assets')));
-app.use('/images', express.static(path.join(process.cwd(), '..', 'assets')));
-app.use('/favicon1.ico', express.static(path.join(process.cwd(), '..', 'favicon1.ico')));
+app.use(express.static(path.join(process.cwd(), 'src', 'public')));
+app.use('/assets', express.static(path.join(process.cwd(), 'assets')));
+app.use('/images', express.static(path.join(process.cwd(), 'assets')));
+app.use('/favicon1.ico', express.static(path.join(process.cwd(), 'favicon1.ico')));
 
 // MIDDLEWARE
 app.use(express.urlencoded({ extended: true }));
