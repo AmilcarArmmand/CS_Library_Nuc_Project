@@ -50,6 +50,12 @@ if [[ -f "${LABWC_USER_CONFIG}.backup" ]]; then
   echo "  Restored: ${LABWC_USER_CONFIG}"
 fi
 
+# Remove Chromium kiosk policy
+echo "Removing Chromium kiosk policy..."
+sudo rm -f "/etc/chromium/policies/managed/kiosk.json"
+echo "  Removed: /etc/chromium/policies/managed/kiosk.json"
+echo ""
+
 echo ""
 echo "Uninstallation complete! The kiosk services will no longer start on boot."
 echo "Keyboard shortcuts have been restored."

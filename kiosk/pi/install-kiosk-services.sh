@@ -8,6 +8,7 @@ KIOSK_USER="${SUDO_USER:-$(id -un)}"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
+CHROMIUM_POLICY_DIR="/etc/chromium/policies/managed"
 
 if [[ -z "${KIOSK_HOME}" ]]; then
   echo "Could not determine home directory for ${KIOSK_USER}."
@@ -67,6 +68,20 @@ fi
 python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_USER_CONFIG}"
 
 chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
+
+# Install Chromium kiosk policy
+echo "Installing Chromium kiosk policy..."
+sudo mkdir -p "${CHROMIUM_POLICY_DIR}"
+sudo tee "${CHROMIUM_POLICY_DIR}/kiosk.json" > /dev/null <<'EOF'
+{
+  "URLBlocklist": ["chrome://downloads", "chrome://history", "chrome://bookmarks", "chrome://help"],
+  "PrintingEnabled": false,
+  "TaskManagerEndProcessEnabled": false,
+  "AllowDinosaurEasterEgg": false
+}
+EOF
+echo "  Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
+echo ""
 
 # Tell labwc to reload its config
 echo "  Reloading labwc config..."
