@@ -2,6 +2,15 @@
 
 set -euo pipefail
 
+if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
+  echo "CAUTION: DESKTOP ENVIRONMENT DETECTED"
+  echo "  You are running this script via the desktop, not over SSH."
+  echo "  Your session from the desktop will be interrupted during install."
+  echo "  It is recommended to run this script over SSH instead."
+  echo "  After the installation is complete, you have to login on the computer again."
+  echo ""
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KIOSK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 KIOSK_USER="${SUDO_USER:-$(id -un)}"
@@ -74,7 +83,8 @@ echo "Installing Chromium kiosk policy..."
 sudo mkdir -p "${CHROMIUM_POLICY_DIR}"
 sudo tee "${CHROMIUM_POLICY_DIR}/kiosk.json" > /dev/null <<'EOF'
 {
-  "URLBlocklist": ["chrome://downloads", "chrome://history", "chrome://bookmarks", "chrome://help"],
+  "URLBlocklist": ["*"],
+  "URLAllowlist": ["localhost", "localhost:*"],
   "PrintingEnabled": false,
   "TaskManagerEndProcessEnabled": false,
   "AllowDinosaurEasterEgg": false

@@ -21,8 +21,8 @@ sudo rm -f "/etc/systemd/system/${BROWSER_SERVICE}"
 sudo systemctl daemon-reload
 
 echo "Removed:"
-echo "  /etc/systemd/system/${APP_SERVICE}"
-echo "  /etc/systemd/system/${BROWSER_SERVICE}"
+echo "/etc/systemd/system/${APP_SERVICE}"
+echo "/etc/systemd/system/${BROWSER_SERVICE}"
 echo ""
 
 # Close Chromium if it's still running
@@ -41,19 +41,32 @@ echo "Restoring labwc config..."
 if [[ -f "${LABWC_SYSTEM_CONFIG}.backup" ]]; then
   sudo cp "${LABWC_SYSTEM_CONFIG}.backup" "${LABWC_SYSTEM_CONFIG}"
   sudo rm -f "${LABWC_SYSTEM_CONFIG}.backup"
-  echo "  Restored: ${LABWC_SYSTEM_CONFIG}"
+  echo "Restored: ${LABWC_SYSTEM_CONFIG}"
+else
+  echo "No system config backup found — already restored or never modified."
 fi
 
 if [[ -f "${LABWC_USER_CONFIG}.backup" ]]; then
   cp "${LABWC_USER_CONFIG}.backup" "${LABWC_USER_CONFIG}"
   rm -f "${LABWC_USER_CONFIG}.backup"
-  echo "  Restored: ${LABWC_USER_CONFIG}"
+  echo "Restored: ${LABWC_USER_CONFIG}"
+else
+  echo "No user config backup found — already restored or never modified."
 fi
+
+pkill -SIGUSR1 labwc 2>/dev/null || true
+echo "labwc config reloaded."
+echo ""
 
 # Remove Chromium kiosk policy
 echo "Removing Chromium kiosk policy..."
-sudo rm -f "/etc/chromium/policies/managed/kiosk.json"
-echo "  Removed: /etc/chromium/policies/managed/kiosk.json"
+if [[ -f "/etc/chromium/policies/managed/kiosk.json" ]]; then
+  sudo rm -f "/etc/chromium/policies/managed/kiosk.json"
+  echo "Removed:"
+  echo "/etc/chromium/policies/managed/kiosk.json"
+else
+  echo "Policy not found — already removed or never installed."
+fi
 echo ""
 
 echo ""
