@@ -218,17 +218,3 @@ input:focus {
   .right-panel { width: 100%; min-height: 100vh; }
   .form-box { width: 100%; max-width: 360px; }
 }
-
-/* ── Touch / reduced motion ── */
-@media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  body::before { opacity: 0.72; }
-  .btn-primary,
-  input[type="text"] {
-    transition: none;
-  }
-  .left-logo .accent-bar,
-  .accent-bar-form,
-  .btn-primary:hover {
-    box-shadow: none;
-  }
-}

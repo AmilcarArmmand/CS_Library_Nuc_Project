@@ -57,11 +57,6 @@ body::before {
     radial-gradient(ellipse at 50% 80%, rgba(88,28,135,0.08), transparent 40%);
 }
 
-/* ── Entry animations ── */
-@keyframes cardIn  { from{opacity:0;transform:translateY(18px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
-@keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
-@keyframes dropDown{ from{opacity:0;transform:translateY(-24px)} to{opacity:1;transform:translateY(0)} }
-
 /* ── Header ── */
 .app-header {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
@@ -254,8 +249,6 @@ body::before {
   position: relative; border-radius: 1rem; overflow: hidden;
   border: 1px solid rgba(71,85,105,0.5); background: rgba(21,25,36,0.8);
   cursor: pointer; transition: transform 0.3s, opacity 0.3s;
-  animation: cardIn 0.45s cubic-bezier(0.16,1,0.3,1) both;
-  will-change: transform;
 }
 .book-card:hover { transform: scale(1.03); }
 .book-card.checked-out { opacity: 0.6; filter: grayscale(1); border-color: rgba(239,68,68,0.5); }
@@ -299,7 +292,7 @@ body::before {
 /* ── Checkout ── */
 .checkout-row { display: flex; gap: 1.25rem; width: 100%; flex-direction: column; }
 @media (min-width: 768px) { .checkout-row { flex-direction: row; } }
-.scan-panel, .cart-panel { flex: 1; padding: 1.75rem; display: flex; flex-direction: column; align-items: center; text-align: center; animation: slideUp 0.4s ease-out; }
+.scan-panel, .cart-panel { flex: 1; padding: 1.75rem; display: flex; flex-direction: column; align-items: center; text-align: center;}
 .cart-panel { text-align: left; height: 420px; }
 @media (min-width: 768px) { .cart-panel { height: 500px; } }
 
@@ -343,7 +336,7 @@ body::before {
 .confirm-btn.on:hover { background: rgba(59,130,246,0.35); }
 
 /* ── Return ── */
-.return-panel { width: 100%; max-width: 52rem; padding: 2.25rem 1.75rem; text-align: center; animation: slideUp 0.4s ease-out; }
+.return-panel { width: 100%; max-width: 52rem; padding: 2.25rem 1.75rem; text-align: center;}
 .return-layout { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; margin-top: 1.25rem; }
 @media (min-width: 768px) { .return-layout { flex-direction: row; justify-content: center; gap: 4rem; text-align: left; } }
 .return-cover { width: 9rem; height: 13.5rem; object-fit: cover; border-radius: 1rem; border: 1px solid #475569; box-shadow: 0 16px 36px rgba(0,0,0,0.6); flex-shrink: 0; }
@@ -353,7 +346,7 @@ body::before {
 .return-title { font-size: 1.75rem; font-weight: 700; line-height: 1.2; }
 
 /* ── My Books ── */
-.mybooks-panel { width: 100%; max-width: 52rem; padding: 1.75rem; max-height: 75vh; overflow-y: auto; animation: slideUp 0.4s ease-out; }
+.mybooks-panel { width: 100%; max-width: 52rem; padding: 1.75rem; max-height: 75vh; overflow-y: auto;}
 .section-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.85rem; }
 .divider { width: 100%; height: 1px; background: rgba(71,85,105,0.5); margin: 1.25rem 0; }
 
@@ -391,7 +384,7 @@ body::before {
   padding: 0.7rem 1.1rem; border-radius: 0.75rem; font-size: 0.82rem; font-weight: 700;
   border: 1px solid; min-width: 15rem; max-width: 24rem; text-align: center;
   backdrop-filter: blur(12px); pointer-events: auto;
-  animation: dropDown 0.4s cubic-bezier(0.16,1,0.3,1); box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
 }
 .toast.positive { background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); }
 .toast.negative { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
@@ -505,52 +498,4 @@ body::before {
 }
 @media (max-height: 500px) and (min-width: 700px) {
   .app-header { min-height: 3.85rem; padding-top: max(0.3rem, env(safe-area-inset-top)); padding-bottom: 0.25rem; }
-}
-
-/*
- * Touch/reduced-motion: disable backdrop-filter, box-shadows, and animations.
- * On a Pi with a touch screen (pointer: coarse), this block will always match —
- * which is the main reason the page performs well on the Pi.
- */
-@media (pointer: coarse), (prefers-reduced-motion: reduce) {
-  body::before { opacity: 0.72; }
-  .app-header,
-  .dash-nav,
-  .nav-search-btn,
-  .search-input,
-  .panel,
-  .toast,
-  .idle-overlay {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  .panel,
-  .dash-nav,
-  .nav-search-btn,
-  .book-card,
-  .loan-row.active,
-  .toast,
-  .idle-card {
-    box-shadow: none;
-  }
-  .book-card,
-  .scan-panel,
-  .cart-panel,
-  .return-panel,
-  .mybooks-panel,
-  .toast {
-    animation: none;
-  }
-  .book-card,
-  .nav-btn,
-  .filter-btn,
-  .page-btn,
-  .confirm-btn,
-  .scan-input,
-  .renew-btn,
-  .idle-btn {
-    transition: none;
-  }
-  .book-card:hover { transform: none; }
-  .book-card.checked-out { filter: none; opacity: 0.7; }
 }

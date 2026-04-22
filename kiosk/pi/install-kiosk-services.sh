@@ -105,12 +105,11 @@ pkill -SIGUSR1 labwc 2>/dev/null || true
 echo ""
 echo "Setup complete!"
 echo ""
-echo "Start the new services with:"
-echo "sudo systemctl start cs-library-kiosk-app.service"
-echo "sudo systemctl start cs-library-kiosk-browser.service"
-echo "Or..."
-echo "npm run start-kiosk"
+echo "Starting the new services..."
+sudo systemctl start cs-library-kiosk-app.service
+sudo systemctl start cs-library-kiosk-browser.service
 echo ""
+echo "A reboot is required for the changes to take full effect."
 read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
 if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
   echo "Rebooting..."
