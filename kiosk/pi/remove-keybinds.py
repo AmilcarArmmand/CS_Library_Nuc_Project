@@ -53,5 +53,5 @@ for keybind in keyboard.findall('ob:keybind', ns) or keyboard.findall('keybind')
 
 ET.indent(tree, space='  ')
 tree.write(output_path, encoding='unicode', xml_declaration=True)
-
-print(f"  Done. Neutralized {len(neutralized)} keybind(s): {', '.join(neutralized)}")
+print("")
+print(f"Done. Neutralized {len(neutralized)} keybind(s): {', '.join(neutralized)}")

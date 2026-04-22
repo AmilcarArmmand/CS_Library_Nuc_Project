@@ -55,8 +55,8 @@ sudo systemctl enable cs-library-kiosk-browser.service
 
 echo ""
 echo "Installed:"
-echo "  /etc/systemd/system/cs-library-kiosk-app.service"
-echo "  /etc/systemd/system/cs-library-kiosk-browser.service"
+echo "/etc/systemd/system/cs-library-kiosk-app.service"
+echo "/etc/systemd/system/cs-library-kiosk-browser.service"
 echo ""
 
 echo "Configuring labwc keyboard shortcuts for kiosk..."
@@ -64,13 +64,13 @@ echo "Configuring labwc keyboard shortcuts for kiosk..."
 # Backup system config
 if [[ -f "${LABWC_SYSTEM_CONFIG}" ]]; then
   sudo cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_SYSTEM_CONFIG}.backup"
-  echo "  Backed up: ${LABWC_SYSTEM_CONFIG}.backup"
+  echo "Backed up: ${LABWC_SYSTEM_CONFIG}.backup"
 fi
 
 # Backup user config if it has real content
 if [[ -f "${LABWC_USER_CONFIG}" ]] && grep -q "<keybind" "${LABWC_USER_CONFIG}"; then
   cp "${LABWC_USER_CONFIG}" "${LABWC_USER_CONFIG}.backup"
-  echo "  Backed up: ${LABWC_USER_CONFIG}.backup"
+  echo "Backed up: ${LABWC_USER_CONFIG}.backup"
 fi
 
 # Start from system config if user config is essentially empty
@@ -94,19 +94,22 @@ sudo tee "${CHROMIUM_POLICY_DIR}/kiosk.json" > /dev/null <<'EOF'
   "AllowDinosaurEasterEgg": false
 }
 EOF
-echo "  Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
+echo ""
+echo "Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
 echo ""
 
 # Tell labwc to reload its config
-echo "  Reloading labwc config..."
+echo "Reloading labwc config..."
 pkill -SIGUSR1 labwc 2>/dev/null || true
 
+echo ""
 echo "Setup complete!"
 echo ""
 echo "Start the new services with:"
 echo "sudo systemctl start cs-library-kiosk-app.service"
 echo "sudo systemctl start cs-library-kiosk-browser.service"
-echo ""
+echo "Or..."
+echo "npm run start-kiosk"
 echo ""
 read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
 if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
