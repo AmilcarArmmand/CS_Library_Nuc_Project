@@ -49,7 +49,7 @@ echo "Configuring labwc keyboard shortcuts for kiosk..."
 
 # Backup system config
 if [[ -f "${LABWC_SYSTEM_CONFIG}" ]]; then
-  cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_SYSTEM_CONFIG}.backup"
+  sudo cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_SYSTEM_CONFIG}.backup"
   echo "  Backed up: ${LABWC_SYSTEM_CONFIG}.backup"
 fi
 
