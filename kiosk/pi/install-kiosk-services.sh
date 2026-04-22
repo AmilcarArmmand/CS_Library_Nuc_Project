@@ -70,7 +70,7 @@ chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
 
 # Tell labwc to reload its config
 echo "  Reloading labwc config..."
-sudo -u "${KIOSK_USER}" labwc --reconfigure 2>/dev/null || true
+pkill -SIGUSR1 labwc 2>/dev/null || true
 
 echo "Setup complete!"
 echo ""
