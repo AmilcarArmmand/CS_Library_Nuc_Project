@@ -7,7 +7,13 @@ if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
   echo "  You are running this script via the desktop, not over SSH."
   echo "  Your session from the desktop will be interrupted during uninstallation."
   echo "  It is recommended to run this script over SSH instead."
-  echo "  After the installation is complete, you have to login on the computer again."
+  echo "  After the uninstallation is complete, you have to login again."
+  echo ""
+  read -r -p "Continue anyway? [y/N]: " DESKTOP_CONFIRM
+  if [[ ! "${DESKTOP_CONFIRM}" =~ ^[Yy]$ ]]; then
+    echo "Exiting..."
+    exit 0
+  fi
   echo ""
 fi
 

@@ -7,7 +7,14 @@ if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
   echo "  You are running this script via the desktop, not over SSH."
   echo "  Your session from the desktop will be interrupted during install."
   echo "  It is recommended to run this script over SSH instead."
-  echo "  After the installation is complete, you have to login on the computer again."
+  echo "  After the installation is complete, you have to login on"
+  echo "  the computer again and enable the services manually."
+  echo ""
+  read -r -p "Continue anyway? [y/N]: " DESKTOP_CONFIRM
+  if [[ ! "${DESKTOP_CONFIRM}" =~ ^[Yy]$ ]]; then
+    echo "Exiting..."
+    exit 0
+  fi
   echo ""
 fi
 
