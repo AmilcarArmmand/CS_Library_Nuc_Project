@@ -78,7 +78,7 @@ if [[ ! -s "${LABWC_USER_CONFIG}" ]] || ! grep -q "<keybind" "${LABWC_USER_CONFI
   cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_USER_CONFIG}"
 fi
 
-python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_USER_CONFIG}"
+python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_SYSTEM_CONFIG}" "${LABWC_USER_CONFIG}"
 
 chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
 
