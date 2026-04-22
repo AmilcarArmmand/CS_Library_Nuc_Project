@@ -90,10 +90,22 @@ EOF
 echo "  Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
 echo ""
 
+# Tell labwc to reload its config
+echo "  Reloading labwc config..."
+pkill -SIGUSR1 labwc 2>/dev/null || true
+
 echo "Setup complete!"
 echo ""
 echo "Start the new services with:"
 echo "sudo systemctl start cs-library-kiosk-app.service"
 echo "sudo systemctl start cs-library-kiosk-browser.service"
 echo ""
-echo "Or reboot the Pi after confirming kiosk/.env is correct."
+echo ""
+read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
+if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
+  echo "Rebooting..."
+  sudo reboot
+else
+  echo "Reboot skipped. Some changes may not take full effect until you reboot."
+fi
+echo ""

@@ -81,5 +81,12 @@ echo ""
 echo ""
 echo "Uninstallation complete! The kiosk services will no longer start on boot."
 echo "Keyboard shortcuts have been restored."
-echo "You may need to log out and back in, or reboot for shortcut changes to take effect."
+echo ""
+read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
+if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
+  echo "Rebooting..."
+  sudo reboot
+else
+  echo "Reboot skipped. Some changes may not take full effect until you reboot."
+fi
 echo ""
