@@ -11,6 +11,7 @@
     "start": "node dist/app.js",
     "install-kiosk": "cd pi && ./install-kiosk-services.sh",
     "uninstall-kiosk": "cd pi && ./uninstall-kiosk-services.sh",
+    "start-kiosk": "sudo systemctl start cs-library-kiosk-app.service && sudo systemctl start cs-library-kiosk-browser.service && exit 0",
     "test": "echo \"Setup Jest aready!\" && exit 1"
   },
   "dependencies": {
