@@ -40,9 +40,6 @@ trap 'rm -f "${TMP_APP_SERVICE}" "${TMP_BROWSER_SERVICE}"' EXIT
 render_service "${SCRIPT_DIR}/cs-library-kiosk-app.service.template" > "${TMP_APP_SERVICE}"
 render_service "${SCRIPT_DIR}/cs-library-kiosk-browser.service.template" > "${TMP_BROWSER_SERVICE}"
 
-chmod +x "${SCRIPT_DIR}/launch-chromium-kiosk.sh"
-chmod +x "${KIOSK_ROOT}/start.sh"
-
 sudo cp "${TMP_APP_SERVICE}" /etc/systemd/system/cs-library-kiosk-app.service
 sudo cp "${TMP_BROWSER_SERVICE}" /etc/systemd/system/cs-library-kiosk-browser.service
 sudo systemctl daemon-reload
