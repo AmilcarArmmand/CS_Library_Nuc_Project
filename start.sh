@@ -19,9 +19,9 @@ export NVM_DIR="$HOME/.nvm"
 # Check Node.js is available
 if ! command -v node &> /dev/null; then
     echo "Node.js not found. Install it with:"
-    echo "  curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
-    echo "  source ~/.bashrc"
-    echo "  nvm install --lts"
+    echo "curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash"
+    echo "source ~/.bashrc"
+    echo "nvm install --lts"
     exit 1
 fi
 
@@ -39,8 +39,9 @@ fi
 # Check .env exists
 if [ ! -f ".env" ]; then
     echo "ERROR: .env file not found."
-    echo "  Copy .env.example to .env and fill in your values."
-    echo "  Use the following command: cp .env.example .env"
+    echo "Copy .env.example to .env and fill in your values."
+    echo "Use the following command:"
+    echo "cp .env.example .env"
     exit 1
 fi
 
