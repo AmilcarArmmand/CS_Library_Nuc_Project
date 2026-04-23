@@ -8,7 +8,7 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { users, books, loans, holds, donations } from '../db/schema/schema.js';
+import { users, books, loans, holds, donations, renewalRequests } from '../db/schema/schema.js';
 import { eq, and, asc, count, or } from 'drizzle-orm';
 import { addDays } from 'date-fns';
 import {
@@ -35,6 +35,37 @@ function requireKioskKey(req: Request, res: Response, next: NextFunction): void 
 
 router.use(requireKioskKey);
 
+function extractStudentId(raw: unknown): string {
+  const value = String(raw ?? '').trim().toUpperCase();
+  const compact = value.replace(/\s+/g, '');
+
+  const scsuStudentId = value.match(/(?:^|\D)(70\d{6})(?:\D|$)/) ?? compact.match(/70\d{6}/);
+  if (scsuStudentId?.[1] || scsuStudentId?.[0]) {
+    return scsuStudentId[1] ?? scsuStudentId[0];
+  }
+
+  const scsuCardNumber = value.match(/(?:^|\D)603277(\d{8})\d{2}(?:\D|$)/) ?? compact.match(/^603277(\d{8})\d{2}$/);
+  if (scsuCardNumber?.[1]) {
+    return scsuCardNumber[1];
+  }
+
+  if (/^[A-Z0-9]{5,16}$/.test(compact)) {
+    return compact;
+  }
+
+  const labeled = value.match(/(?:STUDENT\s*ID|STUDENTID|EMPLID|EMPLOYEE\s*ID|EMPLOYEEID|ID)[^A-Z0-9]{0,8}([A-Z0-9]{5,16})/);
+  if (labeled?.[1]) {
+    return labeled[1].replace(/\s+/g, '');
+  }
+
+  const numericCandidate = value.match(/\d{5,16}/);
+  if (numericCandidate?.[0]) {
+    return numericCandidate[0];
+  }
+
+  return value.replace(/[^A-Z0-9]/g, '').match(/[A-Z0-9]{5,16}/)?.[0] ?? '';
+}
+
 async function findActiveHoldForBook(isbn: string) {
   const [hold] = await db
     .select({
@@ -58,8 +89,7 @@ async function findActiveHoldForBook(isbn: string) {
 
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const raw       = String(req.body.studentId ?? '');
-    const studentId = raw.replace(/\s+/g, '').toUpperCase();
+    const studentId = extractStudentId(req.body.studentId);
 
     if (!/^[A-Z0-9]{5,16}$/.test(studentId)) {
       res.status(400).json({ error: 'Invalid student ID format.' });
@@ -484,6 +514,18 @@ router.post('/renew', async (req: Request, res: Response) => {
       return;
     }
 
+    // Check if this loan has already been renewed once
+    const [existingRenewal] = await db
+      .select({ id: renewalRequests.id })
+      .from(renewalRequests)
+      .where(eq(renewalRequests.loanId, loanId))
+      .limit(1);
+
+    if (existingRenewal) {
+      res.status(409).json({ error: 'This loan has already been renewed once.' });
+      return;
+    }
+
     const activeHold = await findActiveHoldForBook(loan.isbn);
     if (activeHold) {
       res.status(409).json({ error: 'This book cannot be renewed because it has an active hold.' });
@@ -491,7 +533,16 @@ router.post('/renew', async (req: Request, res: Response) => {
     }
 
     const newDueDate = addDays(new Date(loan.dueDate), LOAN_PERIOD_DAYS);
+
     await db.update(loans).set({ dueDate: newDueDate }).where(eq(loans.id, loanId));
+
+    // Record the renewal so it can't be done again
+    await db.insert(renewalRequests).values({
+      loanId,
+      userId: loan.userId,
+      status: 'approved',
+      reviewedAt: new Date(),
+    });
 
     res.json({ ok: true, newDueDate });
   } catch (err) {
