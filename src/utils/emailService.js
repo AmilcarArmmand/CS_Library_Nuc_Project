@@ -1,3 +1,6 @@
+/* This file has been specifically modified for the GCP server. We used a
+    different mailer for this so it has been rewritten as such.
+*/
 import { randomUUID } from 'crypto';
 
 import { config } from '../config/env.js';
