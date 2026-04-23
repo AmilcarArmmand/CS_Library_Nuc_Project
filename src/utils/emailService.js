@@ -1,8 +1,5 @@
-/* This file has been specifically modified for the GCP server. We used a
-    different mailer for this so it has been rewritten as such.
-*/
 import { randomUUID } from 'crypto';
-
+import { spawn } from 'child_process';
 import { config } from '../config/env.js';
 
 function escapeHtml(value) {
@@ -59,45 +56,39 @@ async function sendEmail({ to, subject, text, html }) {
     return { success: false, skipped: true, reason: 'missing_from' };
   }
 
-  const apiKey = process.env['RESEND_API_KEY'];
-  if (!apiKey) {
-    console.warn('[Email] Skipping send: RESEND_API_KEY is not configured.');
-    return { success: false, skipped: true, reason: 'missing_api_key' };
-  }
+  const message = buildMessage({ to, subject, text, html });
 
-  const from = formatAddress(config.email.from, config.email.fromName);
-  const toAddresses = Array.isArray(to) ? to : [to];
+  return await new Promise((resolve) => {
+    const child = spawn(config.email.sendmailPath, ['-t', '-i']);
+    let stderr = '';
 
-  try {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type':  'application/json',
-      },
-      body: JSON.stringify({
-        from,
-        to:      toAddresses,
-        subject,
-        html:    html ?? '',
-        text:    text ?? '',
-      }),
+    child.on('error', (error) => {
+      console.error('[Email] Failed to start sendmail:', error);
+      resolve({ success: false, error: error.message });
     });
 
-    const data = await response.json();
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
 
-    if (!response.ok) {
-      console.error('[Email] Resend API error:', data);
-      return { success: false, error: data.message ?? 'Unknown Resend error' };
-    }
+    child.on('close', (code) => {
+      const errorOutput = stderr.trim();
 
-    console.log(`[Email] Sent via Resend — id: ${data.id}`);
-    return { success: true };
+      // Postfix/sendmail can emit submission warnings to stderr even when it exits 0.
+      // Treat that as a failed send so password reset tokens and notices aren't left dangling.
+      if (code === 0 && !errorOutput) {
+        resolve({ success: true });
+        return;
+      }
 
-  } catch (error) {
-    console.error('[Email] Fetch to Resend failed:', error);
-    return { success: false, error: error.message };
-  }
+      const error = errorOutput || `sendmail exited with code ${code}`;
+      console.error('[Email] Send failed:', error);
+      resolve({ success: false, error });
+    });
+
+    child.stdin.write(message);
+    child.stdin.end();
+  });
 }
 
 export async function sendPasswordResetEmail({ to, name, resetUrl, expiresInMinutes }) {
