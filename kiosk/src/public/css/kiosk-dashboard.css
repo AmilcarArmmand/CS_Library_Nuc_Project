@@ -278,6 +278,7 @@ body::before {
 .hold-state-note.muted  { color: #64748b; }
 
 .pagination { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.4rem; margin-top: 2rem; flex-wrap: wrap; }
+#pagination-top { margin-top: 0; margin-bottom: 1rem; }
 .page-btn {
   width: 2.1rem; height: 2.1rem; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-family: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer;

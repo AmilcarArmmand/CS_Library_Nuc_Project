@@ -8,7 +8,7 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { users, books, loans, holds, donations } from '../db/schema/schema.js';
+import { users, books, loans, holds, donations, renewalRequests } from '../db/schema/schema.js';
 import { eq, and, asc, count, or } from 'drizzle-orm';
 import { addDays } from 'date-fns';
 import {
@@ -514,6 +514,18 @@ router.post('/renew', async (req: Request, res: Response) => {
       return;
     }
 
+    // Check if this loan has already been renewed once
+    const [existingRenewal] = await db
+      .select({ id: renewalRequests.id })
+      .from(renewalRequests)
+      .where(eq(renewalRequests.loanId, loanId))
+      .limit(1);
+
+    if (existingRenewal) {
+      res.status(409).json({ error: 'This loan has already been renewed once.' });
+      return;
+    }
+
     const activeHold = await findActiveHoldForBook(loan.isbn);
     if (activeHold) {
       res.status(409).json({ error: 'This book cannot be renewed because it has an active hold.' });
@@ -521,7 +533,16 @@ router.post('/renew', async (req: Request, res: Response) => {
     }
 
     const newDueDate = addDays(new Date(loan.dueDate), LOAN_PERIOD_DAYS);
+
     await db.update(loans).set({ dueDate: newDueDate }).where(eq(loans.id, loanId));
+
+    // Record the renewal so it can't be done again
+    await db.insert(renewalRequests).values({
+      loanId,
+      userId: loan.userId,
+      status: 'approved',
+      reviewedAt: new Date(),
+    });
 
     res.json({ ok: true, newDueDate });
   } catch (err) {

@@ -61,6 +61,7 @@
         <button class="filter-btn"        data-filter="checked_out" onclick="setFilter('checked_out')">CHECKED OUT</button>
         <button class="filter-btn"        data-filter="on_hold"     onclick="setFilter('on_hold')">ON HOLD</button>
       </div>
+      <div class="pagination" id="pagination-top"></div>
       <div class="catalog-grid" id="catalogGrid"></div>
       <div class="pagination"   id="pagination"></div>
     </div>
@@ -214,6 +215,7 @@
     let idleDeadline = 0;
     let lastSessionPingAt = 0;
     const scannerState = { buffer: '', lastAt: 0 };
+    const renewedLoanIds = new Set();
 
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
@@ -435,8 +437,13 @@
     }
 
     function renderPagination(tp) {
-      const pg = document.getElementById('pagination');
-      if (tp <= 1) { pg.innerHTML=''; return; }
+      const html = buildPaginationHTML(tp);
+      document.getElementById('pagination').innerHTML = html;
+      document.getElementById('pagination-top').innerHTML = html;
+    }
+
+    function buildPaginationHTML(tp) {
+      if (tp <= 1) return '';
       let pages = [];
       if (tp <= 7) { pages = Array.from({length:tp},(_,i)=>i+1); }
       else {
@@ -446,13 +453,14 @@
         if (currentPage<tp-2) pages.push('…');
         if (!pages.includes(tp)) pages.push(tp);
       }
-      pg.innerHTML =
+      return (
         `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>` +
         pages.map(p => p==='…'
           ? `<span class="page-dots">···</span>`
           : `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`
         ).join('') +
-        `<button class="page-btn" ${currentPage>=tp?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
+        `<button class="page-btn" ${currentPage>=tp?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`
+      );
     }
 
     function goPage(p) {
@@ -620,7 +628,9 @@
                 <p class="loan-due-label ${dueClass}">${dueLabel}</p>
               </div>
               <div class="loan-actions">
-                <button class="renew-btn" ${overdue?'disabled':''} onclick="renewLoan(${loan.id}, this)">RENEW</button>
+                <button class="renew-btn" ${(overdue || renewedLoanIds.has(loan.id)) ? 'disabled' : ''} onclick="renewLoan(${loan.id}, this)">
+                  ${renewedLoanIds.has(loan.id) ? 'RENEWED' : 'RENEW'}
+                </button>
               </div>
             </div>`;
         }).join('');
@@ -652,6 +662,7 @@
         });
         const d = await r.json();
         if (!r.ok) { toast(d.error??'Could not renew.','warning'); btn.disabled=false; return; }
+        renewedLoanIds.add(loanId);
         toast('Book renewed for 14 more days!','positive');
         await loadMyBooks();
       } catch { toast('Server error.','negative'); btn.disabled=false; }
