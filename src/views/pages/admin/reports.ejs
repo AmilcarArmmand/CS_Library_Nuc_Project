@@ -154,7 +154,8 @@
     <div class="panel">
       <div class="panel-title">Checkouts by Hour of Day</div>
       <% const maxHour = Math.max(...hourOfDay.map(h => Number(h.checkouts)), 1); %>
-      <div class="chart">
+      <div class="table-scroll">
+      <div class="chart" style="min-width: 420px;">
         <% for (let h = 8; h <= 22; h++) { %>
         <% const found = hourOfDay.find(x => Number(x.hour) === h); %>
         <% const c = found ? Number(found.checkouts) : 0; %>
@@ -164,6 +165,7 @@
           <div class="chart-label"><%= h > 12 ? (h-12)+'pm' : h+'am' %></div>
         </div>
         <% } %>
+      </div>
       </div>
     </div>
   </main>

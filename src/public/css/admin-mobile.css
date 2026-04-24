@@ -3,6 +3,17 @@
   display: none;
 }
 
+.main {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
 html {
   overflow-x: hidden;
 }
