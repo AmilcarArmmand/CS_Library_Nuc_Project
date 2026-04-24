@@ -21,6 +21,7 @@ dangerous_keys = [
     'A-F2',        # run dialog
     'C-A-w',       # network menu
     'C-A-b',       # bluetooth menu
+    'A-F4',        # close window
 ]
 
 ET.register_namespace('', 'http://openbox.org/3.4/rc')
