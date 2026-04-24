@@ -3,6 +3,10 @@
   display: none;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 @media (max-width: 768px) {
   body {
     overflow-x: hidden;
@@ -104,6 +108,8 @@
   .main {
     margin-left: 0 !important;
     padding: 5.4rem 1rem 1.2rem !important;
+    min-width: 0;
+    width: 100%;
   }
 
   .page-title {
@@ -117,5 +123,12 @@
 
   .panel {
     padding: 1rem !important;
+    min-width: 0;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 }

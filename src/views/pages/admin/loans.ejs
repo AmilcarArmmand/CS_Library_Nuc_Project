@@ -60,8 +60,6 @@
     .btn-blue:hover { background: rgba(59,130,246,0.28); }
     .btn-red { background: rgba(239,68,68,0.1); color: #f87171; border-color: rgba(239,68,68,0.25); }
     .btn-red:hover { background: rgba(239,68,68,0.2); }
-
-    @media (max-width: 768px) { .sidebar { display: none; } .main { margin-left: 0; } }
   </style>
 </head>
 <body>
@@ -122,6 +120,7 @@
     </div>
 
     <div class="panel">
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -160,6 +159,7 @@
           <% }); %>
         </tbody>
       </table>
+      </div>
     </div>
   </main>
 </div>
