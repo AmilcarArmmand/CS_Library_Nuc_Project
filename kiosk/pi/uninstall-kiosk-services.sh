@@ -2,20 +2,15 @@
 
 set -euo pipefail
 
-if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
-  echo "CAUTION: DESKTOP ENVIRONMENT DETECTED"
-  echo "  You are running this script via the desktop, not over SSH."
-  echo "  Your session from the desktop will be interrupted during uninstallation."
-  echo "  It is recommended to run this script over SSH instead."
-  echo "  After the uninstallation is complete, you have to login again."
-  echo ""
-  read -r -p "Continue anyway? [y/N]: " DESKTOP_CONFIRM
-  if [[ ! "${DESKTOP_CONFIRM}" =~ ^[Yy]$ ]]; then
-    echo "Exiting..."
-    exit 0
-  fi
-  echo ""
+echo "WARNING: This script will automatically reboot the system when complete."
+echo "  Any unsaved work will be lost. Make sure you are ready before continuing."
+echo ""
+read -r -p "Continue? [y/N]: " UNINSTALL_CONFIRM
+if [[ ! "${UNINSTALL_CONFIRM}" =~ ^[Yy]$ ]]; then
+  echo "Exiting..."
+  exit 0
 fi
+echo ""
 
 APP_SERVICE="cs-library-kiosk-app.service"
 BROWSER_SERVICE="cs-library-kiosk-browser.service"
@@ -38,11 +33,6 @@ sudo systemctl daemon-reload
 echo "Removed:"
 echo "/etc/systemd/system/${APP_SERVICE}"
 echo "/etc/systemd/system/${BROWSER_SERVICE}"
-echo ""
-
-# Close Chromium if it's still running
-echo "Closing Chromium..."
-pkill -f "chromium.*--kiosk" 2>/dev/null || true
 echo ""
 
 # Restore labwc rc.xml from backups
@@ -69,10 +59,6 @@ else
   echo "No user config backup found — already restored or never modified."
 fi
 
-pkill -SIGUSR1 labwc 2>/dev/null || true
-echo "labwc config reloaded."
-echo ""
-
 # Remove Chromium kiosk policy
 echo "Removing Chromium kiosk policy..."
 if [[ -f "/etc/chromium/policies/managed/kiosk.json" ]]; then
@@ -88,11 +74,22 @@ echo ""
 echo "Uninstallation complete! The kiosk services will no longer start on boot."
 echo "Keyboard shortcuts have been restored."
 echo ""
-read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
-if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
-  echo "Rebooting..."
-  sudo reboot
-else
-  echo "Reboot skipped. Some changes may not take full effect until you reboot."
-fi
+echo "Reloading labwc config and rebooting..."
+echo "Press Ctrl+C within 15 seconds to cancel the reboot."
+echo ""
+REBOOT_DELAY=15
+for i in $(seq "${REBOOT_DELAY}" -1 1); do
+  echo -ne "\rRebooting in ${i} seconds...   "
+  sleep 1
+done
+echo ""
+pkill -SIGUSR1 labwc 2>/dev/null || true
+
+# Close Chromium if it's still running
+echo "Closing Chromium..."
+pkill -f "chromium.*--kiosk" 2>/dev/null || true
+echo ""
+
+echo "Rebooting..."
+sudo reboot
 echo ""

@@ -2,21 +2,15 @@
 
 set -euo pipefail
 
-if [[ -z "${SSH_CLIENT:-}" && -z "${SSH_TTY:-}" ]]; then
-  echo "CAUTION: DESKTOP ENVIRONMENT DETECTED"
-  echo "  You are running this script via the desktop, not over SSH."
-  echo "  Your session from the desktop will be interrupted during install."
-  echo "  It is recommended to run this script over SSH instead."
-  echo "  After the installation is complete, you have to login on"
-  echo "  the computer again and enable the services manually."
-  echo ""
-  read -r -p "Continue anyway? [y/N]: " DESKTOP_CONFIRM
-  if [[ ! "${DESKTOP_CONFIRM}" =~ ^[Yy]$ ]]; then
-    echo "Exiting..."
-    exit 0
-  fi
-  echo ""
+echo "WARNING: This script will automatically reboot the system when complete."
+echo "  Any unsaved work will be lost. Make sure you are ready before continuing."
+echo ""
+read -r -p "Continue? [y/N]: " INSTALL_CONFIRM
+if [[ ! "${INSTALL_CONFIRM}" =~ ^[Yy]$ ]]; then
+  echo "Exiting..."
+  exit 0
 fi
+echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KIOSK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -98,10 +92,6 @@ echo ""
 echo "Installed: ${CHROMIUM_POLICY_DIR}/kiosk.json"
 echo ""
 
-# Tell labwc to reload its config
-echo "Reloading labwc config..."
-pkill -SIGUSR1 labwc 2>/dev/null || true
-
 echo ""
 echo "Setup complete!"
 echo ""
@@ -109,12 +99,15 @@ echo "Starting the new services..."
 sudo systemctl start cs-library-kiosk-app.service
 sudo systemctl start cs-library-kiosk-browser.service
 echo ""
-echo "A reboot is required for the changes to take full effect."
-read -r -p "Reboot now? [y/N]: " REBOOT_CONFIRM
-if [[ "${REBOOT_CONFIRM}" =~ ^[Yy]$ ]]; then
-  echo "Rebooting..."
-  sudo reboot
-else
-  echo "Reboot skipped. Some changes may not take full effect until you reboot."
-fi
+echo "Reloading labwc config and rebooting..."
+echo "Press Ctrl+C within 15 seconds to cancel the reboot."
 echo ""
+REBOOT_DELAY=15
+for i in $(seq "${REBOOT_DELAY}" -1 1); do
+  echo -ne "\rRebooting in ${i} seconds...   "
+  sleep 1
+done
+echo ""
+pkill -SIGUSR1 labwc 2>/dev/null || true
+echo "Rebooting..."
+sudo reboot
