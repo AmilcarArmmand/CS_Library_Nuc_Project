@@ -99,7 +99,7 @@ echo "Starting the new services..."
 sudo systemctl start cs-library-kiosk-app.service
 sudo systemctl start cs-library-kiosk-browser.service
 echo ""
-echo "Reloading labwc config and rebooting..."
+echo "Rebooting..."
 echo "Press Ctrl+C within 15 seconds to cancel the reboot."
 echo ""
 REBOOT_DELAY=15
@@ -108,6 +108,6 @@ for i in $(seq "${REBOOT_DELAY}" -1 1); do
   sleep 1
 done
 echo ""
-pkill -SIGUSR1 labwc 2>/dev/null || true
+# pkill -SIGUSR1 labwc 2>/dev/null || true
 echo "Rebooting..."
 sudo reboot
