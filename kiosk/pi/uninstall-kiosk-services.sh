@@ -83,13 +83,7 @@ for i in $(seq "${REBOOT_DELAY}" -1 1); do
   sleep 1
 done
 echo ""
-# pkill -SIGUSR1 labwc 2>/dev/null || true
-
-# Close Chromium if it's still running
-echo "Closing Chromium..."
-pkill -f "chromium.*--kiosk" 2>/dev/null || true
-echo ""
 
 echo "Rebooting..."
-sudo reboot
-echo ""
+sudo systemd-run --on-active=5 /sbin/reboot
+pkill -f "chromium.*--kiosk" 2>/dev/null || true ; pkill -SIGUSR1 labwc 2>/dev/null || true
