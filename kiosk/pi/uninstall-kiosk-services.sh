@@ -55,8 +55,11 @@ if [[ -f "${LABWC_USER_CONFIG}.backup" ]]; then
   cp "${LABWC_USER_CONFIG}.backup" "${LABWC_USER_CONFIG}"
   rm -f "${LABWC_USER_CONFIG}.backup"
   echo "Restored: ${LABWC_USER_CONFIG}"
+elif [[ -f "${LABWC_USER_CONFIG}" ]]; then
+  rm -f "${LABWC_USER_CONFIG}"
+  echo "No backup found — removed user config, labwc will fall back to system default."
 else
-  echo "No user config backup found — already restored or never modified."
+  echo "No user config found — nothing to restore."
 fi
 
 # Remove Chromium kiosk policy

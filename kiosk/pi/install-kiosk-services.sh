@@ -54,22 +54,30 @@ echo "/etc/systemd/system/cs-library-kiosk-browser.service"
 echo ""
 
 echo "Configuring labwc keyboard shortcuts for kiosk..."
+echo ""
 
 # Backup system config
 if [[ -f "${LABWC_SYSTEM_CONFIG}" ]]; then
   sudo cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_SYSTEM_CONFIG}.backup"
   echo "Backed up: ${LABWC_SYSTEM_CONFIG}.backup"
+else
+  echo "No system config found — skipping backup."
 fi
 
 # Backup user config if it has real content
 if [[ -f "${LABWC_USER_CONFIG}" ]] && grep -q "<keybind" "${LABWC_USER_CONFIG}"; then
   cp "${LABWC_USER_CONFIG}" "${LABWC_USER_CONFIG}.backup"
   echo "Backed up: ${LABWC_USER_CONFIG}.backup"
+else
+  echo "No user config found — skipping backup."
 fi
 
 # Start from system config if user config is essentially empty
 if [[ ! -s "${LABWC_USER_CONFIG}" ]] || ! grep -q "<keybind" "${LABWC_USER_CONFIG}"; then
+  echo "User config is empty — starting from system config."
   cp "${LABWC_SYSTEM_CONFIG}" "${LABWC_USER_CONFIG}"
+else
+  echo "User config already has content — preserving existing config."
 fi
 
 python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_SYSTEM_CONFIG}" "${LABWC_USER_CONFIG}"
@@ -77,6 +85,7 @@ python3 "${SCRIPT_DIR}/remove-keybinds.py" "${LABWC_SYSTEM_CONFIG}" "${LABWC_USE
 chown "${KIOSK_USER}:${KIOSK_USER}" "${LABWC_USER_CONFIG}"
 
 # Install Chromium kiosk policy
+# Reconfigure to your needs by modifying the JSON written below
 echo "Installing Chromium kiosk policy..."
 sudo mkdir -p "${CHROMIUM_POLICY_DIR}"
 sudo tee "${CHROMIUM_POLICY_DIR}/kiosk.json" > /dev/null <<'EOF'
