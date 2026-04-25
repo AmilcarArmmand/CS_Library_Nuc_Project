@@ -36,7 +36,7 @@ echo "/etc/systemd/system/${BROWSER_SERVICE}"
 echo ""
 
 # Restore labwc rc.xml from backups
-KIOSK_USER="${SUDO_USER:-$(id -un)}"
+KIOSK_USER="kiosk"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
