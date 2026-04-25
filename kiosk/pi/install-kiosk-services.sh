@@ -14,7 +14,7 @@ echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KIOSK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-KIOSK_USER="kiosk"
+KIOSK_USER="${SUDO_USER:-$(id -un)}"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
