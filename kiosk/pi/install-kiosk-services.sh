@@ -21,6 +21,16 @@ LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
 CHROMIUM_POLICY_DIR="/etc/chromium/policies/managed"
 
+echo ""
+echo "Script Directory: ${SCRIPT_DIR}"
+echo "Kiosk Root: ${KIOSK_ROOT}"
+echo "Kiosk User: ${KIOSK_USER}"
+echo "Kiosk Home: ${KIOSK_HOME}"
+echo "Labwc User Config: ${LABWC_USER_CONFIG}"
+echo "Labwc System Config: ${LABWC_SYSTEM_CONFIG}"
+echo "Chromium Policy Directory: ${CHROMIUM_POLICY_DIR}"
+echo ""
+
 # Permissions fix
 echo "Checking app directory permissions..."
 if [[ -d "${KIOSK_ROOT}" ]]; then
