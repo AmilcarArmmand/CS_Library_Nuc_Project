@@ -36,6 +36,7 @@ echo "/etc/systemd/system/${BROWSER_SERVICE}"
 echo ""
 
 # Restore labwc rc.xml from backups
+# Please create the kiosk user and set up the app directory before running this script.
 KIOSK_USER="kiosk"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
@@ -72,6 +73,12 @@ else
   echo "Policy not found — already removed or never installed."
 fi
 echo ""
+
+# Safety cleanup — remove any leftover user config that wasn't caught above
+if [[ -f "${LABWC_USER_CONFIG}" ]]; then
+  sudo rm -f "${LABWC_USER_CONFIG}"
+  echo "Cleaned up leftover user config: ${LABWC_USER_CONFIG}"
+fi
 
 echo ""
 echo "Uninstallation complete! The kiosk services will no longer start on boot."

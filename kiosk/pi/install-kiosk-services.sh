@@ -14,11 +14,27 @@ echo ""
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 KIOSK_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# Please create the kiosk user and set up the app directory before running this script.
 KIOSK_USER="kiosk"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
 CHROMIUM_POLICY_DIR="/etc/chromium/policies/managed"
+
+# Permissions fix
+echo "Checking app directory permissions..."
+if [[ -d "${KIOSK_ROOT}" ]]; then
+  if ! sudo -u "${KIOSK_USER}" test -w "${KIOSK_ROOT}"; then
+    echo "Fixing permissions for ${KIOSK_ROOT}..."
+    sudo chown -R "${KIOSK_USER}:${KIOSK_USER}" "${KIOSK_ROOT}"
+    echo "Permissions updated."
+  else
+    echo "Permissions for ${KIOSK_ROOT} are correct — skipping."
+  fi
+else
+  echo "WARNING: App directory ${KIOSK_ROOT} not found — skipping permissions check."
+fi
+echo ""
 
 if [[ -z "${KIOSK_HOME}" ]]; then
   echo "Could not determine home directory for ${KIOSK_USER}."
