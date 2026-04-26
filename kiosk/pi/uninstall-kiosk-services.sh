@@ -15,6 +15,18 @@ echo ""
 APP_SERVICE="cs-library-kiosk-app.service"
 BROWSER_SERVICE="cs-library-kiosk-browser.service"
 
+# Restore labwc rc.xml from backups
+# Please create the kiosk user and set up the app directory before running this script.
+KIOSK_USER="kiosk"
+KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
+LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
+LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
+
+echo "Kiosk User: ${KIOSK_USER}"
+echo "Kiosk Home: ${KIOSK_HOME}"
+echo "Labwc User Config: ${LABWC_USER_CONFIG}"
+echo "Labwc System Config: ${LABWC_SYSTEM_CONFIG}"
+
 echo ""
 echo "Uninstalling CS Library kiosk services..."
 echo ""
@@ -34,13 +46,6 @@ echo "Removed:"
 echo "/etc/systemd/system/${APP_SERVICE}"
 echo "/etc/systemd/system/${BROWSER_SERVICE}"
 echo ""
-
-# Restore labwc rc.xml from backups
-# Please create the kiosk user and set up the app directory before running this script.
-KIOSK_USER="kiosk"
-KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
-LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
-LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
 
 echo "Restoring labwc config..."
 
