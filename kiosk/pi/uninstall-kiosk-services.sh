@@ -12,12 +12,26 @@ if [[ ! "${UNINSTALL_CONFIRM}" =~ ^[Yy]$ ]]; then
 fi
 echo ""
 
+echo "Uninstall for which user?"
+echo "  1) kiosk (recommended for production)"
+echo "  2) Current user (${SUDO_USER:-$(id -un)}) (for testing)"
+echo ""
+read -r -p "Enter 1 or 2 [1]: " USER_CHOICE
+echo ""
+
+if [[ "${USER_CHOICE}" == "2" ]]; then
+  KIOSK_USER="${SUDO_USER:-$(id -un)}"
+  echo "Uninstalling for current user: ${KIOSK_USER}"
+else
+  KIOSK_USER="kiosk"
+  echo "Uninstalling for kiosk user: ${KIOSK_USER}"
+fi
+echo ""
+
 APP_SERVICE="cs-library-kiosk-app.service"
 BROWSER_SERVICE="cs-library-kiosk-browser.service"
 
 # Restore labwc rc.xml from backups
-# Please create the kiosk user and set up the app directory before running this script.
-KIOSK_USER="kiosk"
 KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
