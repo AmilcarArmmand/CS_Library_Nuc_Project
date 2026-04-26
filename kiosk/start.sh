@@ -16,7 +16,8 @@ echo "==================="
 # Check write permissions for the project directory
 if [ ! -w "$KIOSK_DIR" ]; then
   echo "ERROR: No write permission for $KIOSK_DIR"
-  echo "Fix with: sudo chown -R $(whoami):$(whoami) $KIOSK_DIR"
+  echo "Fix with: "
+  echo "sudo chown -R $(whoami):$(whoami) $KIOSK_DIR"
   exit 1
 fi
 
