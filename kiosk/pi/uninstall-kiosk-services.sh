@@ -82,9 +82,11 @@ fi
 echo ""
 
 # Safety cleanup — remove any leftover user config that wasn't caught above
-if [[ -f "${LABWC_USER_CONFIG}" ]]; then
-  sudo rm "${LABWC_USER_CONFIG}"
-  echo "Cleaned up leftover user config: ${LABWC_USER_CONFIG}"
+if [[ -f "/home/${KIOSK_USER}/.config/labwc/rc.xml" ]]; then
+  sudo rm -f "/home/${KIOSK_USER}/.config/labwc/rc.xml"
+  echo "Cleaned up leftover user config: /home/${KIOSK_USER}/.config/labwc/rc.xml"
+else
+  echo "No leftover user config found — cleanup was unsuccessful."
 fi
 
 echo ""
