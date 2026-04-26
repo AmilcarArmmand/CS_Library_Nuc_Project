@@ -1,18 +1,18 @@
 import session from 'express-session';
 import pgSession from 'connect-pg-simple';
-import { pool } from '../db/database.js';
-import { config } from './env.js';
+import { getPool } from '../db/database.js';
+import config from './env.js';
 
 const PgSessionStore = pgSession(session);
 
-const sessionConfig = {
-    secret: config.session.secret!,
+const sessionConfig: session.SessionOptions = {
+    secret: config().JWT_SECRET!,
     resave: false,
     saveUninitialized: false,
     store: new PgSessionStore({
-        pool: pool,
+        pool: getPool(),
         tableName: 'sessions',
-        createTableIfMissing: config.nodeEnv !== 'production',
+        createTableIfMissing: config().NODE_ENV !== 'production',
         ttl: 14 * 24 * 60 * 60,
     }),
     cookie: {
