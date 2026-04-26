@@ -22,10 +22,12 @@ KIOSK_HOME="$(getent passwd "${KIOSK_USER}" | cut -d: -f6)"
 LABWC_USER_CONFIG="${KIOSK_HOME}/.config/labwc/rc.xml"
 LABWC_SYSTEM_CONFIG="/etc/xdg/labwc/rc.xml"
 
+echo ""
 echo "Kiosk User: ${KIOSK_USER}"
 echo "Kiosk Home: ${KIOSK_HOME}"
 echo "Labwc User Config: ${LABWC_USER_CONFIG}"
 echo "Labwc System Config: ${LABWC_SYSTEM_CONFIG}"
+echo ""
 
 echo ""
 echo "Uninstalling CS Library kiosk services..."
