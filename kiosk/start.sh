@@ -13,6 +13,13 @@ echo ""
 echo "CS Library — Kiosk"
 echo "==================="
 
+# Check write permissions for the project directory
+if [ ! -w "$KIOSK_DIR" ]; then
+  echo "ERROR: No write permission for $KIOSK_DIR"
+  echo "Fix with: sudo chown -R $(whoami):$(whoami) $KIOSK_DIR"
+  exit 1
+fi
+
 # Load nvm if available
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
