@@ -12,6 +12,7 @@
     "install-kiosk": "cd pi && ./install-kiosk-services.sh",
     "uninstall-kiosk": "cd pi && ./uninstall-kiosk-services.sh",
     "start-kiosk": "sudo systemctl start cs-library-kiosk-app.service && sudo systemctl start cs-library-kiosk-browser.service && exit",
+    "restart-kiosk": "sudo systemctl restart cs-library-kiosk-app.service && sudo systemctl restart cs-library-kiosk-browser.service && exit",
     "reset-keybinds": "sudo apt reinstall labwc ; rm ~/.config/labwc/rc.xml",
     "test": "echo \"Setup Jest aready!\" && exit 1"
   },
