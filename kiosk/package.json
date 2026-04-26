@@ -14,6 +14,7 @@
     "start-kiosk": "sudo systemctl start cs-library-kiosk-app.service && sudo systemctl start cs-library-kiosk-browser.service && exit",
     "restart-kiosk": "sudo systemctl restart cs-library-kiosk-app.service && sudo systemctl restart cs-library-kiosk-browser.service && exit",
     "reset-keybinds": "sudo apt reinstall labwc ; rm ~/.config/labwc/rc.xml",
+    "keybind-cleanup": "sudo rm /home/kiosk/.config/labwc/rc.xml && echo 'keybinds cleaned up! Reboot to apply changes.'",
     "test": "echo \"Setup Jest aready!\" && exit 1"
   },
   "dependencies": {
