@@ -76,7 +76,7 @@ echo ""
 
 # Safety cleanup — remove any leftover user config that wasn't caught above
 if [[ -f "${LABWC_USER_CONFIG}" ]]; then
-  sudo rm -f "${LABWC_USER_CONFIG}"
+  sudo rm "${LABWC_USER_CONFIG}"
   echo "Cleaned up leftover user config: ${LABWC_USER_CONFIG}"
 fi
 
