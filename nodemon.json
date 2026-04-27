@@ -1,6 +1,6 @@
 {
   "watch": ["src", ".env"],
   "ext": "ts,js,json",
-  "exec": "npx tsx src/index.ts",
+  "exec": "npx tsx src/app.ts",
   "ignore": ["node_modules"]
 }
