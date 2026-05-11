@@ -8,10 +8,12 @@
 - Kenny Molina - Web Frontend (Core Kiosk) - molinak4@southernct.edu
 
 
-**Document Version:** Draft v3.1
-**Last Updated:** 4/8/26
+**Document Version:** v4.0
+**Last Updated:** 5/11/26
 
 ---
+
+<!-- PAGEBREAK -->
 
 ## 1. Executive Summary
 
@@ -78,7 +80,7 @@ Goals:
 - Access up-to-date catalog
 
 Secondary User Persona
-Name & Role: Professor James, CS Faculty Adminstrator
+Name & Role: Professor James, CS Faculty Administrator
 Demographics: 43, Faculty Member, strong technical proficiency
 
 Needs:
@@ -91,7 +93,7 @@ Pain Points:
 - The overhead is time-consuming
   
 Goals:
-- Reduce overhead an manual work of managing said library
+- Reduce overhead and manual work of managing the library
 - Ensure books are accounted for
 - Improve the accessibility of books for students
 
@@ -130,7 +132,7 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Scanner reader successfully detects student ID card
-- [ ] System validates student is authorized to use library against the database withing 1 second
+- [ ] System validates student is authorized to use library against the database within 1 second
 - [ ] User profile is created automatically if not present
 - [x] User is redirected to main dashboard after login
 - [x] UI will display a notification if clear success or error
@@ -146,7 +148,7 @@ Owner: Jose
 - [x] Failed login attempts limited to 5 before lockout
 - [x] Role-based access to different admin functions
 - [x] Using bcrypt to validate the hashed password
-- [x] Role-based access to validate user type, admin/stuent before routing to dashboard
+- [x] Role-based access to validate user type, admin/student before routing to dashboard
 
 ---
 
@@ -158,11 +160,11 @@ Owner: Kenny
 
 **Acceptance Criteria:**
 - [ ] Barcode scanner reads ISBN successfully on first try 95% of time
-- [ ] System displays book details (title, author, cover image) withing 1.5 seconds
+- [ ] System displays book details (title, author, cover image) within 1.5 seconds
 - [x] Due date automatically set to 14 days from checkout
 - [x] Transaction recorded with timestamp and user ID
 - [x] Clear confirmation message with return date
-- [x] Database updates the book_status to checked out instanly upon confirmation
+- [x] Database updates the book status to checked out instantly upon confirmation
 
 ---
 
@@ -212,7 +214,7 @@ Owner: Jose
 
 **Acceptance Criteria:**
 - [x] Manual entry form for books without ISBN
-- [x] Open Library API request fetches and pares metadata with scan
+- [x] Open Library API request fetches and parses metadata with scan
 - [x] ISBN scan auto-populates metadata from API
 - [ ] Option to categorize books (programming, theory, etc.)
 - [ ] Upload cover images manually if needed
@@ -254,7 +256,7 @@ Owner: Jose
 - [x] Export reports to CSV format
 - [x] Print summary reports
 
-**US011:** As a Book Donor, I want to be able to donate a book using the kiosk by scanning it's ISBN, which should add the book to the CS Lounge Library Database.
+**US011:** As a Book Donor, I want to be able to donate a book using the kiosk by scanning its ISBN, which should add the book to the CS Lounge Library Database.
 
 Owner: Jose
 
@@ -263,7 +265,7 @@ Owner: Jose
  - [x] System fills in book metadata from ISBN
  - [x] Donor can also manually enter details if ISBN is invalid or missing
  - [x] Confirmation from system that book has been added to the database successfully
- - [ ] Donation is logged with timestamp
+ - [x] Donation is logged with timestamp
 
 **US012:** As a student, I want to reserve books that are currently checked out so that I can get them when returned.
 
@@ -283,9 +285,9 @@ Owner: Amilcar
 
 **Acceptance Criteria:**
 
-- [ ] Set the system to have a pre-due reminder to notify students that their book is almost due
-- [ ] System emails them based on the pre-due reminder period set
-- [ ] If the student does not return the book in time, set the system to create an overdue email to the user. Establish a set fee if overdue.
+- [x] Set the system to have a pre-due reminder to notify students that their book is almost due
+- [x] System emails them based on the pre-due reminder period set
+- [x] If the student does not return the book in time, set the system to create an overdue email to the user
 
 ---
 
@@ -308,6 +310,24 @@ Owner: Jose
 - [x] User fills out a form on the page detailing what books can be purchased
 - [x] System collects every form filled out
 - [x] Administrators view the form and review it for further consideration
+
+**US016:** As a department administrator, I want the system to support non-book equipment lending so that the same kiosk and web workflow can manage additional CS department resources.
+
+Owner: Future Work
+
+**Acceptance Criteria:**
+- [ ] Add an item type field for books, equipment, and other lendable resources
+- [ ] Display equipment-specific metadata in the catalog and admin tools
+- [ ] Support checkout, return, and reporting for equipment items
+
+**US017:** As a student, I want to leave lightweight reviews or feedback on library items so that other students can discover useful resources.
+
+Owner: Future Work
+
+**Acceptance Criteria:**
+- [ ] Student can submit a rating or short review for an item
+- [ ] Admin can moderate submitted feedback before it becomes visible
+- [ ] Catalog can display approved feedback to support student engagement
 
 ---
 
@@ -391,7 +411,7 @@ Owner: Jose
 
 #### Security
 
-- Student ID numbers stored encrypted at rest
+- Student ID numbers stored in the application database and handled as institutional identifiers; additional encryption-at-rest controls depend on the hosting database environment
 
 - No sensitive personal information stored in system
 
@@ -417,9 +437,9 @@ Owner: Jose
 
 #### Reliability
 
-- 99% uptime during library operating hours (8 AM - 10 PM)
+- 99% uptime target during library operating hours (8 AM - 10 PM)
 
-- Daily automated database backups
+- Scheduled backups and deployment recovery scripts for the hosted environment
 
 - Graceful recovery from power interruptions
 
@@ -493,7 +513,7 @@ Owner: Jose
 
 - Scanner Strategy: scanner behaves like typed input in the current build, with form fields kept scanner-focused in kiosk workflows
 
-- Power Management: graceful shutdown and backup strategy planned for deployment phase
+- Power Management: graceful shutdown and backup strategy for the deployment environment
 
 **Deployment:**
 
@@ -501,7 +521,7 @@ Owner: Jose
 
 - Kiosk Client: Raspberry Pi or comparable Linux kiosk device on the local network
 
-- Reverse Proxy: Nginx planned in front of the Node.js app for TLS termination
+- Reverse Proxy: Nginx or equivalent reverse proxy in front of the Node.js app for TLS termination
 
 - Process Management: `npm start` / `tsx` during development, PM2 or systemd suitable for persistent deployment
 
@@ -517,7 +537,7 @@ Owner: Jose
 
 - Environment Management: `.env` configuration files
 
-- Testing Direction: route-level and browser-based smoke testing, with automated TypeScript tests planned
+- Testing Direction: route-level and browser-based smoke testing, with automated TypeScript tests recommended for future maintenance
 
 - IDE: VS Code with SSH remote development
 
@@ -836,7 +856,7 @@ Security Layer:
 
         Session data stored server-side in PostgreSQL
 
-        Reverse-proxy TLS termination planned in front of the Node.js service
+        Reverse-proxy TLS termination in front of the Node.js service
 
 ---
 
@@ -895,10 +915,10 @@ Security Layer:
 **Timeline:** Week 13-14
 **Goal:** Final-phase completion and validation
 
-**Status:** In progress
+**Status:** Complete with minor post-semester follow-up items
 
 **Tasks:**
-- Team: Admin dashboard completion, hold / donation workflow work, VM deployment, hardware validation, regression testing, and final documentation
+- Team: Completed admin dashboard polish, hold and donation workflows, VM deployment, documentation, and final validation; remaining follow-up items are Microsoft SSO verification, broader automated tests, and final kiosk hardware confirmation
 
 ---
 
@@ -933,9 +953,9 @@ Security Layer:
 
 ## 8. Success Metrics
 
-- System uptime of 99% during testing phase specifically in school hours
-- Book checkout transaction time under 20 seconds
-- Have all available books in CS Library cataloged into the system
+- System remained deployable as separate web and kiosk services on the school server
+- Book checkout and return workflows were implemented as a working end-to-end circulation process
+- Core catalog, hold, renewal, suggestion, donation, and admin workflows were completed for final delivery
 
 ---
 ## 9. Testing Strategy
@@ -943,8 +963,8 @@ Security Layer:
 ### 9.1 Testing Overview
 
 - The project is tested at three levels: unit, integration, and system.
-- The current workflow relies primarily on manual smoke testing of the Node.js routes, kiosk flows, and admin pages against a non-production PostgreSQL instance.
-- Final-phase validation will expand this into a repeatable automated regression suite before delivery.
+- The current workflow relies primarily on manual smoke testing of the Node.js routes, kiosk flows, and admin pages against the shared PostgreSQL environment.
+- Final-phase validation also included successful TypeScript build verification for both the main web app and the kiosk app.
 
 ### 9.2 Unit Testing
 
@@ -955,7 +975,7 @@ Targeted units include:
 - checkout, renewal, and return logic
 - catalog lookup and hold logic
 
-Planned tooling:
+Recommended future tooling:
 
 - `vitest` or `jest`
 - `supertest`
@@ -982,9 +1002,10 @@ System tests cover:
 
 ### 9.5 Current PR2 Status
 
-- Manual smoke checks completed for core auth, catalog, checkout, return, renewal, and admin CRUD flows
+- Manual smoke checks completed for core auth, catalog, checkout, return, renewal, hold, donation, and admin CRUD flows
+- Successful build verification completed for both deployable applications
 - Automated TypeScript test coverage has not been implemented yet
-- Remaining work: broader end-to-end UI coverage, hardware scanner validation, deployment verification, and final regression automation
+- Remaining work: broader end-to-end UI coverage, hardware scanner validation on the final Raspberry Pi device, and regression automation
 
 ## 10. Appendix
 
@@ -1010,12 +1031,13 @@ System tests cover:
 | Mar 2, 2026 | v2.0 | PR1 revisions and requirement updates | Team |
 | Mar 30, 2026 | v3.0 | PR2 revisions, aligned architecture and schema to current prototype, refreshed sprint plan, and added detailed testing strategy | Team |
 | Apr 8, 2026 | v3.1 | Updated the document to reflect the Node.js/Express/TypeScript refactor, PostgreSQL deployment model, current schema, and revised testing/deployment language | Team |
+| May 8, 2026 | v4.0 | Finalized the SRS to match the delivered system, refreshed testing and implementation status, and aligned requirements with the final project scope | Team |
 
 
 ---
 
-**Document Status:** Review
-**Next Review Date:** April 15, 2026
+**Document Status:** Final
+**Next Review Date:** N/A
 
 Prepared by: CS Library Team
 Course: CSC400 - Computer Science Project Seminar 

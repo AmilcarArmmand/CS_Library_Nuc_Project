@@ -42,6 +42,22 @@ CS Library provides two interfaces over a shared PostgreSQL database:
 - View user suggestions sent to the server
 ---
 
+## Screenshots
+
+**Web Portal Login**
+
+![Web portal login](docs/screenshots/web-login.png)
+
+**Kiosk Dashboard**
+
+![Kiosk dashboard](docs/screenshots/kiosk-dashboard.png)
+
+**Admin Dashboard**
+
+![Admin dashboard](docs/screenshots/admin-dashboard.png)
+
+---
+
 ## Architecture
 
 ```
@@ -136,7 +152,8 @@ Adds 16 books and 3 test accounts to the database. Safe to re-run.
 npx tsx src/mock-data.ts
 ```
 
-Test credentials after seeding, as defined in mock-data.ts:
+Local-only test credentials after seeding, as defined in mock-data.ts. These are
+development fixtures and must not be reused for production accounts:
 
 ```bash
 const TEST_USERS = [
@@ -274,8 +291,8 @@ The admin panel is at `/admin/login` — separate from the main web login. Regul
 
 Developed by the SCSU CS Capstone Team — Spring 2026.
 
-- **Amilcar Armmand** — Project Lead, Full-Stack Development
-- **Jose Gaspar Marin** — Full-Stack Development
-- **Kenneth Molina** — Full-Stack Development
+- **Amilcar Armmand** — Project Lead, hardware integration, database and deployment coordination
+- **Jose Gaspar Marin** — Web frontend, backend admin tools, catalog management, reports, donations, and suggestions
+- **Kenneth Molina** — Web frontend, kiosk interface, scanner-friendly circulation workflows, and demo validation
 
 Built with [Express](https://expressjs.com), [Drizzle ORM](https://orm.drizzle.team), [Passport.js](https://www.passportjs.org), and [EJS](https://ejs.co).

@@ -1,10 +1,7 @@
 // src/db/schema/schema.ts
-// I did my best creating the schema based on database.py's pre-existing tables.
-// This SHOULD support both Google OAuth and local email/password users.
-// This is full library system (books, loans, holds).
-// We would need to rework this if we manage to get SSO permissions from the school.
-// Honestly though we could base it off of what the professor has for her website.
-
+// Core PostgreSQL schema for the CS Library system.
+// Supports local accounts, optional OAuth identity links, catalog records,
+// circulation workflows, holds, donations, suggestions, and renewal requests.
 
 import {
   pgTable,
