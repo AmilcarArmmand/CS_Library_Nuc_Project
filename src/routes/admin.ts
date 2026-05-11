@@ -146,7 +146,6 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
 
     req.logIn(user, (loginErr) => {
       if (loginErr) return next(loginErr);
-      console.log(`[Admin] Login: ${user.email}`);
       res.redirect('/admin');
     });
   })(req, res, next);
@@ -155,12 +154,10 @@ router.post('/login', (req: Request, res: Response, next: NextFunction) => {
 // GET /admin/logout
 
 router.get('/logout', (req: Request, res: Response, next: NextFunction) => {
-  const email = (req.user as any)?.email ?? 'unknown';
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
       res.clearCookie('sessionId');
-      console.log(`[Admin] Logged out: ${email}`);
       res.redirect('/admin/login');
     });
   });

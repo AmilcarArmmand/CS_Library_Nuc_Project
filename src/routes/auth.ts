@@ -9,12 +9,6 @@ import { passwordResetTokens, users } from '../db/schema/schema.js';
 import { config } from '../config/env.js';
 import { sendPasswordResetEmail } from '../utils/emailService.js';
 
-declare module 'express-session' {
-  interface SessionData {
-    returnTo?: string;
-  }
-}
-
 const router = express.Router();
 const PASSWORD_RESET_TOKEN_BYTES = 32;
 
@@ -169,7 +163,6 @@ router.get('/google/callback', (req: Request, res: Response, next: NextFunction)
 },
   passport.authenticate('google', { failureRedirect: '/auth/login?error=google_failed' }),
   (req: Request, res: Response) => {
-    console.log(`[Auth] Google login: ${(req.user as any)?.email}`);
     const redirectTo = req.session['returnTo'] ?? '/web-dashboard';
     delete req.session['returnTo'];
     res.redirect(redirectTo);
@@ -204,7 +197,6 @@ router.get('/outlook/callback', (req: Request, res: Response, next: NextFunction
       }
       req.logIn(user, (loginErr) => {
         if (loginErr) return next(loginErr);
-        console.log(`[Auth] Microsoft login: ${user.email}`);
 
         // New OAuth account — offer optional password setup once
         if (user._isNewOAuthAccount) {
@@ -243,7 +235,6 @@ router.post('/login',
       }
       req.logIn(user, (loginErr) => {
         if (loginErr) return next(loginErr);
-        console.log(`[Auth] Local login: ${user.email}`);
         const redirectTo = req.session['returnTo'] ?? '/web-dashboard';
         delete req.session['returnTo'];
         res.redirect(redirectTo);
@@ -498,7 +489,6 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       .returning({ id: users.id });
  
     if (!newUser) return renderError('Registration failed. Please try again.');
-    console.log(`[Auth] New account registered: ${email}`);
  
     const [user] = await db.select().from(users).where(eq(users.id, newUser.id)).limit(1);
     if (!user) return renderError('Registration failed. Please try again.');
@@ -562,7 +552,6 @@ router.post('/setup-password', async (req: Request, res: Response, next: NextFun
       .set({ passwordHash, updatedAt: new Date() })
       .where(eq(users.id, user.id));
 
-    console.log(`[Auth] Password set for OAuth user: ${user.email}`);
     res.redirect('/web-dashboard');
 
   } catch (err) { next(err); }
@@ -571,12 +560,10 @@ router.post('/setup-password', async (req: Request, res: Response, next: NextFun
 // LOGOUT
 
 router.get('/logout', (req: Request, res: Response, next: NextFunction) => {
-  const email = (req.user as any)?.email ?? 'unknown';
   req.logout((err) => {
     if (err) return next(err);
     req.session.destroy(() => {
       res.clearCookie('sessionId');
-      console.log(`[Auth] Logged out: ${email}`);
       res.redirect('/auth/login?message=logged_out');
     });
   });

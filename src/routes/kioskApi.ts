@@ -629,7 +629,6 @@ router.post('/donate', async (req: Request, res: Response) => {
         });
     }
 
-    console.log(`[Kiosk API] Book donated: "${title}" by ${resolvedDonorName}`);
     res.json({ ok: true, book: newBook, donation });
 
   } catch (err) {

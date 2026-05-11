@@ -62,8 +62,6 @@ router.post('/password', async (req: Request, res: Response, next: NextFunction)
       .set({ passwordHash, updatedAt: new Date() })
       .where(eq(users.id, user.id));
 
-    // console.log(`[Settings] Password updated for: ${user.email}`);
-
     // Refresh the session so passwordHash reflects immediately
     (req.user as any).passwordHash = passwordHash;
 
