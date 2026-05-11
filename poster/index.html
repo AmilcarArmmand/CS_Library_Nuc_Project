@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CS Library Poster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,650;6..72,750&family=Source+Sans+3:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --paper: #fbfaf5;
+      --paper-ink: #20242c;
+      --muted: #5c6472;
+      --quiet: #8a909a;
+      --rule: rgba(32, 36, 44, 0.16);
+      --blue: #1d4f91;
+      --blue-dark: #102746;
+      --red: #af4b40;
+      --green: #34785f;
+      --yellow: #e6c46f;
+      --shadow: 0 18px 42px rgba(28, 35, 51, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #dfe4ec;
+      color: var(--paper-ink);
+      font-family: "Source Sans 3", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px;
+      overflow: auto;
+    }
+
+    .controls {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 10;
+    }
+
+    .controls button {
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      background: #14233a;
+      color: #fff;
+      padding: 12px 18px;
+      font: 700 14px/1 "Source Sans 3", sans-serif;
+      cursor: pointer;
+      box-shadow: 0 14px 26px rgba(20, 35, 58, 0.22);
+    }
+
+    .poster-stage {
+      width: calc(24in * var(--screen-scale, 1));
+      height: calc(36in * var(--screen-scale, 1));
+      flex: 0 0 auto;
+    }
+
+    .poster {
+      width: 24in;
+      height: 36in;
+      position: relative;
+      overflow: hidden;
+      padding: 0.62in;
+      background:
+        linear-gradient(rgba(32, 36, 44, 0.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(32, 36, 44, 0.024) 1px, transparent 1px),
+        radial-gradient(circle at 4% 2%, rgba(175, 75, 64, 0.09), transparent 18%),
+        radial-gradient(circle at 94% 98%, rgba(29, 79, 145, 0.09), transparent 20%),
+        var(--paper);
+      background-size: 0.34in 0.34in, 0.34in 0.34in, auto, auto, auto;
+      box-shadow: 0 32px 80px rgba(12, 19, 37, 0.18);
+      transform-origin: top left;
+      transform: scale(var(--screen-scale, 1));
+    }
+
+    .poster::after {
+      content: "";
+      position: absolute;
+      inset: 0.28in;
+      border: 2px solid rgba(32, 36, 44, 0.12);
+      pointer-events: none;
+    }
+
+    .masthead {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 3.1in 1fr 5.1in;
+      gap: 0.35in;
+      align-items: end;
+      padding-bottom: 0.34in;
+      border-bottom: 3px solid var(--paper-ink);
+      margin-bottom: 0.34in;
+    }
+
+    .school-mark {
+      align-self: start;
+      padding-top: 0.02in;
+    }
+
+    .school-mark img {
+      width: 2.4in;
+      height: auto;
+      display: block;
+    }
+
+    .title-block .label {
+      display: inline-block;
+      margin-bottom: 0.12in;
+      color: var(--red);
+      font-weight: 800;
+      font-size: 12pt;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    h1 {
+      margin: 0;
+      color: var(--paper-ink);
+      font-family: "Newsreader", serif;
+      font-size: 68pt;
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 12.6in;
+      margin: 0.18in 0 0;
+      color: #3d4656;
+      font-size: 22pt;
+      line-height: 1.18;
+      font-weight: 500;
+    }
+
+    .people {
+      border-left: 3px solid var(--paper-ink);
+      padding-left: 0.24in;
+      display: grid;
+      gap: 0.12in;
+    }
+
+    .people .small-label {
+      font-size: 10pt;
+      color: var(--quiet);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 800;
+    }
+
+    .people p {
+      margin: 0;
+      color: #29303b;
+      font-size: 15pt;
+      line-height: 1.28;
+      font-weight: 600;
+    }
+
+    .board {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 6.55in 7.45in 7.45in;
+      grid-template-rows: 9.2in 10.35in 8.15in;
+      gap: 0.28in;
+    }
+
+    .panel {
+      position: relative;
+      min-width: 0;
+      background: rgba(255, 255, 255, 0.62);
+      border: 1px solid var(--rule);
+      border-radius: 0.08in;
+      padding: 0.24in;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel.plain {
+      background: rgba(255, 255, 255, 0.36);
+      box-shadow: none;
+    }
+
+    .panel.blue {
+      background: #102746;
+      color: white;
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .panel::before {
+      content: attr(data-number);
+      position: absolute;
+      top: 0.18in;
+      right: 0.2in;
+      color: rgba(32, 36, 44, 0.16);
+      font-family: "Newsreader", serif;
+      font-size: 44pt;
+      line-height: 1;
+      font-weight: 750;
+    }
+
+    .panel.blue::before {
+      color: rgba(255, 255, 255, 0.18);
+    }
+
+    .section-label {
+      color: var(--red);
+      font-size: 10.4pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.13em;
+      margin-bottom: 0.08in;
+    }
+
+    .panel.blue .section-label {
+      color: #f1c879;
+    }
+
+    h2 {
+      margin: 0;
+      max-width: 92%;
+      font-family: "Newsreader", serif;
+      font-size: 25pt;
+      line-height: 1.02;
+      letter-spacing: 0;
+      color: var(--paper-ink);
+    }
+
+    .panel.blue h2 {
+      color: white;
+    }
+
+    p {
+      margin: 0.12in 0 0;
+      color: var(--muted);
+      font-size: 14pt;
+      line-height: 1.38;
+    }
+
+    .panel.blue p {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    ul {
+      margin: 0.16in 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 0.09in;
+    }
+
+    li {
+      position: relative;
+      padding-left: 0.18in;
+      color: #343b47;
+      font-size: 13.7pt;
+      line-height: 1.34;
+    }
+
+    li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.21em;
+      width: 0.07in;
+      height: 0.07in;
+      border-radius: 999px;
+      background: var(--red);
+    }
+
+    .panel.blue li {
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .panel.blue li::before {
+      background: #f1c879;
+    }
+
+    .span-2 {
+      grid-column: span 2;
+    }
+
+    .photo {
+      position: relative;
+      margin-top: 0.24in;
+      background: #fff;
+      padding: 0.12in;
+      border: 1px solid rgba(32, 36, 44, 0.16);
+      box-shadow: 0 18px 28px rgba(32, 36, 44, 0.14);
+      transform: rotate(-1deg);
+    }
+
+    .photo::before {
+      content: "";
+      position: absolute;
+      top: -0.13in;
+      left: 35%;
+      width: 1.2in;
+      height: 0.24in;
+      background: rgba(230, 196, 111, 0.62);
+      border: 1px solid rgba(132, 99, 28, 0.16);
+      transform: rotate(2deg);
+    }
+
+    .photo img {
+      display: block;
+      width: 100%;
+      height: 4.55in;
+      object-fit: cover;
+      object-position: top center;
+      filter: contrast(1.02) saturate(0.96);
+    }
+
+    .caption {
+      margin-top: 0.11in;
+      color: #606774;
+      font-size: 10.7pt;
+      line-height: 1.36;
+    }
+
+    .architecture {
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+        #102746;
+      background-size: 0.32in 0.32in;
+    }
+
+    .architecture h2 {
+      max-width: 8.3in;
+    }
+
+    .diagram {
+      margin-top: 0.26in;
+      display: grid;
+      gap: 0.16in;
+    }
+
+    .diagram-top,
+    .diagram-bottom {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.14in;
+    }
+
+    .node {
+      min-height: 1.22in;
+      padding: 0.16in;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+    }
+
+    .node.light {
+      background: rgba(255, 255, 255, 0.95);
+      color: var(--paper-ink);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .node strong {
+      display: block;
+      margin-bottom: 0.06in;
+      font-size: 14.5pt;
+      line-height: 1.05;
+      font-weight: 800;
+    }
+
+    .node span {
+      display: block;
+      font-size: 11.2pt;
+      line-height: 1.34;
+      color: inherit;
+      opacity: 0.86;
+    }
+
+    .api-line {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 0.16in;
+      color: #f1c879;
+      font-weight: 800;
+      font-size: 12pt;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .api-line::before,
+    .api-line::after {
+      content: "";
+      height: 2px;
+      background: rgba(241, 200, 121, 0.7);
+    }
+
+    .stack-strip {
+      margin-top: 0.18in;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.08in;
+    }
+
+    .stack-strip span {
+      display: inline-block;
+      padding: 0.06in 0.1in;
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 10.4pt;
+      font-weight: 700;
+    }
+
+    .solution-list {
+      margin-top: 0.26in;
+      display: grid;
+      gap: 0.18in;
+    }
+
+    .solution-item {
+      display: grid;
+      grid-template-columns: 0.54in 1fr;
+      gap: 0.14in;
+      align-items: start;
+      padding-top: 0.16in;
+      border-top: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .solution-item:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .solution-index {
+      width: 0.44in;
+      height: 0.44in;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: #f1c879;
+      color: #102746;
+      font-family: "Newsreader", serif;
+      font-size: 18pt;
+      font-weight: 750;
+    }
+
+    .solution-item strong {
+      display: block;
+      margin-bottom: 0.04in;
+      color: white;
+      font-size: 15pt;
+      line-height: 1.1;
+    }
+
+    .solution-item span {
+      display: block;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 12.3pt;
+      line-height: 1.36;
+    }
+
+    .screens {
+      padding: 0.2in;
+    }
+
+    .screens h2 {
+      max-width: none;
+    }
+
+    .screens-wrap {
+      margin-top: 0.18in;
+      display: grid;
+      grid-template-columns: 1.28fr 0.82fr;
+      gap: 0.18in;
+      align-items: stretch;
+    }
+
+    figure {
+      margin: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      background: #fff;
+      border: 1px solid rgba(32, 36, 44, 0.14);
+      box-shadow: 0 14px 28px rgba(32, 36, 44, 0.1);
+      overflow: hidden;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      height: 7.3in;
+      object-fit: cover;
+      object-position: center;
+      background: #071224;
+    }
+
+    .kiosk-shot img {
+      object-fit: cover;
+      object-position: center;
+    }
+
+    figcaption {
+      padding: 0.12in 0.14in;
+      min-height: 0.78in;
+      color: #515866;
+      font-size: 11.2pt;
+      line-height: 1.32;
+      border-top: 1px solid rgba(32, 36, 44, 0.12);
+    }
+
+    .contrib-lines {
+      margin-top: 0.18in;
+      display: grid;
+      gap: 0.14in;
+    }
+
+    .contrib {
+      padding-bottom: 0.12in;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .contrib:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .contrib strong {
+      display: block;
+      color: var(--paper-ink);
+      font-size: 14.5pt;
+      line-height: 1.12;
+      margin-bottom: 0.04in;
+      font-weight: 800;
+    }
+
+    .contrib span {
+      display: block;
+      color: var(--muted);
+      font-size: 12.4pt;
+      line-height: 1.35;
+    }
+
+    .lesson-list li {
+      padding-left: 0.22in;
+      font-size: 13.2pt;
+    }
+
+    .callout {
+      margin-top: 0.22in;
+      padding: 0.17in;
+      background: rgba(175, 75, 64, 0.08);
+      border-left: 5px solid var(--red);
+      color: #424956;
+      font-size: 13pt;
+      line-height: 1.36;
+      font-weight: 600;
+    }
+
+    .qr {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: #102746;
+      color: white;
+      padding: 0.26in;
+    }
+
+    .qr .section-label {
+      color: #f1c879;
+    }
+
+    .qr-box {
+      margin-top: 0.2in;
+      width: 3.7in;
+      height: 3.7in;
+      display: grid;
+      place-items: center;
+      background: #fff;
+      padding: 0.1in;
+      box-shadow: 0 18px 28px rgba(0, 0, 0, 0.2);
+    }
+
+    .qr-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      image-rendering: pixelated;
+      display: block;
+    }
+
+    .site-url {
+      margin-top: 0.18in;
+      font-family: "Newsreader", serif;
+      font-size: 22pt;
+      line-height: 1.1;
+      color: white;
+      word-break: break-word;
+    }
+
+    .qr-note {
+      margin-top: 0.12in;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 11.4pt;
+      line-height: 1.38;
+      max-width: 4.4in;
+    }
+
+    @page {
+      size: 24in 36in;
+      margin: 0;
+    }
+
+    @media print {
+      html,
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .controls {
+        display: none;
+      }
+
+      .poster-stage {
+        width: 24in;
+        height: 36in;
+      }
+
+      .poster {
+        box-shadow: none;
+        margin: 0;
+        transform: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="window.print()">Print Poster</button>
+  </div>
+
+  <div class="poster-stage">
+    <main class="poster">
+      <header class="masthead">
+        <div class="school-mark">
+          <img src="../assets/scsu_logo.png" alt="Southern Connecticut State University logo" />
+        </div>
+
+        <div class="title-block">
+          <div class="label">Senior Capstone Project</div>
+          <h1>CS Library</h1>
+          <p class="subtitle">From a handwritten checkout sheet to a searchable department library with a web portal, admin tools, and a touchscreen kiosk.</p>
+        </div>
+
+        <aside class="people">
+          <div>
+            <div class="small-label">Team</div>
+            <p>Amilcar Armmand<br />Kenny Molina<br />Jose Gaspar Marin</p>
+          </div>
+          <div>
+            <div class="small-label">Client</div>
+            <p>Omar Abid<br />SCSU Computer Science Department</p>
+          </div>
+        </aside>
+      </header>
+
+      <section class="board">
+        <article class="panel problem" data-number="01">
+          <div class="section-label">Problem Statement</div>
+          <h2>The library existed, but the system around it was mostly manual.</h2>
+          <p>Borrowing depended on handwritten records, memory, and follow-up. That worked for a small room, but it made availability hard to trust and made the collection harder to manage over time.</p>
+          <ul>
+            <li>Students had no quick way to check what was available before visiting.</li>
+            <li>Admins had to interpret scattered checkout information by hand.</li>
+            <li>The in-person flow needed to work with real student IDs, scanners, and touch hardware.</li>
+          </ul>
+          <div class="photo">
+            <img src="assets/ppt-media/ppt/media/image1.jpeg" alt="Scanned handwritten book log used for manual tracking" />
+            <div class="caption">The original paper log became the clearest proof of the problem: useful information existed, but it was not searchable, enforceable, or easy to keep current.</div>
+          </div>
+        </article>
+
+        <article class="panel blue architecture span-2" data-number="02">
+          <div class="section-label">Architecture Diagram</div>
+          <h2>Three interfaces share one backend and one set of library records.</h2>
+          <p>The design keeps the student website, admin dashboard, and kiosk separate where the user experience needs to differ, while keeping catalog and loan data centralized.</p>
+
+          <div class="diagram">
+            <div class="diagram-top">
+              <div class="node">
+                <strong>Web Portal</strong>
+                <span>Students browse, search, view details, and check account activity.</span>
+              </div>
+              <div class="node">
+                <strong>Kiosk</strong>
+                <span>Touchscreen station for student ID entry and scanner-assisted checkout.</span>
+              </div>
+              <div class="node">
+                <strong>Admin Dashboard</strong>
+                <span>Catalog editing, user oversight, requests, and loan management.</span>
+              </div>
+            </div>
+
+            <div class="api-line">Express REST API</div>
+
+            <div class="node light">
+              <strong>Application Layer</strong>
+              <span>Node.js, Express, TypeScript, EJS, Passport, and shared route logic coordinate authentication, search, checkout, returns, holds, donations, and account workflows.</span>
+            </div>
+
+            <div class="api-line">Data and integrations</div>
+
+            <div class="diagram-bottom">
+              <div class="node">
+                <strong>PostgreSQL</strong>
+                <span>Users, books, loans, holds, renewals, donations, and suggestions.</span>
+              </div>
+              <div class="node">
+                <strong>OpenLibrary</strong>
+                <span>Book metadata enrichment for catalog entries.</span>
+              </div>
+              <div class="node">
+                <strong>Email</strong>
+                <span>Password reset and notification workflows.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack-strip">
+            <span>Node.js</span>
+            <span>Express</span>
+            <span>TypeScript</span>
+            <span>PostgreSQL</span>
+            <span>Drizzle ORM</span>
+            <span>Raspberry Pi kiosk</span>
+          </div>
+        </article>
+
+        <article class="panel blue" data-number="03">
+          <div class="section-label">Solution</div>
+          <h2>We built the flow around how the library is actually used.</h2>
+          <p>The project is not just a catalog page. It connects discovery, borrowing, returns, and staff management into one system.</p>
+
+          <div class="solution-list">
+            <div class="solution-item">
+              <div class="solution-index">1</div>
+              <div>
+                <strong>Browse before walking in</strong>
+                <span>The web portal lets students inspect the collection and see availability without needing to be in the room.</span>
+              </div>
+            </div>
+            <div class="solution-item">
+              <div class="solution-index">2</div>
+              <div>
+                <strong>Check out at the kiosk</strong>
+                <span>The kiosk supports student ID login, touch navigation, scanner input, checkout, return, renew, and donation entry points.</span>
+              </div>
+            </div>
+            <div class="solution-item">
+              <div class="solution-index">3</div>
+              <div>
+                <strong>Manage from one place</strong>
+                <span>Admins can maintain records, review activity, and keep the department collection current.</span>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel screens span-2" data-number="04">
+          <div class="section-label">Screenshots</div>
+          <h2>Real interfaces from the project</h2>
+          <div class="screens-wrap">
+            <figure>
+              <img src="assets/derived/web-hero-crop.png" alt="CS Library web portal screenshot" />
+              <figcaption>Web portal: a student-facing homepage with search context, availability, and recently added books.</figcaption>
+            </figure>
+            <figure class="kiosk-shot">
+              <img src="assets/derived/kiosk-login-crop.png" alt="CS Library kiosk login screenshot" />
+              <figcaption>Kiosk: a touch-first login screen built around student ID scanning and quick in-person use.</figcaption>
+            </figure>
+          </div>
+        </article>
+
+        <article class="panel plain" data-number="05">
+          <div class="section-label">Contributions</div>
+          <h2>What we added to the department library</h2>
+          <div class="contrib-lines">
+            <div class="contrib">
+              <strong>A searchable catalog</strong>
+              <span>The collection moved from handwritten entries to structured records with availability states and book metadata.</span>
+            </div>
+            <div class="contrib">
+              <strong>A student web experience</strong>
+              <span>Students can discover books, view loan information, and use account tools from a browser.</span>
+            </div>
+            <div class="contrib">
+              <strong>A real kiosk workflow</strong>
+              <span>The kiosk was tested against the constraints that matter for the room: touch, scanner input, and fast checkout.</span>
+            </div>
+            <div class="contrib">
+              <strong>Admin management tools</strong>
+              <span>Staff can update catalog records, review activity, and manage operational tasks without editing the database directly.</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel" data-number="06">
+          <div class="section-label">Highlights / Lessons Learned</div>
+          <h2>What we learned while turning it into something usable</h2>
+          <ul class="lesson-list">
+            <li>Trust mattered. Once we trusted each other to own pieces of the system, delegation and debugging became much smoother.</li>
+            <li>Hardware changes the truth. A kiosk that feels fine on a laptop still needs real scanner and touchscreen testing.</li>
+            <li>Deployment exposed issues that local development could not show, especially around routing, authentication, and long-running services.</li>
+            <li>The strongest demo is not the biggest feature list. It is a clean flow that people can understand immediately.</li>
+          </ul>
+          <div class="callout">Our biggest takeaway was that software for a real space has to respect the people, hardware, and habits already in that space.</div>
+        </article>
+
+        <article class="panel qr" data-number="07">
+          <div>
+            <div class="section-label">QR Code</div>
+            <h2>Scan to visit the site</h2>
+            <div class="qr-box">
+              <img src="assets/site-qr.png" alt="QR code linking to the CS Library site" />
+            </div>
+            <div class="site-url">csclibrary.scsu.southernct.edu</div>
+            <div class="qr-note">Open the live CS Library site to view the student-facing portal and continue testing on the department network.</div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const updateScale = () => {
+        const posterWidth = 24 * 96;
+        const posterHeight = 36 * 96;
+        const availableWidth = window.innerWidth - 48;
+        const availableHeight = window.innerHeight - 48;
+        const scale = Math.min(1, availableWidth / posterWidth, availableHeight / posterHeight);
+        document.documentElement.style.setProperty("--screen-scale", String(scale));
+      };
+
+      window.addEventListener("resize", updateScale);
+      updateScale();
+    })();
+  </script>
+</body>
+</html>

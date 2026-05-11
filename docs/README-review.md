@@ -274,11 +274,9 @@ Nginx/TLS is still the final handoff step for ITS.
 
 ## Demo accounts
 
-These may vary depending on the local database state, but the common demo accounts used during development are:
-
-- Student web login: `molinak4@southernct.edu` / `changeme123`
-- Admin login: `james@southernct.edu` / `changeme123`
-- Kiosk student ID: `12345`
+Demo account availability depends on the local database state. For local testing,
+seed the database with `npm run db:seed`, then use the seeded users documented
+in `src/mock-data.ts`. Do not reuse seeded demo passwords in production.
 
 ## Notes
 

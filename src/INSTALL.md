@@ -40,7 +40,7 @@ npx tsc --init
 - Install dependencies: `npm install`
 - Script to clean dist/ `npm run clean`
 - Script to build `npm run build`
-- Script to run development mode with nodemon `npm run dev`
+- Script to run the hot-reload server with nodemon `npm run dev`
 - Script to generate schema `npm run db:generate`
 - Script to migrate generated Drizzle files `npm run db:migrate`
 - Script to apply the password-reset/email/library schema additions directly `npm run db:migrate:library`

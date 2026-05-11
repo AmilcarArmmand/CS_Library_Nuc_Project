@@ -85,7 +85,7 @@ export const validateConfig = () => {
         if (config.nodeEnv === 'production') {
             process.exit(1);
         } else {
-            console.warn('⚠️  Running in development mode with missing variables');
+            console.warn('⚠️  Missing variables are allowed outside production');
         }
     }
 
