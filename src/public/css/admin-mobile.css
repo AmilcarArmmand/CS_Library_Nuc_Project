@@ -102,6 +102,9 @@ html {
     box-shadow: 18px 0 48px -28px rgba(2, 6, 23, 0.95);
   }
 
+  .sidebar-footer .admin-name  { font-size: 0.75rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.15rem; }
+  .sidebar-footer .admin-email { font-size: 0.65rem; color: #64748b; margin-bottom: 0.6rem; }
+
   body.admin-nav-open .sidebar {
     transform: translateX(0);
   }

@@ -251,7 +251,7 @@ export const equipment = pgTable('equipment', {
 export const equipmentUnits = pgTable('equipment_units', {
   id:          serial('id').primaryKey(),
   equipmentId: integer('equipment_id').notNull().references(() => equipment.id, { onDelete: 'cascade' }),
-  barcode:     varchar('barcode', { length: 100 }).unique().notNull(),
+  barcode:     varchar('barcode', { length: 100 }).notNull(),
   condition:   varchar('condition', { length: 50 }).notNull().default('Good'),
   status:      varchar('status', { length: 50 }).notNull().default('Available'),
   notes:       text('notes').notNull().default(''),

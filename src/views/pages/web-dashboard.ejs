@@ -91,6 +91,38 @@
           <p>No borrowing history yet</p>
         </div>
       </div>
+
+      <!-- Equipment loans panel -->
+      <div class="mybooks-panel panel" style="margin-top:1.5rem;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <p class="panel-title">MY CHECKED OUT EQUIPMENT</p>
+          <button class="refresh-btn" onclick="loadMyEquipmentLoans(true)" id="refreshEquipBtn">
+            ↻ Refresh
+          </button>
+        </div>
+
+        <!-- Summary cards -->
+        <div class="loans-summary">
+          <div class="summary-card total">
+            <span class="summary-num" id="totalEquipOut">—</span>
+            <span class="summary-label">Items Out</span>
+          </div>
+          <div class="summary-card overdue">
+            <span class="summary-num" id="totalEquipOverdue">—</span>
+            <span class="summary-label">Overdue</span>
+          </div>
+        </div>
+
+        <!-- Active equipment loans -->
+        <p class="section-title">Currently Checked Out</p>
+        <div id="activeEquipmentLoans"></div>
+        <div class="empty-state" id="noEquipmentLoans" style="display:none;">
+          <img src="/assets/ph-book-open-text.svg" alt="" />
+          <p>No equipment currently checked out</p>
+          <span>Equipment borrowed from the kiosk will appear here</span>
+        </div>
+      </div>
+
     </div>
 
     <!-- SUGGEST -->
@@ -105,6 +137,30 @@
           <button onclick="submitSuggestion()" style="padding:0.65rem;border-radius:0.5rem;background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid rgba(59,130,246,0.4);font-family:inherit;font-size:0.82rem;font-weight:700;letter-spacing:0.08em;cursor:pointer;transition:all 0.2s;">SUBMIT SUGGESTION</button>
         </div>
       </div>
+    </div>
+
+    <!-- ── EQUIPMENT CATALOG WORKSPACE ── -->
+    <div class="workspace" id="ws-equipment">
+      <div class="catalog-header">
+        <h1 class="catalog-title">Equipment Catalog</h1>
+        <div class="catalog-meta">
+          <span class="catalog-count" id="equipCatalogCount">Loading…</span>
+        </div>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="equipSearchInput"
+              placeholder="Search by name or category…"
+              oninput="filterEquipmentCatalog(this.value)" />
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active" data-efilter="all"       onclick="setEquipFilter('all')">ALL</button>
+        <button class="filter-btn"        data-efilter="available" onclick="setEquipFilter('available')">AVAILABLE</button>
+        <button class="filter-btn"        data-efilter="out"       onclick="setEquipFilter('out')">UNAVAILABLE</button>
+      </div>
+
+      <div class="catalog-grid" id="equipCatalogGrid"></div>
     </div>
 
   </main>
@@ -174,7 +230,8 @@
       const mb = document.getElementById(`mnav-${view}`);
       if (mb) mb.classList.add('active');
 
-      if (view === 'mybooks') loadMyBooks(false);
+      if (view === 'mybooks')  loadMyBooks(false);
+      if (view === 'equipment') loadEquipmentCatalog();
     }
 
     // ── Search ──────────────────────────────────────────────────────────────────
@@ -528,9 +585,69 @@
             </div>`;
         }).join('');
 
+        await loadMyEquipmentLoans(false);
         if (showSpinner) toast('Loans refreshed.', 'positive');
       } catch {
         toast('Could not load loans.', 'negative');
+      } finally {
+        if (btn) btn.classList.remove('spinning');
+      }
+    }
+
+    // ── Equipment loans ────────────────────────────────────────────────────────
+    async function loadMyEquipmentLoans(showSpinner = false) {
+      const btn = document.getElementById('refreshEquipBtn');
+      if (showSpinner && btn) btn.classList.add('spinning');
+
+      try {
+        const r = await fetch('/web-dashboard/api/my-equipment-loans');
+        const d = await r.json();
+        const now    = new Date();
+        const active = (d.loans ?? []).filter(l => !l.returned);
+        const overdue = active.filter(l => new Date(l.dueDate) < now);
+
+        document.getElementById('totalEquipOut').textContent    = String(active.length);
+        document.getElementById('totalEquipOverdue').textContent = String(overdue.length);
+        document.getElementById('noEquipmentLoans').style.display = active.length ? 'none' : 'flex';
+
+        document.getElementById('activeEquipmentLoans').innerHTML = active.map(loan => {
+          const due     = new Date(loan.dueDate);
+          const diffMs  = due - now;
+          const diffDay = Math.ceil(diffMs / 86400000);
+          let badgeClass, dueClass, dueLabel;
+          if (diffMs < 0) {
+            badgeClass = 'overdue'; dueClass = 'due-overdue';
+            dueLabel   = `Overdue by ${Math.abs(diffDay)} day${Math.abs(diffDay) !== 1 ? 's' : ''}`;
+          } else if (diffDay <= 3) {
+            badgeClass = 'soon'; dueClass = 'due-soon';
+            dueLabel   = diffDay === 0 ? 'Due today!' : `Due in ${diffDay} day${diffDay !== 1 ? 's' : ''}`;
+          } else {
+            badgeClass = 'ok'; dueClass = 'due-ok';
+            dueLabel   = `Due ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          }
+          const fullDue = due.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+          return `
+            <div class="loan-row">
+              <img src="${esc(loan.image || '')}"
+                  onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.name)}</p>
+                <p class="loan-author">${esc(loan.category || 'Equipment')}</p>
+                <p class="loan-isbn" style="font-family:ui-monospace,monospace;">${esc(loan.barcode)}</p>
+              </div>
+              <div class="loan-actions">
+                <div class="loan-status-stack">
+                  <span class="due-badge ${badgeClass}">${dueLabel}</span>
+                  <p class="loan-due ${dueClass}" style="font-size:0.65rem;margin-top:0.2rem;">${fullDue}</p>
+                </div>
+                <p style="font-size:0.65rem;color:#475569;margin-top:0.35rem;">Return at the kiosk</p>
+              </div>
+            </div>`;
+        }).join('');
+
+        if (showSpinner) toast('Equipment loans refreshed.', 'positive');
+      } catch {
+        toast('Could not load equipment loans.', 'negative');
       } finally {
         if (btn) btn.classList.remove('spinning');
       }
@@ -577,6 +694,76 @@
       } catch { toast('Server error.', 'negative'); }
     }
 
+    // ── Equipment catalog ──────────────────────────────────────────────────────
+    let allEquipment    = [];
+    let filteredEquip   = [];
+    let currentEFilter  = 'all';
+
+    async function loadEquipmentCatalog() {
+      try {
+        const r = await fetch('/web-dashboard/api/equipment-catalog');
+        const d = await r.json();
+        allEquipment = d.equipment ?? [];
+        applyEquipFilters();
+      } catch { toast('Could not load equipment catalog.', 'negative'); }
+    }
+
+    function setEquipFilter(f) {
+      currentEFilter = f;
+      document.querySelectorAll('[data-efilter]').forEach(b =>
+        b.classList.toggle('active', b.dataset.efilter === f));
+      applyEquipFilters();
+    }
+
+    function filterEquipmentCatalog(query) {
+      applyEquipFilters(query);
+    }
+
+    function applyEquipFilters(query) {
+      const q = (query ?? document.getElementById('equipSearchInput').value).toLowerCase().trim();
+      let items = allEquipment;
+      if (q) items = items.filter(e =>
+        e.name.toLowerCase().includes(q) ||
+        (e.category || '').toLowerCase().includes(q));
+      if (currentEFilter === 'available') items = items.filter(e => e.availableUnits > 0);
+      if (currentEFilter === 'out')       items = items.filter(e => e.availableUnits === 0);
+      filteredEquip = items;
+      renderEquipmentCatalog();
+    }
+
+    function renderEquipmentCatalog() {
+      const grid = document.getElementById('equipCatalogGrid');
+      document.getElementById('equipCatalogCount').textContent =
+        `Showing ${filteredEquip.length} item${filteredEquip.length !== 1 ? 's' : ''}`;
+
+      if (!filteredEquip.length) {
+        grid.innerHTML = `<p style="color:#334155;font-size:0.82rem;grid-column:1/-1;padding:2rem 0;">No equipment found.</p>`;
+        return;
+      }
+
+      grid.innerHTML = filteredEquip.map((item, i) => {
+        const avail = item.availableUnits > 0;
+        return `
+          <div class="book-card ${avail ? '' : 'checked-out'}" style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
+            <img src="${esc(item.image || '')}"
+                onerror="this.src='/assets/book-placeholder.svg'"
+                alt="${esc(item.name)}" />
+            <div class="book-overlay">
+              <p class="book-title">${esc(item.name)}</p>
+              <p class="book-author">${esc(item.category || 'Equipment')}</p>
+              <p class="book-isbn">${item.loanDurationDays}-day loan period</p>
+              <span class="badge ${avail ? 'badge-avail' : 'badge-out'}">
+                ${avail ? item.availableUnits + ' AVAILABLE' : 'UNAVAILABLE'}
+              </span>
+              ${item.description
+                ? `<p style="font-size:0.65rem;color:#94a3b8;margin-top:0.5rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(item.description)}</p>`
+                : ''}
+              <p style="font-size:0.62rem;color:#475569;margin-top:0.5rem;">Visit the kiosk to borrow</p>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
     async function requestExtension(loanId, btn) {
       if (btn) btn.disabled = true;
       try {
@@ -611,7 +798,7 @@
     // Read ?view= query param so header nav links from index.ejs navigate correctly
     const urlParams = new URLSearchParams(window.location.search);
     const startView = urlParams.get('view');
-    if (startView && ['catalog', 'mybooks', 'suggest'].includes(startView)) {
+    if (startView && ['catalog', 'mybooks', 'suggest', 'equipment'].includes(startView)) {
       showView(startView);
     } else {
       showView('catalog');

@@ -805,40 +805,39 @@
           return;
         }
 
-        currentEquipUnit = d.unit;
-        const activeLoan = d.activeLoan;
+        currentEquipUnit = { barcode: d.barcode, name: d.name, image: d.image };
 
-        document.getElementById('equipPreviewImg').src =
-          d.unit.image || '/assets/book-placeholder.svg';
-        document.getElementById('equipPreviewName').textContent    = d.unit.name;
-        document.getElementById('equipPreviewCat').textContent     = d.unit.category || '';
-        document.getElementById('equipPreviewBarcode').textContent = `Barcode: ${d.unit.barcode}`;
+        document.getElementById('equipPreviewImg').src        = d.image || '/assets/book-placeholder.svg';
+        document.getElementById('equipPreviewName').textContent    = d.name;
+        document.getElementById('equipPreviewCat').textContent     = d.category || '';
+        document.getElementById('equipPreviewBarcode').textContent =
+          `Barcode: ${d.barcode}  ·  ${d.availableUnits} of ${d.totalUnits} available`;
 
         const badge       = document.getElementById('equipPreviewBadge');
         const loanInfo    = document.getElementById('equipLoanInfo');
         const checkoutBtn = document.getElementById('equipCheckoutBtn');
         const returnBtn   = document.getElementById('equipReturnBtn');
 
-        if (d.unit.status === 'Available' && !activeLoan) {
-          badge.textContent         = 'AVAILABLE';
-          badge.className           = 'return-status returned';
-          loanInfo.style.display    = 'none';
-          checkoutBtn.style.display = '';
-          returnBtn.style.display   = 'none';
-        } else if (activeLoan) {
-          badge.textContent         = 'CHECKED OUT';
+        if (d.userActiveLoan) {
+          // Current user already has this item checked out — show return
+          badge.textContent         = 'YOU HAVE THIS';
           badge.className           = 'return-status waiting';
-          document.getElementById('equipLoanName').textContent = activeLoan.borrowerName;
+          document.getElementById('equipLoanName').textContent = 'Checked out by you';
           document.getElementById('equipLoanDue').textContent  =
-            '— Due: ' + new Date(activeLoan.dueDate).toLocaleDateString('en-US', {
+            '— Due: ' + new Date(d.userActiveLoan.dueDate).toLocaleDateString('en-US', {
               month: 'long', day: 'numeric', year: 'numeric',
             });
           loanInfo.style.display    = '';
           checkoutBtn.style.display = 'none';
-          // Show Return — user may be returning their own item
           returnBtn.style.display   = '';
+        } else if (d.availableUnits > 0) {
+          badge.textContent         = `${d.availableUnits} AVAILABLE`;
+          badge.className           = 'return-status returned';
+          loanInfo.style.display    = 'none';
+          checkoutBtn.style.display = '';
+          returnBtn.style.display   = 'none';
         } else {
-          badge.textContent         = d.unit.status.toUpperCase();
+          badge.textContent         = 'NONE AVAILABLE';
           badge.className           = 'return-status waiting';
           loanInfo.style.display    = 'none';
           checkoutBtn.style.display = 'none';

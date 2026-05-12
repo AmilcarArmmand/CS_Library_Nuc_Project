@@ -115,58 +115,16 @@
 <body>
   <div class="admin-layout">
     <!-- Sidebar -->
-    <nav class="sidebar">
-      <div class="sidebar-brand">
-        <h1>CS_LIBRARY</h1>
-        <span>ADMIN PANEL</span>
-      </div>
-      <div class="nav-items">
-        <a href="/admin" class="nav-item active">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Dashboard
-        </a>
-        <a href="/admin/books" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
-          Books
-        </a>
-        <a href="/admin/equipment" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Equipment</a>
-        <a href="/admin/loans" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
-          Loans
-        </a>
-        <a href="/admin/users" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-          Users
-        </a>
-        <a href="/admin/reports" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-          Reports
-        </a>
-        <a href="/admin/donations" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M5 12h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M7.5 8a2.5 2.5 0 1 1 0-5c1.8 0 3.2 2.2 4.5 5"/><path d="M16.5 8a2.5 2.5 0 1 0 0-5c-1.8 0-3.2 2.2-4.5 5"/></svg>
-          Donations
-        </a>
-        <a href="/admin/suggestions" class="nav-item">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
-          Suggestions
-        </a>
-      </div>
-      <div class="sidebar-footer">
-        <div class="admin-name"><%= admin.name %></div>
-        <div class="admin-email"><%= admin.email %></div>
-        <a href="/admin/logout" class="signout-btn">Sign Out</a>
-      </div>
-    </nav>
-
-    <%- include('../../partials/admin-mobile-shell', { mobileTitle: 'Dashboard' }) %>
+  <%- include('./partials/sidebar', { activePage: 'dashboard', mobileTitle: 'Dashboard', admin: admin }) %>
 
     <!-- Main content -->
     <main class="main">
       <h1 class="page-title">Dashboard</h1>
       <p class="page-sub">Overview of library activity and system health</p>
 
-      <!-- Stats -->
-      <div class="stats-grid">
+      <!-- Book stats -->
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#475569;margin-bottom:0.6rem;">Books</div>
+      <div class="stats-grid" style="margin-bottom:0.75rem;">
         <div class="stat-card">
           <div class="stat-label">Registered Users</div>
           <div class="stat-value blue"><%= stats.users %></div>
@@ -176,12 +134,33 @@
           <div class="stat-value green"><%= stats.books %></div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Active Loans</div>
+          <div class="stat-label">Active Book Loans</div>
           <div class="stat-value amber"><%= stats.activeLoans %></div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">Overdue</div>
+          <div class="stat-label">Overdue Books</div>
           <div class="stat-value red"><%= stats.overdue %></div>
+        </div>
+      </div>
+
+      <!-- Equipment stats -->
+      <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#475569;margin-bottom:0.6rem;">Equipment</div>
+      <div class="stats-grid" style="margin-bottom:2rem;">
+        <div class="stat-card">
+          <div class="stat-label">Equipment Types</div>
+          <div class="stat-value blue"><%= stats.equipmentTypes %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Equipment Units</div>
+          <div class="stat-value green"><%= stats.equipmentUnits %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Equipment Loans</div>
+          <div class="stat-value amber"><%= stats.activeEquipmentLoans %></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Overdue Equipment</div>
+          <div class="stat-value red"><%= stats.overdueEquipment %></div>
         </div>
       </div>
 
@@ -214,6 +193,56 @@
               <% } %>
             </tbody>
           </table>
+        </div>
+
+        <div class="two-col">
+          <!-- Recent Equipment Activity -->
+          <div class="panel">
+            <div class="panel-title">Recent Equipment Activity</div>
+            <table>
+              <thead><tr><th>Item</th><th>Borrower</th><th>Status</th><th>Date</th></tr></thead>
+              <tbody>
+                <% recentEquipmentActivity.forEach(a => { %>
+                <% const overdue = !a.returned && new Date(a.dueDate) < new Date(); %>
+                <tr>
+                  <td style="font-weight:700;"><%= a.name %></td>
+                  <td><%= a.userName %></td>
+                  <td>
+                    <% if (a.returned) { %>
+                      <span class="badge badge-returned">RETURNED</span>
+                    <% } else if (overdue) { %>
+                      <span class="badge badge-overdue">OVERDUE</span>
+                    <% } else { %>
+                      <span class="badge badge-active">ACTIVE</span>
+                    <% } %>
+                  </td>
+                  <td><%= new Date(a.checkedOut).toLocaleDateString('en-US', {month:'short',day:'numeric'}) %></td>
+                </tr>
+                <% }); %>
+                <% if (!recentEquipmentActivity.length) { %>
+                <tr><td colspan="4" style="text-align:center;color:#64748b;">No equipment activity yet</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Popular Equipment -->
+          <div class="panel">
+            <div class="panel-title">Most Popular Equipment</div>
+            <% popularEquipment.forEach((e, i) => { %>
+            <div class="pop-item">
+              <div class="pop-rank"><%= i + 1 %></div>
+              <div>
+                <div class="pop-title"><%= e.name %></div>
+                <div class="pop-author"><%= e.category || 'Equipment' %></div>
+              </div>
+              <div class="pop-count"><%= e.checkoutCount %> checkouts</div>
+            </div>
+            <% }); %>
+            <% if (!popularEquipment.length) { %>
+            <p style="color:#64748b;font-size:0.82rem;text-align:center;padding:1rem;">No data yet</p>
+            <% } %>
+          </div>
         </div>
 
         <!-- Popular Books -->

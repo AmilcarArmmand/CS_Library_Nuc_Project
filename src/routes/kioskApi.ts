@@ -739,18 +739,13 @@ router.get('/holds/:userId', async (req: Request, res: Response) => {
 router.get('/equipment/scan/:barcode', async (req: Request, res: Response) => {
   try {
     const barcode = String(req.params['barcode'] ?? '').trim().toUpperCase();
-    if (!barcode) {
-      res.status(400).json({ error: 'Barcode is required.' });
-      return;
-    }
+    const userId  = req.query['userId'] ? Number(req.query['userId']) : null;
+    if (!barcode) { res.status(400).json({ error: 'Barcode is required.' }); return; }
 
-    const [unit] = await db
+    const units = await db
       .select({
         id:               equipmentUnits.id,
-        barcode:          equipmentUnits.barcode,
-        condition:        equipmentUnits.condition,
         status:           equipmentUnits.status,
-        notes:            equipmentUnits.notes,
         equipmentId:      equipmentUnits.equipmentId,
         name:             equipment.name,
         description:      equipment.description,
@@ -760,28 +755,43 @@ router.get('/equipment/scan/:barcode', async (req: Request, res: Response) => {
       })
       .from(equipmentUnits)
       .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
-      .where(eq(equipmentUnits.barcode, barcode))
-      .limit(1);
+      .where(eq(equipmentUnits.barcode, barcode));
 
-    if (!unit) {
+    if (!units.length) {
       res.status(404).json({ error: 'No equipment found with that barcode.' });
       return;
     }
 
-    const [activeLoan] = await db
-      .select({
-        id:           equipmentLoans.id,
-        userId:       equipmentLoans.userId,
-        checkedOut:   equipmentLoans.checkedOut,
-        dueDate:      equipmentLoans.dueDate,
-        borrowerName: users.name,
-      })
-      .from(equipmentLoans)
-      .innerJoin(users, eq(equipmentLoans.userId, users.id))
-      .where(and(eq(equipmentLoans.unitId, unit.id), eq(equipmentLoans.returned, false)))
-      .limit(1);
+    const first          = units[0]!;
+    const availableUnits = units.filter(u => u.status === 'Available').length;
 
-    res.json({ unit, activeLoan: activeLoan ?? null });
+    let userActiveLoan: { id: number; dueDate: Date } | null = null;
+    if (userId) {
+      const [loan] = await db
+        .select({ id: equipmentLoans.id, dueDate: equipmentLoans.dueDate })
+        .from(equipmentLoans)
+        .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
+        .where(and(
+          eq(equipmentUnits.barcode, barcode),
+          eq(equipmentLoans.userId, userId),
+          eq(equipmentLoans.returned, false),
+        ))
+        .limit(1);
+      userActiveLoan = loan ?? null;
+    }
+
+    res.json({
+      barcode,
+      name:             first.name,
+      description:      first.description,
+      category:         first.category,
+      image:            first.image,
+      loanDurationDays: first.loanDurationDays,
+      equipmentId:      first.equipmentId,
+      totalUnits:       units.length,
+      availableUnits,
+      userActiveLoan,
+    });
   } catch (err) {
     console.error('[Kiosk API] /equipment/scan error:', err);
     res.status(500).json({ error: 'Server error.' });
@@ -794,78 +804,48 @@ router.get('/equipment/scan/:barcode', async (req: Request, res: Response) => {
 router.post('/equipment/checkout', async (req: Request, res: Response) => {
   try {
     const userId  = Number(req.body.userId);
-    const barcode = String(req.body.barcode ?? '').trim().toUpperCase();
+    const barcode     = String(req.body.barcode ?? '').trim().toUpperCase();
+    const equipmentId = req.body.equipmentId ? Number(req.body.equipmentId) : null;
 
-    if (!userId || !barcode) {
-      res.status(400).json({ error: 'userId and barcode are required.' });
-      return;
-    }
+    if (!userId || (!barcode && !equipmentId)) {
+      res.status(400).json({ error: 'userId and barcode or equipmentId are required.' }); return;
+}
 
     const [user] = await db
       .select({ id: users.id, active: users.active })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-
+      .from(users).where(eq(users.id, userId)).limit(1);
     if (!user)        { res.status(404).json({ error: 'User not found.' }); return; }
     if (!user.active) { res.status(403).json({ error: 'Account is disabled.' }); return; }
 
-    const [unit] = await db
-      .select({
-        id:               equipmentUnits.id,
-        status:           equipmentUnits.status,
-        equipmentId:      equipmentUnits.equipmentId,
-        name:             equipment.name,
-        loanDurationDays: equipment.loanDurationDays,
-      })
-      .from(equipmentUnits)
-      .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
-      .where(eq(equipmentUnits.barcode, barcode))
-      .limit(1);
-
-    if (!unit) {
-      res.status(404).json({ error: 'Equipment not found.' });
-      return;
-    }
-
-    if (unit.status !== 'Available') {
-      res.status(409).json({ error: `This unit is currently ${unit.status.toLowerCase()}.` });
-      return;
-    }
-
-    // Double-check: no active loan on this specific unit
-    const [existingUnitLoan] = await db
-      .select({ id: equipmentLoans.id })
-      .from(equipmentLoans)
-      .where(and(eq(equipmentLoans.unitId, unit.id), eq(equipmentLoans.returned, false)))
-      .limit(1);
-
-    if (existingUnitLoan) {
-      res.status(409).json({ error: 'This unit is already on loan.' });
-      return;
-    }
-
-    // One-per-type rule: user can't have two active loans of the same equipment type
-    const [existingTypeLoan] = await db
+    // One-per-type rule: user already has this barcode group checked out
+    const [existingLoan] = await db
       .select({ id: equipmentLoans.id })
       .from(equipmentLoans)
       .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
-      .where(
-        and(
-          eq(equipmentLoans.userId, userId),
-          eq(equipmentUnits.equipmentId, unit.equipmentId),
-          eq(equipmentLoans.returned, false),
-        ),
-      )
+      .where(and(
+        eq(equipmentUnits.barcode, barcode),
+        eq(equipmentLoans.userId, userId),
+        eq(equipmentLoans.returned, false),
+      ))
       .limit(1);
-
-    if (existingTypeLoan) {
-      res.status(409).json({ error: `You already have a ${unit.name} checked out.` });
-      return;
+    if (existingLoan) {
+      res.status(409).json({ error: 'You already have this item checked out.' }); return;
     }
 
-    const dueDate = addDays(new Date(), unit.loanDurationDays);
+    const unitCondition = barcode
+    ? and(eq(equipmentUnits.barcode, barcode), eq(equipmentUnits.status, 'Available'))
+    : and(eq(equipmentUnits.equipmentId, equipmentId!), eq(equipmentUnits.status, 'Available'));
+    // Pick any available unit with this barcode
+    const [unit] = await db
+      .select({ id: equipmentUnits.id, status: equipmentUnits.status, equipmentId: equipmentUnits.equipmentId, name: equipment.name, loanDurationDays: equipment.loanDurationDays })
+      .from(equipmentUnits)
+      .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
+      .where(unitCondition)
+      .limit(1);
 
+    if (!unit) { res.status(409).json({ error: 'No units available for this barcode.' }); return; }
+
+    const dueDate = addDays(new Date(), unit.loanDurationDays);
     await db.insert(equipmentLoans).values({ userId, unitId: unit.id, dueDate });
     await db.update(equipmentUnits).set({ status: 'Checked Out' }).where(eq(equipmentUnits.id, unit.id));
 
@@ -883,55 +863,27 @@ router.post('/equipment/return', async (req: Request, res: Response) => {
   try {
     const barcode = String(req.body.barcode ?? '').trim().toUpperCase();
     const userId  = Number(req.body.userId);
+    if (!barcode) { res.status(400).json({ error: 'Barcode is required.' }); return; }
 
-    if (!barcode) {
-      res.status(400).json({ error: 'Barcode is required.' });
-      return;
-    }
-
-    const [unit] = await db
-      .select({
-        id:    equipmentUnits.id,
-        name:  equipment.name,
-        image: equipment.image,
-      })
-      .from(equipmentUnits)
-      .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
-      .where(eq(equipmentUnits.barcode, barcode))
-      .limit(1);
-
-    if (!unit) {
-      res.status(404).json({ error: 'No equipment found with that barcode.' });
-      return;
-    }
-
+    // Find this user's active loan for any unit with this barcode
     const [loan] = await db
-      .select({ id: equipmentLoans.id, userId: equipmentLoans.userId })
+      .select({ id: equipmentLoans.id, unitId: equipmentLoans.unitId, name: equipment.name, image: equipment.image })
       .from(equipmentLoans)
-      .where(and(eq(equipmentLoans.unitId, unit.id), eq(equipmentLoans.returned, false)))
+      .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
+      .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
+      .where(and(
+        eq(equipmentUnits.barcode, barcode),
+        eq(equipmentLoans.userId, userId),
+        eq(equipmentLoans.returned, false),
+      ))
       .limit(1);
 
-    if (!loan) {
-      res.status(404).json({ error: 'No active loan found for this equipment.' });
-      return;
-    }
+    if (!loan) { res.status(404).json({ error: 'No active loan found for this equipment on your account.' }); return; }
 
-    if (userId && loan.userId !== userId) {
-      res.status(403).json({ error: 'This equipment is not checked out on your account.' });
-      return;
-    }
+    await db.update(equipmentLoans).set({ returned: true, returnedDate: new Date() }).where(eq(equipmentLoans.id, loan.id));
+    await db.update(equipmentUnits).set({ status: 'Available' }).where(eq(equipmentUnits.id, loan.unitId));
 
-    await db
-      .update(equipmentLoans)
-      .set({ returned: true, returnedDate: new Date() })
-      .where(eq(equipmentLoans.id, loan.id));
-
-    await db
-      .update(equipmentUnits)
-      .set({ status: 'Available' })
-      .where(eq(equipmentUnits.id, unit.id));
-
-    res.json({ ok: true, name: unit.name, image: unit.image ?? '' });
+    res.json({ ok: true, name: loan.name, image: loan.image ?? '' });
   } catch (err) {
     console.error('[Kiosk API] /equipment/return error:', err);
     res.status(500).json({ error: 'Equipment return failed.' });
@@ -971,6 +923,24 @@ router.get('/equipment/loans/:userId', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[Kiosk API] /equipment/loans error:', err);
     res.status(500).json({ error: 'Could not fetch equipment loans.' });
+  }
+});
+
+router.get('/equipment/catalog', async (_req: Request, res: Response) => {
+  try {
+    const allEquip = await db.select().from(equipment).orderBy(equipment.name);
+    const available = await db
+      .select({ equipmentId: equipmentUnits.equipmentId })
+      .from(equipmentUnits)
+      .where(eq(equipmentUnits.status, 'Available'));
+    const countMap = new Map<number, number>();
+    for (const u of available) {
+      countMap.set(u.equipmentId, (countMap.get(u.equipmentId) ?? 0) + 1);
+    }
+    res.json({ equipment: allEquip.map(e => ({ ...e, availableUnits: countMap.get(e.id) ?? 0 })) });
+  } catch (err) {
+    console.error('[Kiosk API] /equipment/catalog error:', err);
+    res.status(500).json({ error: 'Could not load equipment catalog.' });
   }
 });
 

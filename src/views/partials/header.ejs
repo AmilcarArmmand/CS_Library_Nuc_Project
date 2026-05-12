@@ -25,10 +25,12 @@
     <% if (_mode === 'dashboard') { %>
       <button class="hdr-nav-btn active" id="nav-catalog" onclick="showView('catalog')">My Library</button>
       <button class="hdr-nav-btn"        id="nav-mybooks" onclick="showView('mybooks')">My Books</button>
+      <button class="hdr-nav-btn"        id="nav-equipment" onclick="showView('equipment')">Equipment</button>
       <button class="hdr-nav-btn"        id="nav-suggest" onclick="showView('suggest')">Suggest</button>
     <% } else { %>
       <a href="/web-dashboard?view=catalog" class="hdr-nav-btn">My Library</a>
       <a href="/web-dashboard?view=mybooks" class="hdr-nav-btn">My Books</a>
+      <a href="/web-dashboard?view=equipment" class="hdr-nav-btn">Equipment</a>
       <a href="/web-dashboard?view=suggest" class="hdr-nav-btn">Suggest</a>
     <% } %>
   </nav>
@@ -69,10 +71,12 @@
     <% if (_mode === 'dashboard') { %>
       <button class="mobile-item active" id="mnav-catalog" onclick="showView('catalog');closeMobileMenu()">My Library</button>
       <button class="mobile-item"        id="mnav-mybooks" onclick="showView('mybooks');closeMobileMenu()">My Books</button>
+      <button class="mobile-item"        id="mnav-equipment" onclick="showView('equipment');closeMobileMenu()">Equipment</button>
       <button class="mobile-item"        id="mnav-suggest" onclick="showView('suggest');closeMobileMenu()">Suggest</button>
     <% } else { %>
       <a href="/web-dashboard?view=catalog" class="mobile-item">My Library</a>
       <a href="/web-dashboard?view=mybooks" class="mobile-item">My Books</a>
+      <a href="/web-dashboard?view=equipment" class="mobile-item">Equipment</a>
       <a href="/web-dashboard?view=suggest" class="mobile-item">Suggest</a>
     <% } %>
     <div class="mobile-divider"></div>

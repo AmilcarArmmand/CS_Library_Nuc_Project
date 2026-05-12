@@ -14,7 +14,7 @@ import type { Request, Response, NextFunction } from 'express';
 import passport from '../config/passport.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { db } from '../db/database.js';
-import { users, books, loans, holds, suggestions, donations, renewalRequests } from '../db/schema/schema.js';
+import { users, books, loans, holds, suggestions, donations, renewalRequests, equipment, equipmentUnits, equipmentLoans } from '../db/schema/schema.js';
 import { eq, count, and, lt, gt, desc, asc, sql, or } from 'drizzle-orm';
 import { addDays } from 'date-fns';
 import {
@@ -171,37 +171,55 @@ router.use(requireAdmin);
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get('/', async (req: Request, res: Response) => {
-  const [[userCount], [bookCount], [activeLoanCount], [overdueCount]] = await Promise.all([
+  const now = new Date();
+
+  const [
+    [userCount], [bookCount], [activeLoanCount], [overdueCount],
+    [equipTypeCount], [equipUnitCount], [activeEquipLoanCount], [overdueEquipCount],
+  ] = await Promise.all([
     db.select({ count: count() }).from(users),
     db.select({ count: count() }).from(books),
     db.select({ count: count() }).from(loans).where(eq(loans.returned, false)),
-    db.select({ count: count() }).from(loans).where(
-      and(eq(loans.returned, false), lt(loans.dueDate, new Date()))
-    ),
+    db.select({ count: count() }).from(loans).where(and(eq(loans.returned, false), lt(loans.dueDate, now))),
+    db.select({ count: count() }).from(equipment),
+    db.select({ count: count() }).from(equipmentUnits),
+    db.select({ count: count() }).from(equipmentLoans).where(eq(equipmentLoans.returned, false)),
+    db.select({ count: count() }).from(equipmentLoans).where(and(eq(equipmentLoans.returned, false), lt(equipmentLoans.dueDate, now))),
   ]);
 
-  // Recent activity — last 10 transactions
   const recentActivity = await db
     .select({
       id: loans.id,
-      isbn: loans.isbn,
       title: books.title,
       checkedOut: loans.checkedOut,
       dueDate: loans.dueDate,
       returned: loans.returned,
-      returnedDate: loans.returnedDate,
       userName: users.name,
     })
     .from(loans)
     .innerJoin(books, eq(loans.isbn, books.isbn))
     .innerJoin(users, eq(loans.userId, users.id))
     .orderBy(desc(loans.checkedOut))
-    .limit(10);
+    .limit(8);
 
-  // Popular books (top 5 by checkout count)
+  const recentEquipmentActivity = await db
+    .select({
+      id: equipmentLoans.id,
+      name: equipment.name,
+      checkedOut: equipmentLoans.checkedOut,
+      dueDate: equipmentLoans.dueDate,
+      returned: equipmentLoans.returned,
+      userName: users.name,
+    })
+    .from(equipmentLoans)
+    .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
+    .innerJoin(equipment, eq(equipmentUnits.equipmentId, equipment.id))
+    .innerJoin(users, eq(equipmentLoans.userId, users.id))
+    .orderBy(desc(equipmentLoans.checkedOut))
+    .limit(8);
+
   const popularBooks = await db
     .select({
-      isbn: books.isbn,
       title: books.title,
       author: books.author,
       checkoutCount: count(loans.id),
@@ -212,17 +230,36 @@ router.get('/', async (req: Request, res: Response) => {
     .orderBy(desc(count(loans.id)))
     .limit(5);
 
+  const popularEquipment = await db
+    .select({
+      name: equipment.name,
+      category: equipment.category,
+      checkoutCount: count(equipmentLoans.id),
+    })
+    .from(equipment)
+    .leftJoin(equipmentUnits, eq(equipment.id, equipmentUnits.equipmentId))
+    .leftJoin(equipmentLoans, eq(equipmentUnits.id, equipmentLoans.unitId))
+    .groupBy(equipment.id, equipment.name, equipment.category)
+    .orderBy(desc(count(equipmentLoans.id)))
+    .limit(5);
+
   res.render('pages/admin/dashboard', {
     title: 'Admin — CS Library',
     admin: req.user,
     stats: {
-      users:       userCount?.count ?? 0,
-      books:       bookCount?.count ?? 0,
-      activeLoans: activeLoanCount?.count ?? 0,
-      overdue:     overdueCount?.count ?? 0,
+      users:                userCount?.count       ?? 0,
+      books:                bookCount?.count        ?? 0,
+      activeLoans:          activeLoanCount?.count  ?? 0,
+      overdue:              overdueCount?.count     ?? 0,
+      equipmentTypes:       equipTypeCount?.count   ?? 0,
+      equipmentUnits:       equipUnitCount?.count   ?? 0,
+      activeEquipmentLoans: activeEquipLoanCount?.count ?? 0,
+      overdueEquipment:     overdueEquipCount?.count    ?? 0,
     },
     recentActivity,
+    recentEquipmentActivity,
     popularBooks,
+    popularEquipment,
   });
 });
 
@@ -235,6 +272,7 @@ router.get('/books', async (_req: Request, res: Response) => {
   const allBooks = await db.select().from(books).orderBy(books.title);
   res.render('pages/admin/books', {
     title: 'Book Management — CS Library Admin',
+    admin: _req.user,
     books: allBooks,
   });
 });
@@ -403,9 +441,30 @@ router.get('/loans', async (_req: Request, res: Response) => {
     .where(eq(renewalRequests.status, 'pending'))
     .orderBy(desc(renewalRequests.requestedAt));
 
+  const allEquipmentLoans = await db
+    .select({
+      id:           equipmentLoans.id,
+      name:         equipment.name,
+      category:     equipment.category,
+      barcode:      equipmentUnits.barcode,
+      checkedOut:   equipmentLoans.checkedOut,
+      dueDate:      equipmentLoans.dueDate,
+      returned:     equipmentLoans.returned,
+      returnedDate: equipmentLoans.returnedDate,
+      userName:     users.name,
+      userEmail:    users.email,
+    })
+    .from(equipmentLoans)
+    .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
+    .innerJoin(equipment,      eq(equipmentUnits.equipmentId, equipment.id))
+    .innerJoin(users,          eq(equipmentLoans.userId, users.id))
+    .orderBy(desc(equipmentLoans.checkedOut));
+
   res.render('pages/admin/loans', {
     title: 'Loan Management — CS Library Admin',
+    admin: _req.user,
     loans: allLoans,
+    equipmentLoans: allEquipmentLoans,
     renewalRequests: pendingRenewalRequests,
   });
 });
@@ -471,6 +530,7 @@ router.get('/donations', async (_req: Request, res: Response) => {
 
   res.render('pages/admin/donations', {
     title: 'Donation Log — CS Library Admin',
+    admin: _req.user,
     donations: donationRows,
   });
 });
@@ -604,6 +664,7 @@ router.get('/users', async (_req: Request, res: Response) => {
 
   res.render('pages/admin/users', {
     title: 'User Management — CS Library Admin',
+    admin: _req.user,
     users: usersWithLoans,
   });
 });
@@ -747,10 +808,36 @@ router.get('/reports', async (_req: Request, res: Response) => {
     .groupBy(sql`EXTRACT(HOUR FROM ${loans.checkedOut})`)
     .orderBy(sql`EXTRACT(HOUR FROM ${loans.checkedOut})`);
 
+  const monthlyEquipmentStats = await db
+    .select({
+      month: sql<string>`to_char(${equipmentLoans.checkedOut}, 'YYYY-MM')`,
+      checkouts: count(),
+    })
+    .from(equipmentLoans)
+    .where(gt(equipmentLoans.checkedOut, sql`NOW() - INTERVAL '12 months'`))
+    .groupBy(sql`to_char(${equipmentLoans.checkedOut}, 'YYYY-MM')`)
+    .orderBy(sql`to_char(${equipmentLoans.checkedOut}, 'YYYY-MM')`);
+
+  const popularEquipment = await db
+    .select({
+      name: equipment.name,
+      category: equipment.category,
+      checkoutCount: count(equipmentLoans.id),
+    })
+    .from(equipment)
+    .leftJoin(equipmentUnits, eq(equipment.id, equipmentUnits.equipmentId))
+    .leftJoin(equipmentLoans, eq(equipmentUnits.id, equipmentLoans.unitId))
+    .groupBy(equipment.id, equipment.name, equipment.category)
+    .orderBy(desc(count(equipmentLoans.id)))
+    .limit(10);
+
   res.render('pages/admin/reports', {
     title: 'Usage Reports — CS Library Admin',
+    admin: _req.user,
     monthlyStats,
+    monthlyEquipmentStats,
     popular,
+    popularEquipment,
     dayOfWeek,
     hourOfDay,
   });
@@ -805,6 +892,7 @@ router.get('/suggestions', async (_req: Request, res: Response) => {
 
   res.render('pages/admin/suggestions', {
     title: 'Book Suggestions — CS Library Admin',
+    admin: _req.user,
     suggestions: allSuggestions,
   });
 });

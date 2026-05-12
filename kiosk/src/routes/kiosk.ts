@@ -407,9 +407,10 @@ router.get('/api/my-holds', requireLogin, async (req: Request, res: Response) =>
 // Look up a unit by barcode — called when user scans in the Equipment tab.
 router.get('/api/equipment/scan/:barcode', requireLogin, async (req: Request, res: Response) => {
   const barcode = String(req.params['barcode'] ?? '').trim().toUpperCase();
+  const user    = getUser(req)!;
   const { ok, status, data } = await cloudFetch(
     'GET',
-    `/equipment/scan/${encodeURIComponent(barcode)}`,
+    `/equipment/scan/${encodeURIComponent(barcode)}?userId=${user.id}`,
   );
   res.status(ok ? 200 : status).json(data);
 });
@@ -440,6 +441,12 @@ router.post('/api/equipment/return', requireLogin, async (req: Request, res: Res
 router.get('/api/equipment/loans', requireLogin, async (req: Request, res: Response) => {
   const user = getUser(req)!;
   const { ok, status, data } = await cloudFetch('GET', `/equipment/loans/${user.id}`);
+  res.status(ok ? 200 : status).json(data);
+});
+
+// GET /api/equipment/catalog
+router.get('/api/equipment/catalog', requireLogin, async (req: Request, res: Response) => {
+  const { ok, status, data } = await cloudFetch('GET', '/equipment/catalog');
   res.status(ok ? 200 : status).json(data);
 });
 

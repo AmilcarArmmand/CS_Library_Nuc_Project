@@ -1,7 +1,7 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { books, loans, holds, suggestions, renewalRequests, users } from '../db/schema/schema.js';
+import { books, loans, holds, suggestions, renewalRequests, users, equipment, equipmentUnits, equipmentLoans } from '../db/schema/schema.js';
 import { eq, desc, and, or } from 'drizzle-orm';
 import { normalizeIsbn } from '../utils/openLibrary.js';
 import { sendRenewalRequestReceivedEmail } from '../utils/emailService.js';
@@ -283,6 +283,79 @@ router.post('/api/renewal-request', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[WebDashboard] /api/renewal-request error:', err);
     res.status(500).json({ error: 'Failed to submit extension request.' });
+  }
+});
+
+// GET /web-dashboard/api/equipment-catalog
+// Returns all equipment types with their unit availability summary.
+
+router.get('/api/equipment-catalog', async (req: Request, res: Response) => {
+  try {
+    const allEquipment = await db
+      .select()
+      .from(equipment)
+      .orderBy(equipment.name);
+
+    const allUnits = await db
+      .select({
+        id:          equipmentUnits.id,
+        equipmentId: equipmentUnits.equipmentId,
+        status:      equipmentUnits.status,
+        condition:   equipmentUnits.condition,
+      })
+      .from(equipmentUnits)
+      .where(eq(equipmentUnits.status, 'Available'));
+
+    // Count available units per equipment type
+    const availableByType = new Map<number, number>();
+    for (const unit of allUnits) {
+      availableByType.set(
+        unit.equipmentId,
+        (availableByType.get(unit.equipmentId) ?? 0) + 1,
+      );
+    }
+
+    const enriched = allEquipment.map(item => ({
+      ...item,
+      availableUnits: availableByType.get(item.id) ?? 0,
+    }));
+
+    res.json({ equipment: enriched });
+  } catch (err) {
+    console.error('[WebDashboard] /api/equipment-catalog error:', err);
+    res.status(500).json({ error: 'Could not load equipment catalog.' });
+  }
+});
+
+// GET /web-dashboard/api/my-equipment-loans
+// Returns the logged-in user's active equipment loans.
+
+router.get('/api/my-equipment-loans', async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id as number;
+
+    const loanRows = await db
+      .select({
+        id:           equipmentLoans.id,
+        barcode:      equipmentUnits.barcode,
+        checkedOut:   equipmentLoans.checkedOut,
+        dueDate:      equipmentLoans.dueDate,
+        returned:     equipmentLoans.returned,
+        returnedDate: equipmentLoans.returnedDate,
+        name:         equipment.name,
+        category:     equipment.category,
+        image:        equipment.image,
+      })
+      .from(equipmentLoans)
+      .innerJoin(equipmentUnits, eq(equipmentLoans.unitId, equipmentUnits.id))
+      .innerJoin(equipment,      eq(equipmentUnits.equipmentId, equipment.id))
+      .where(eq(equipmentLoans.userId, userId))
+      .orderBy(desc(equipmentLoans.checkedOut));
+
+    res.json({ loans: loanRows });
+  } catch (err) {
+    console.error('[WebDashboard] /api/my-equipment-loans error:', err);
+    res.status(500).json({ error: 'Could not fetch equipment loans.' });
   }
 });
 
