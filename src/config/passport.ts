@@ -110,7 +110,6 @@ if (hasGoogleAuth) {
           .values({ googleId, email, name, picture, active: true, lastLogin: new Date() })
           .returning();
 
-        console.log(`[Auth] New Google user: ${email}`);
         return done(null, newUser as Express.User);
 
       } catch (err) {
@@ -225,7 +224,6 @@ if (hasMicrosoftAuth) {
           const rawId    = normalizeStudentId(graphData.employeeId ?? '');
           graphStudentId = /^[A-Z0-9]{5,16}$/.test(rawId) ? rawId : null;
 
-          //console.log(`[Auth] Graph data — email: ${graphEmail}, employeeId: ${graphStudentId}`);
         } catch (graphErr) {
           console.warn('[Auth] Graph fetch failed, falling back to profile data:', graphErr);
         }
@@ -239,7 +237,6 @@ if (hasMicrosoftAuth) {
 
         if (!email) return done(new Error('Microsoft account has no email address'));
 
-        //Stop
         let [user] = microsoftId
           ? await db.select().from(users).where(eq(users.microsoftId, microsoftId)).limit(1)
           : [];
@@ -251,10 +248,6 @@ if (hasMicrosoftAuth) {
           };
           if (studentId && user.studentId !== studentId) {
             updates.studentId = studentId;
-            if (user.studentId) {
-              // For the students who register in the page and, in a rare case, mistype their ID.
-              console.log(`[Auth] Correcting studentId for ${user.email}: ${user.studentId} → ${studentId}`);
-            }
           }
           if (!user.microsoftId && microsoftId) updates.microsoftId = microsoftId;
           await db.update(users).set(updates).where(eq(users.id, user.id));
@@ -275,10 +268,6 @@ if (hasMicrosoftAuth) {
           };
           if (studentId && user.studentId !== studentId) {
             updates.studentId = studentId;
-            if (user.studentId) {
-              // For the students who register in the page and, in a rare case, mistype their ID.
-              console.log(`[Auth] Correcting studentId for ${user.email}: ${user.studentId} → ${studentId}`);
-            }
           }
           await db.update(users).set(updates).where(eq(users.id, user.id));
           return done(null, { ...user, ...updates } as Express.User);

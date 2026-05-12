@@ -9,7 +9,7 @@ A full-stack library management system for the Department of Computer Science at
 CS Library provides two interfaces over a shared PostgreSQL database:
 
 - **Web Portal** — Students register, browse the catalog, track their loans, and manage their account from anywhere they go. Supports local email/password login and Microsoft (Outlook) single sign-on.
-- **Kiosk App** — A Raspberry Pi terminal in the CS Library where students scan their student ID to check out and return books. Communicates with the web server over a shared key, the REST API.
+- **Kiosk App** — A Raspberry Pi terminal in the CS Library where students scan or type their student ID to check out and return books. Communicates with the web server through a shared-key REST API.
 
 ---
 
@@ -70,7 +70,7 @@ CS Library provides two interfaces over a shared PostgreSQL database:
 │  ├── /admin/*               │         └──────────────────────┘
 │  └── /api/kiosk/*  ◄────────┘
 │                             │
-│  PostgreSQL (Cloud SQL)     │
+│  PostgreSQL Database        │
 └─────────────────────────────┘
 ```
 
@@ -121,7 +121,8 @@ Open `.env` and fill in your values. At minimum:
 
 ```env
 NODE_ENV=development
-PORT=8000
+PORT=8080
+APP_BASE_URL=http://localhost:8080
 
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
@@ -134,7 +135,7 @@ KIOSK_API_KEY=    # generate: node -e "console.log(require('crypto').randomBytes
 
 MICROSOFT_CLIENT_ID=        # from Azure Portal
 MICROSOFT_CLIENT_SECRET=    # from Azure Portal
-MICROSOFT_CALLBACK_URL=http://localhost:3000/auth/microsoft/callback
+MICROSOFT_CALLBACK_URL=http://localhost:8080/auth/outlook/callback
 ```
 
 ### 5. Set up the database
@@ -176,7 +177,7 @@ Or for development with hot reload:
 npm run dev
 ```
 
-Open your browser to `http://localhost:8000`
+Open your browser to `http://localhost:8080`
 
 ---
 
@@ -204,12 +205,12 @@ Fill in `kiosk/.env`:
 
 ```env
 CLOUD_HOST=your-server-ip-or-domain
-CLOUD_PORT=3000
+CLOUD_PORT=8080
 CLOUD_PROTOCOL=http
 CLOUD_API_KEY=   # must match KIOSK_API_KEY on the server
 
 KIOSK_SESSION_SECRET=   # any random string
-KIOSK_PORT=8080
+KIOSK_PORT=8081
 ```
 
 ### 4. Build and run
@@ -218,11 +219,11 @@ KIOSK_PORT=8080
 npm run build && npm start
 ```
 
-The kiosk UI is accessible at `http://localhost:8080`. On the Pi, configure Chromium to open this URL on boot in kiosk mode:
+The kiosk UI is accessible at `http://localhost:8081`. On the Pi, configure Chromium to open this URL on boot in kiosk mode:
 
 ```bash
 # Add to /etc/xdg/lxsession/LXDE-pi/autostart
-@chromium-browser --kiosk --noerrdialogs http://localhost:8080
+@chromium-browser --kiosk --noerrdialogs http://localhost:8081
 ```
 
 ---
@@ -234,11 +235,13 @@ The kiosk UI is accessible at `http://localhost:8080`. On the Pi, configure Chro
 ```bash
 ssh user@scsu-server
 cd /opt/app
-git clone https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git .
-cp .env.example .env
-nano .env   # fill in production values
-chmod +x deploy.sh stop.sh status.sh
-./deploy.sh
+git clone -b reconstruction https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git CS_Library_Nuc_Project
+cp CS_Library_Nuc_Project/.env.example .env
+mkdir -p kiosk
+cp CS_Library_Nuc_Project/kiosk/.env.example kiosk/.env
+nano .env        # fill in production web values
+nano kiosk/.env  # fill in kiosk values
+./CS_Library_Nuc_Project/deploy-scsu.sh
 ```
 
 ### Updating the server
@@ -246,8 +249,7 @@ chmod +x deploy.sh stop.sh status.sh
 ```bash
 ssh user@your-server
 cd /opt/app
-git pull
-./deploy.sh
+BRANCH=reconstruction ./deploy-scsu.sh
 ```
 
 ### Useful commands

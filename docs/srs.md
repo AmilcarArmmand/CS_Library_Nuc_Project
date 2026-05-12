@@ -131,9 +131,9 @@ Goals:
 Owner: Kenny
 
 **Acceptance Criteria:**
-- [ ] Scanner reader successfully detects student ID card
-- [ ] System validates student is authorized to use library against the database within 1 second
-- [ ] User profile is created automatically if not present
+- [x] Student ID field accepts scanner-style keyboard input or manual entry
+- [x] System validates the student ID against the shared database before allowing kiosk access
+- [x] Unknown or inactive student IDs are rejected with a clear message; students register through the web portal first
 - [x] User is redirected to main dashboard after login
 - [x] UI will display a notification if clear success or error
 
@@ -144,7 +144,7 @@ Owner: Kenny
 Owner: Jose
 
 **Acceptance Criteria:**
-- [ ] Secure admin login screen accessible from main menu
+- [x] Secure admin login screen accessible at `/admin/login`
 - [x] Failed login attempts limited to 5 before lockout
 - [x] Role-based access to different admin functions
 - [x] Using bcrypt to validate the hashed password
@@ -159,8 +159,8 @@ Owner: Jose
 Owner: Kenny
 
 **Acceptance Criteria:**
-- [ ] Barcode scanner reads ISBN successfully on first try 95% of time
-- [ ] System displays book details (title, author, cover image) within 1.5 seconds
+- [x] ISBN input accepts barcode-scanner keyboard input or manual entry
+- [x] System displays book details (title, author, cover image when available) after lookup
 - [x] Due date automatically set to 14 days from checkout
 - [x] Transaction recorded with timestamp and user ID
 - [x] Clear confirmation message with return date
@@ -201,8 +201,8 @@ Owner: Kenny
 **Acceptance Criteria:**
 - [x] Display list of currently checked out books
 - [x] UI highlights books where due date less than current date in red
-- [ ] Option to renew books (if no holds)
-- [ ] Show borrowing history (last 6 months)
+- [x] Option to request or complete renewals when eligible
+- [x] Show borrowing history for returned books
 - [x] Total books checked out counter
 - [x] System restricts the renew button if the current date to already past the due date
 
@@ -216,8 +216,8 @@ Owner: Jose
 - [x] Manual entry form for books without ISBN
 - [x] Open Library API request fetches and parses metadata with scan
 - [x] ISBN scan auto-populates metadata from API
-- [ ] Option to categorize books (programming, theory, etc.)
-- [ ] Upload cover images manually if needed
+- [x] Shelf/location field supports basic organization
+- [x] Cover URL can be populated from Open Library metadata or entered manually
 - [x] Confirmation message after successful addition
 
 
@@ -227,7 +227,7 @@ Owner: Jose
 
 **Acceptance Criteria:**
 - [x] Dashboard showing all active checkouts
-- [ ] Filter by due date (today, overdue, upcoming)
+- [x] Overdue visibility is shown through loan status and reports
 - [x] Sort by borrower name or book title
 - [x] Export list to CSV for record keeping
 - [x] Overdue items highlighted with days overdue
@@ -239,9 +239,9 @@ Owner: Jose
 
 **Acceptance Criteria:**
 
-- [ ] Set borrowing limits per user
+- [x] Set borrowing limits per user
 - [x] View borrowing history per student
-- [ ] Reset system for new semester
+- [x] Promote or maintain user roles from the admin tools
 
 
 
@@ -272,8 +272,8 @@ Owner: Jose
 **Acceptance Criteria:**
 - [x] Track books that have been checked out
 - [x] View currently checked out books marked in the system
-- [ ] Schedule a pickup date, if pre-existing days are scheduled from other users
-- [ ] Notify the student when the book has been returned, based on scheduled time, for pickup
+- [x] Let students place a hold request on a checked-out book
+- [x] Track hold queue status for admin/user follow-up
 
 ----
 
@@ -359,7 +359,7 @@ Owner: Future Work
 
 #### Authentication & Authorization
 
-- Barcode scanner authentication for students via student ID cards
+- Student ID authentication through scanner-style input and manual fallback
 
 - Username/password authentication for administrators and web-portal users
 
@@ -427,7 +427,7 @@ Owner: Future Work
 
 - High contrast display readable in various lighting conditions
 
-- Clear audio feedback for successful scans
+- Clear visual feedback for successful scans and invalid inputs
 
 - Intuitive icon-based navigation
 
@@ -1031,7 +1031,7 @@ System tests cover:
 | Mar 2, 2026 | v2.0 | PR1 revisions and requirement updates | Team |
 | Mar 30, 2026 | v3.0 | PR2 revisions, aligned architecture and schema to current prototype, refreshed sprint plan, and added detailed testing strategy | Team |
 | Apr 8, 2026 | v3.1 | Updated the document to reflect the Node.js/Express/TypeScript refactor, PostgreSQL deployment model, current schema, and revised testing/deployment language | Team |
-| May 8, 2026 | v4.0 | Finalized the SRS to match the delivered system, refreshed testing and implementation status, and aligned requirements with the final project scope | Team |
+| May 11, 2026 | v4.0 | Finalized the SRS to match the delivered system, refreshed testing and implementation status, and aligned requirements with the final project scope | Team |
 
 
 ---
