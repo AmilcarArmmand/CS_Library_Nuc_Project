@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/admin-mobile.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Space Grotesk', sans-serif; background: #020617; color: white; min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 15% 50%, rgba(29,78,216,0.15), transparent 35%),
+        radial-gradient(ellipse at 85% 30%, rgba(6,182,212,0.12), transparent 35%);
+    }
+    .admin-layout { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    .sidebar { width: 250px; background: rgba(10,15,28,0.95); border-right: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; padding: 1.5rem 0; flex-shrink: 0; backdrop-filter: blur(20px); position: fixed; top: 0; left: 0; bottom: 0; z-index: 10; }
+    .sidebar-brand { padding: 0 1.25rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 1rem; }
+    .sidebar-brand h1 { font-size: 0.85rem; font-weight: 900; letter-spacing: 0.15em; }
+    .sidebar-brand span { font-size: 0.65rem; color: #60a5fa; font-weight: 300; letter-spacing: 0.15em; }
+    .nav-items { display: flex; flex-direction: column; gap: 0.15rem; padding: 0 0.75rem; flex: 1; overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.75rem; border-radius: 0.5rem; text-decoration: none; color: #94a3b8; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; white-space: nowrap; }
+    .nav-item:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); margin-top: auto; }
+    .signout-btn { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 0.35rem; font-size: 0.68rem; font-weight: 700; color: #f87171; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); text-decoration: none; }
+
+    .main { flex: 1; margin-left: 250px; padding: 2rem; }
+    .page-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .page-sub { font-size: 0.82rem; color: #64748b; margin-bottom: 1.5rem; max-width: 56rem; }
+
+    .panel { background: rgba(21,25,36,0.84); border: 1px solid rgba(71,85,105,0.55); border-radius: 1rem; padding: 1.5rem; backdrop-filter: blur(12px); margin-bottom: 1.5rem; box-shadow: 0 22px 40px -28px rgba(2,6,23,0.9); }
+    .panel-title { font-size: 0.72rem; letter-spacing: 0.2em; font-weight: 900; text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem; }
+    .panel-copy { color: #94a3b8; font-size: 0.8rem; line-height: 1.6; margin-bottom: 1rem; max-width: 48rem; }
+
+    .form-grid { display: grid; gap: 0.85rem; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .span-12 { grid-column: span 12; }
+    .span-8  { grid-column: span 8; }
+    .span-6  { grid-column: span 6; }
+    .span-4  { grid-column: span 4; }
+    .span-3  { grid-column: span 3; }
+    .span-2  { grid-column: span 2; }
+    .form-group label { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 0.65rem 0.85rem; border-radius: 0.65rem; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05); color: white; font-family: inherit; font-size: 0.82rem; outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group textarea { min-height: 5rem; resize: vertical; line-height: 1.5; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: rgba(59,130,246,0.5); }
+    .form-group select option { background: #0f172a; }
+
+    .btn-row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
+    .btn { padding: 0.6rem 1.2rem; border-radius: 0.65rem; font-family: inherit; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; cursor: pointer; border: 1px solid; transition: all 0.2s; }
+    .btn-blue  { background: rgba(59,130,246,0.2);  color: #60a5fa;  border-color: rgba(59,130,246,0.4); }
+    .btn-blue:hover  { background: rgba(59,130,246,0.35); }
+    .btn-green { background: rgba(34,197,94,0.15);  color: #4ade80;  border-color: rgba(34,197,94,0.3); }
+    .btn-green:hover { background: rgba(34,197,94,0.3); }
+    .btn-red   { background: rgba(239,68,68,0.1);   color: #f87171;  border-color: rgba(239,68,68,0.25); }
+    .btn-red:hover   { background: rgba(239,68,68,0.25); }
+    .btn-slate { background: rgba(148,163,184,0.1); color: #cbd5e1;  border-color: rgba(148,163,184,0.2); }
+    .btn-slate:hover { background: rgba(148,163,184,0.2); }
+    .btn-amber { background: rgba(245,158,11,0.15); color: #fbbf24;  border-color: rgba(245,158,11,0.3); }
+    .btn-amber:hover { background: rgba(245,158,11,0.28); }
+    .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.64rem; }
+
+    .search-bar { margin-bottom: 1rem; }
+    .search-bar input { width: 100%; max-width: 430px; padding: 0.65rem 1rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: white; font-family: inherit; font-size: 0.82rem; outline: none; }
+    .search-bar input:focus { border-color: rgba(59,130,246,0.5); }
+
+    .badge { display: inline-block; padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; }
+    .badge-avail { background: rgba(34,197,94,0.15);   color: #4ade80; }
+    .badge-out   { background: rgba(239,68,68,0.15);   color: #f87171; }
+    .badge-hold  { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+    .badge-maint { background: rgba(148,163,184,0.15); color: #94a3b8; }
+    .badge-ret   { background: rgba(71,85,105,0.25);   color: #64748b; }
+
+    /* Main equipment table */
+    table { width: 100%; border-collapse: collapse; }
+    th { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid rgba(71,85,105,0.4); }
+    td { font-size: 0.78rem; padding: 0.7rem 0.75rem; border-bottom: 1px solid rgba(71,85,105,0.2); color: #cbd5e1; vertical-align: middle; }
+    .eq-row:hover td { background: rgba(255,255,255,0.02); cursor: pointer; }
+    .eq-row.is-open td { background: rgba(255,255,255,0.03); }
+    .eq-name-cell { display: flex; gap: 0.75rem; align-items: flex-start; }
+    .eq-thumb { width: 42px; height: 42px; border-radius: 0.4rem; object-fit: cover; border: 1px solid rgba(71,85,105,0.4); background: rgba(15,23,42,0.6); flex-shrink: 0; }
+    .eq-name-copy strong { font-size: 0.84rem; color: white; display: block; }
+    .eq-name-copy span   { font-size: 0.68rem; color: #64748b; }
+    .action-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+
+    /* Expanded units section */
+    .eq-units-row { display: none; }
+    .eq-units-row.open { display: table-row; }
+    .eq-units-row td { padding: 0; border-bottom: 1px solid rgba(71,85,105,0.3); }
+    .eq-units-card {
+      padding: 1rem 1.25rem 1.25rem;
+      background: linear-gradient(180deg, rgba(15,23,42,0.7), rgba(15,23,42,0.45));
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .units-section-title { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #475569; margin-bottom: 0.75rem; }
+
+    /* Units sub-table */
+    .units-table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; }
+    .units-table th { font-size: 0.6rem; color: #475569; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; padding: 0.5rem 0.6rem; text-align: left; border-bottom: 1px solid rgba(71,85,105,0.3); }
+    .units-table td { font-size: 0.75rem; padding: 0.55rem 0.6rem; border-bottom: 1px solid rgba(71,85,105,0.15); color: #cbd5e1; vertical-align: top; }
+    .units-table tr:last-child td { border-bottom: none; }
+    .barcode-cell { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.75rem; color: #93c5fd; font-weight: 700; }
+    .loan-info { font-size: 0.68rem; line-height: 1.5; }
+    .loan-info strong { color: white; display: block; }
+    .loan-info span   { color: #64748b; }
+    .loan-overdue { color: #f87171; font-weight: 700; }
+
+    /* Add unit form */
+    .add-unit-form {
+      display: grid; gap: 0.65rem;
+      grid-template-columns: 2fr 1fr 1fr 2fr auto;
+      align-items: end;
+      padding: 0.85rem; border-radius: 0.75rem;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    }
+    .add-unit-form .form-group label { font-size: 0.58rem; }
+    .add-unit-form .form-group input,
+    .add-unit-form .form-group select { padding: 0.5rem 0.65rem; font-size: 0.76rem; }
+
+    /* Inline unit edit form */
+    .unit-edit-row { display: none; }
+    .unit-edit-row.open { display: table-row; }
+    .unit-edit-row td { padding: 0.65rem 0.6rem; background: rgba(59,130,246,0.05); border-bottom: 1px solid rgba(71,85,105,0.2); }
+    .unit-edit-grid { display: grid; gap: 0.6rem; grid-template-columns: 1fr 1fr 2fr auto; align-items: end; }
+    .unit-edit-grid .form-group label { font-size: 0.58rem; }
+    .unit-edit-grid .form-group input,
+    .unit-edit-grid .form-group select { padding: 0.45rem 0.6rem; font-size: 0.75rem; }
+
+    /* Toast */
+    .toast-wrap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { padding: 0.65rem 1rem; border-radius: 0.65rem; font-size: 0.78rem; font-weight: 600; border: 1px solid; animation: dropDown 0.25s ease; }
+    .toast.positive { background: rgba(34,197,94,0.15);  color: #4ade80; border-color: rgba(34,197,94,0.3); }
+    .toast.negative { background: rgba(239,68,68,0.15);  color: #f87171; border-color: rgba(239,68,68,0.3); }
+    .toast.warning  { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+    @keyframes dropDown { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .add-unit-form { grid-template-columns: 1fr 1fr; }
+      .unit-edit-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <h1>CS_LIBRARY</h1>
+      <span>ADMIN PANEL</span>
+    </div>
+    <div class="nav-items">
+      <a href="/admin" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a href="/admin/books" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>Books</a>
+      <a href="/admin/equipment" class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>Equipment</a>
+      <a href="/admin/loans" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>Loans</a>
+      <a href="/admin/users" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Users</a>
+      <a href="/admin/reports" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>Reports</a>
+      <a href="/admin/donations" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M5 12h14v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><path d="M7.5 8a2.5 2.5 0 1 1 0-5c1.8 0 3.2 2.2 4.5 5"/><path d="M16.5 8a2.5 2.5 0 1 0 0-5c-1.8 0-3.2 2.2-4.5 5"/></svg>Donations</a>
+      <a href="/admin/suggestions" class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>Suggestions</a>
+    </div>
+    <div class="sidebar-footer"><a href="/admin/logout" class="signout-btn">Sign Out</a></div>
+  </nav>
+
+  <%- include('../../partials/admin-mobile-shell', { mobileTitle: 'Equipment' }) %>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <main class="main">
+    <h1 class="page-title">Equipment Management</h1>
+    <p class="page-sub">Add loanable equipment types, register individual physical units with barcodes, and manage active loans. Each unit gets its own barcode label — scan it at the kiosk to check out or return.</p>
+
+    <!-- ── Add / Edit Equipment Type Panel ── -->
+    <div class="panel">
+      <div class="panel-title" id="formTitle">Add Equipment Type</div>
+      <p class="panel-copy">Define the type of equipment first (e.g. "Blue Yeti Microphone"). Then expand its row below to register individual physical units with their barcode labels.</p>
+
+      <div class="form-grid">
+        <input type="hidden" id="editingId" value="" />
+
+        <div class="form-group span-6">
+          <label>Name</label>
+          <input type="text" id="nameInput" placeholder="e.g. Blue Yeti Microphone" />
+        </div>
+        <div class="form-group span-3">
+          <label>Category</label>
+          <input type="text" id="categoryInput" placeholder="e.g. Audio, Computing…" />
+        </div>
+        <div class="form-group span-3">
+          <label>Loan Duration (days)</label>
+          <input type="number" id="loanDaysInput" value="7" min="1" max="365" />
+        </div>
+        <div class="form-group span-8">
+          <label>Image URL</label>
+          <input type="text" id="imageInput" placeholder="https://… (optional)" />
+        </div>
+        <div class="form-group span-12">
+          <label>Description</label>
+          <textarea id="descriptionInput" placeholder="Brief description of the item and any borrowing notes…"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-green" id="addBtn"    onclick="submitEquipment()">ADD EQUIPMENT</button>
+        <button class="btn btn-blue"  id="saveBtn"   onclick="submitEquipment()" style="display:none;">SAVE CHANGES</button>
+        <button class="btn btn-slate" id="cancelBtn" onclick="cancelEdit()"      style="display:none;">CANCEL</button>
+      </div>
+    </div>
+
+    <!-- ── Equipment Catalog Panel ── -->
+    <div class="panel">
+      <div class="panel-title">Equipment Catalog (<%= equipmentList.length %> types)</div>
+      <p class="panel-copy">Click any row to expand it and manage that item's physical units. The barcode column is what the kiosk scanner will read.</p>
+
+      <div class="search-bar">
+        <input type="text" placeholder="Search by name or category…" oninput="filterEquipment(this.value)" />
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Equipment</th>
+              <th>Category</th>
+              <th>Total Units</th>
+              <th>Available</th>
+              <th>On Loan</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="equipmentTable">
+            <% if (equipmentList.length === 0) { %>
+              <tr><td colspan="6" style="color:#334155;text-align:center;padding:2rem;">No equipment added yet.</td></tr>
+            <% } %>
+            <% equipmentList.forEach(function(item) { %>
+
+              <!-- Equipment type summary row -->
+              <tr class="eq-row"
+                  id="eq-row-<%= item.id %>"
+                  data-id="<%= item.id %>"
+                  data-name="<%= item.name.toLowerCase() %>"
+                  data-category="<%= (item.category || '').toLowerCase() %>"
+                  onclick="toggleUnits(<%= item.id %>)">
+                <td>
+                  <div class="eq-name-cell">
+                    <% if (item.image) { %>
+                      <img class="eq-thumb" src="<%= item.image %>" alt="" onerror="this.style.display='none'" />
+                    <% } %>
+                    <div class="eq-name-copy">
+                      <strong><%= item.name %></strong>
+                      <span>Loan period: <%= item.loanDurationDays %> day<%= item.loanDurationDays !== 1 ? 's' : '' %></span>
+                    </div>
+                  </div>
+                </td>
+                <td><%= item.category || '—' %></td>
+                <td><%= item.totalUnits %></td>
+                <td>
+                  <span class="badge <%= item.availableUnits > 0 ? 'badge-avail' : 'badge-out' %>">
+                    <%= item.availableUnits %>
+                  </span>
+                </td>
+                <td>
+                  <% if (item.activeLoans > 0) { %>
+                    <span class="badge badge-out"><%= item.activeLoans %></span>
+                  <% } else { %>
+                    <span style="color:#334155;">0</span>
+                  <% } %>
+                </td>
+                <td onclick="event.stopPropagation()">
+                  <div class="action-group">
+                    <button class="btn btn-blue btn-sm" onclick="startEdit(<%= JSON.stringify(item).replace(/</g,'\\u003c') %>)">EDIT</button>
+                    <button class="btn btn-red  btn-sm" onclick="deleteEquipment(<%= item.id %>, '<%= item.name.replace(/'/g, "\\'") %>')">DELETE</button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Expanded units row -->
+              <tr class="eq-units-row" id="eq-units-<%= item.id %>">
+                <td colspan="6">
+                  <div class="eq-units-card">
+
+                    <!-- Units sub-table -->
+                    <div class="units-section-title">Physical Units</div>
+                    <% if (item.units.length === 0) { %>
+                      <p style="font-size:0.78rem;color:#334155;margin-bottom:1rem;">No units registered yet. Add one below.</p>
+                    <% } else { %>
+                    <table class="units-table" id="units-table-<%= item.id %>">
+                      <thead>
+                        <tr>
+                          <th>Barcode</th>
+                          <th>Condition</th>
+                          <th>Status</th>
+                          <th>Notes</th>
+                          <th>Active Loan</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% item.units.forEach(function(unit) { %>
+                          <!-- Unit display row -->
+                          <tr id="unit-display-<%= unit.id %>">
+                            <td class="barcode-cell"><%= unit.barcode %></td>
+                            <td>
+                              <span class="badge <%=
+                                unit.condition === 'Good' ? 'badge-avail' :
+                                unit.condition === 'Fair' ? 'badge-hold'  : 'badge-out'
+                              %>"><%= unit.condition %></span>
+                            </td>
+                            <td>
+                              <span class="badge <%=
+                                unit.status === 'Available'   ? 'badge-avail' :
+                                unit.status === 'Checked Out' ? 'badge-out'   :
+                                unit.status === 'Maintenance' ? 'badge-maint' : 'badge-ret'
+                              %>"><%= unit.status %></span>
+                            </td>
+                            <td style="color:#64748b;font-size:0.7rem;"><%= unit.notes || '—' %></td>
+                            <td>
+                              <% if (unit.activeLoan) { %>
+                                <div class="loan-info">
+                                  <strong><%= unit.activeLoan.userName %></strong>
+                                  <span>Due: <%=
+                                    new Date(unit.activeLoan.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                  %></span>
+                                  <% if (new Date(unit.activeLoan.dueDate) < new Date()) { %>
+                                    <span class="loan-overdue">OVERDUE</span>
+                                  <% } %>
+                                </div>
+                              <% } else { %>
+                                <span style="color:#334155;">—</span>
+                              <% } %>
+                            </td>
+                            <td>
+                              <div class="action-group">
+                                <button class="btn btn-blue btn-sm" onclick="showUnitEdit(<%= unit.id %>, '<%= unit.condition %>', '<%= unit.status %>', `<%= unit.notes.replace(/`/g, '\\`') %>`)">EDIT</button>
+                                <% if (unit.activeLoan) { %>
+                                  <button class="btn btn-amber btn-sm" onclick="returnLoan(<%= unit.activeLoan.id %>)">RETURN</button>
+                                <% } %>
+                                <button class="btn btn-red btn-sm" onclick="deleteUnit(<%= unit.id %>, '<%= unit.barcode %>')">REMOVE</button>
+                              </div>
+                            </td>
+                          </tr>
+                          <!-- Inline unit edit row -->
+                          <tr class="unit-edit-row" id="unit-edit-<%= unit.id %>">
+                            <td colspan="6">
+                              <div class="unit-edit-grid">
+                                <div class="form-group">
+                                  <label>Condition</label>
+                                  <select id="edit-condition-<%= unit.id %>">
+                                    <option value="Good">Good</option>
+                                    <option value="Fair">Fair</option>
+                                    <option value="Poor">Poor</option>
+                                  </select>
+                                </div>
+                                <div class="form-group">
+                                  <label>Status</label>
+                                  <select id="edit-status-<%= unit.id %>">
+                                    <option value="Available">Available</option>
+                                    <option value="Maintenance">Maintenance</option>
+                                    <option value="Retired">Retired</option>
+                                  </select>
+                                </div>
+                                <div class="form-group">
+                                  <label>Notes</label>
+                                  <input type="text" id="edit-notes-<%= unit.id %>" placeholder="Optional notes…" />
+                                </div>
+                                <div class="btn-row" style="margin-top:0;">
+                                  <button class="btn btn-green btn-sm" onclick="saveUnitEdit(<%= unit.id %>)">SAVE</button>
+                                  <button class="btn btn-slate btn-sm" onclick="hideUnitEdit(<%= unit.id %>)">CANCEL</button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        <% }); %>
+                      </tbody>
+                    </table>
+                    <% } %>
+
+                    <!-- Add unit form -->
+                    <div class="units-section-title" style="margin-top:1rem;">Register New Unit</div>
+                    <div class="add-unit-form" id="add-unit-form-<%= item.id %>">
+                      <div class="form-group">
+                        <label>Barcode</label>
+                        <input type="text" id="new-barcode-<%= item.id %>" placeholder="e.g. MIC-001" style="text-transform:uppercase;" />
+                      </div>
+                      <div class="form-group">
+                        <label>Condition</label>
+                        <select id="new-condition-<%= item.id %>">
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                          <option value="Poor">Poor</option>
+                        </select>
+                      </div>
+                      <div class="form-group" style="grid-column: span 2;">
+                        <label>Notes (optional)</label>
+                        <input type="text" id="new-notes-<%= item.id %>" placeholder="Any notes about this unit…" />
+                      </div>
+                      <div style="padding-bottom:0.1rem;">
+                        <button class="btn btn-green btn-sm" onclick="addUnit(<%= item.id %>)">+ ADD UNIT</button>
+                      </div>
+                    </div>
+
+                  </div>
+                </td>
+              </tr>
+
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function toast(msg, type = 'positive') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastWrap').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+
+  async function api(path, body) {
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const d = await r.json();
+    return { ok: r.ok, status: r.status, data: d };
+  }
+
+  // ── Row expand / collapse ──────────────────────────────────────────────────
+  function toggleUnits(id) {
+    const unitsRow = document.getElementById(`eq-units-${id}`);
+    const summaryRow = document.getElementById(`eq-row-${id}`);
+    const isOpen = unitsRow.classList.contains('open');
+
+    // Close all open rows first
+    document.querySelectorAll('.eq-units-row.open').forEach(r => r.classList.remove('open'));
+    document.querySelectorAll('.eq-row.is-open').forEach(r => r.classList.remove('is-open'));
+
+    if (!isOpen) {
+      unitsRow.classList.add('open');
+      summaryRow.classList.add('is-open');
+    }
+  }
+
+  // ── Equipment type CRUD ────────────────────────────────────────────────────
+  let isEditing = false;
+
+  function startEdit(item) {
+    isEditing = true;
+    document.getElementById('editingId').value        = item.id;
+    document.getElementById('nameInput').value        = item.name;
+    document.getElementById('categoryInput').value    = item.category || '';
+    document.getElementById('loanDaysInput').value    = item.loanDurationDays;
+    document.getElementById('imageInput').value       = item.image || '';
+    document.getElementById('descriptionInput').value = item.description || '';
+
+    document.getElementById('formTitle').textContent = 'Edit Equipment Type';
+    document.getElementById('addBtn').style.display  = 'none';
+    document.getElementById('saveBtn').style.display = '';
+    document.getElementById('cancelBtn').style.display = '';
+    document.getElementById('nameInput').focus();
+    document.getElementById('nameInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function cancelEdit() {
+    isEditing = false;
+    document.getElementById('editingId').value        = '';
+    document.getElementById('nameInput').value        = '';
+    document.getElementById('categoryInput').value    = '';
+    document.getElementById('loanDaysInput').value    = '7';
+    document.getElementById('imageInput').value       = '';
+    document.getElementById('descriptionInput').value = '';
+
+    document.getElementById('formTitle').textContent   = 'Add Equipment Type';
+    document.getElementById('addBtn').style.display    = '';
+    document.getElementById('saveBtn').style.display   = 'none';
+    document.getElementById('cancelBtn').style.display = 'none';
+  }
+
+  async function submitEquipment() {
+    const name            = document.getElementById('nameInput').value.trim();
+    const category        = document.getElementById('categoryInput').value.trim();
+    const loanDurationDays = parseInt(document.getElementById('loanDaysInput').value, 10) || 7;
+    const image           = document.getElementById('imageInput').value.trim();
+    const description     = document.getElementById('descriptionInput').value.trim();
+
+    if (!name) { toast('Name is required.', 'negative'); return; }
+
+    const path = isEditing ? '/admin/equipment/edit' : '/admin/equipment/add';
+    const body = { name, category, loanDurationDays, image, description };
+    if (isEditing) body.id = parseInt(document.getElementById('editingId').value, 10);
+
+    const { ok, data } = await api(path, body);
+    if (!ok) { toast(data.error ?? 'Failed.', 'negative'); return; }
+
+    toast(isEditing ? 'Equipment updated.' : 'Equipment added.', 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  async function deleteEquipment(id, name) {
+    if (!confirm(`Delete "${name}" and all its units? This cannot be undone.`)) return;
+    const { ok, data } = await api('/admin/equipment/delete', { id });
+    if (!ok) { toast(data.error ?? 'Failed.', 'negative'); return; }
+    toast('Equipment deleted.', 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  // ── Unit CRUD ──────────────────────────────────────────────────────────────
+  async function addUnit(equipmentId) {
+    const barcode   = document.getElementById(`new-barcode-${equipmentId}`).value.trim().toUpperCase();
+    const condition = document.getElementById(`new-condition-${equipmentId}`).value;
+    const notes     = document.getElementById(`new-notes-${equipmentId}`).value.trim();
+
+    if (!barcode) { toast('Barcode is required.', 'negative'); return; }
+
+    const { ok, data } = await api('/admin/equipment/units/add', { equipmentId, barcode, condition, notes });
+    if (!ok) { toast(data.error ?? 'Failed to add unit.', 'negative'); return; }
+
+    toast(`Unit ${barcode} registered.`, 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  function showUnitEdit(id, condition, status, notes) {
+    // Hide any other open edit rows first
+    document.querySelectorAll('.unit-edit-row.open').forEach(r => r.classList.remove('open'));
+
+    document.getElementById(`edit-condition-${id}`).value = condition;
+    document.getElementById(`edit-status-${id}`).value    = status;
+    document.getElementById(`edit-notes-${id}`).value     = notes;
+    document.getElementById(`unit-edit-${id}`).classList.add('open');
+  }
+
+  function hideUnitEdit(id) {
+    document.getElementById(`unit-edit-${id}`).classList.remove('open');
+  }
+
+  async function saveUnitEdit(id) {
+    const condition = document.getElementById(`edit-condition-${id}`).value;
+    const status    = document.getElementById(`edit-status-${id}`).value;
+    const notes     = document.getElementById(`edit-notes-${id}`).value.trim();
+
+    const { ok, data } = await api('/admin/equipment/units/edit', { id, condition, status, notes });
+    if (!ok) { toast(data.error ?? 'Failed to update unit.', 'negative'); return; }
+
+    toast('Unit updated.', 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  async function deleteUnit(id, barcode) {
+    if (!confirm(`Remove unit "${barcode}"? Its loan history will be preserved.`)) return;
+    const { ok, data } = await api('/admin/equipment/units/delete', { id });
+    if (!ok) { toast(data.error ?? 'Failed.', 'negative'); return; }
+    toast(`Unit ${barcode} removed.`, 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  async function returnLoan(loanId) {
+    if (!confirm('Mark this equipment as returned?')) return;
+    const { ok, data } = await api('/admin/equipment/loans/return', { loanId });
+    if (!ok) { toast(data.error ?? 'Failed.', 'negative'); return; }
+    toast('Equipment returned successfully.', 'positive');
+    setTimeout(() => location.reload(), 600);
+  }
+
+  // ── Search ─────────────────────────────────────────────────────────────────
+  function filterEquipment(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('#equipmentTable tr.eq-row').forEach(row => {
+      const name     = (row.dataset.name     || '');
+      const category = (row.dataset.category || '');
+      const matches  = !q || name.includes(q) || category.includes(q);
+      const id = row.dataset.id;
+      row.style.display = matches ? '' : 'none';
+      const unitsRow = document.getElementById(`eq-units-${id}`);
+      if (unitsRow) unitsRow.style.display = matches ? '' : 'none';
+    });
+  }
+</script>
+</body>
+</html>

@@ -71,7 +71,7 @@
       <div class="checkout-row">
         <div class="panel scan-panel">
           <p class="panel-title" style="margin-bottom:1.25rem;">SCAN TO ADD TO CART</p>
-        <input type="text" class="scan-input" id="checkoutInput"
+          <input type="text" class="scan-input" id="checkoutInput"
                  placeholder="Scan ISBN…" autocomplete="off"
                  onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanISBN(); }" />
           <img id="checkoutCover" src="/assets/book-placeholder.svg"
@@ -99,7 +99,7 @@
       <div class="panel return-panel">
         <p class="panel-title" style="margin-bottom:1.25rem;">QUICK RETURN</p>
         <input type="text" class="scan-input" id="returnInput"
-               placeholder="Scan barcode…" autocomplete="off"
+               placeholder="Scan book or equipment barcode…" autocomplete="off"
                onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanReturn(); }" />
         <div class="return-layout">
           <img id="returnCover" src="/assets/book-placeholder.svg"
@@ -115,21 +115,32 @@
     <!-- ── MY BOOKS ── -->
     <div class="workspace" id="ws-mybooks">
       <div class="panel mybooks-panel">
-        <p class="panel-title" style="margin-bottom:1.25rem; text-align:center;">MY BORROWED BOOKS</p>
-        <p class="section-title" id="activeCount">Currently Checked Out</p>
+        <p class="panel-title" style="margin-bottom:1.25rem; text-align:center;">MY BORROWED ITEMS</p>
+
+        <!-- Books section -->
+        <p class="section-title" id="activeCount">Books Checked Out</p>
         <div id="activeLoans"></div>
         <div class="empty-state" id="noActiveLoans" style="display:none;">
           <img src="/assets/ph-check-circle.svg" alt="" />
           <p>No books currently checked out</p>
         </div>
+
         <div class="divider"></div>
-        <p class="section-title">Borrowing History (Last 6 Months)</p>
+        <p class="section-title">Book Borrowing History (Last 6 Months)</p>
         <div id="loanHistory"></div>
         <div class="empty-state" id="noHistory" style="display:none;">
           <img src="/assets/ph-clock-counter-clockwise.svg" alt="" />
           <p>No borrowing history yet</p>
         </div>
-      </div>
+
+        <!-- Equipment section -->
+        <div class="divider"></div>
+        <p class="section-title" id="equipmentLoanTitle">Equipment Checked Out</p>
+        <div id="activeEquipmentLoans"></div>
+        <div class="empty-state" id="noEquipmentLoans" style="display:none;">
+          <img src="/assets/ph-check-circle.svg" alt="" />
+          <p>No equipment currently checked out</p>
+        </div>
       </div>
     </div>
 
@@ -161,25 +172,80 @@
       </div>
     </div>
 
+    <!-- ── EQUIPMENT ── -->
+    <div class="workspace" id="ws-equipment">
+      <div class="panel return-panel">
+        <p class="panel-title" style="margin-bottom:1.25rem;">EQUIPMENT CHECKOUT / RETURN</p>
+
+        <input type="text" class="scan-input" id="equipmentInput"
+               placeholder="Scan equipment barcode…" autocomplete="off"
+               onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanEquipment(); }" />
+
+        <!-- Preview card — hidden until a scan succeeds -->
+        <div id="equipmentPreview" style="display:none;margin-top:1.5rem;">
+          <div style="display:flex;gap:1rem;align-items:flex-start;justify-content:center;flex-wrap:wrap;">
+            <img id="equipPreviewImg"
+                 src="/assets/book-placeholder.svg"
+                 style="width:80px;height:80px;object-fit:cover;border-radius:0.5rem;border:1px solid rgba(71,85,105,0.4);flex-shrink:0;"
+                 alt="" />
+            <div style="text-align:left;">
+              <p id="equipPreviewName"    style="font-size:1rem;font-weight:800;color:white;margin-bottom:0.2rem;"></p>
+              <p id="equipPreviewCat"     style="font-size:0.72rem;color:#64748b;margin-bottom:0.35rem;"></p>
+              <p id="equipPreviewBarcode" style="font-size:0.68rem;font-family:monospace;color:#475569;margin-bottom:0.5rem;"></p>
+              <span id="equipPreviewBadge" class="return-status waiting"></span>
+            </div>
+          </div>
+
+          <!-- Loan info (shown when unit is checked out by someone else) -->
+          <div id="equipLoanInfo" style="display:none;margin-top:1rem;padding:0.65rem 0.85rem;border-radius:0.6rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);font-size:0.76rem;color:#fca5a5;text-align:center;">
+            Checked out by <strong id="equipLoanName"></strong>
+            <span id="equipLoanDue" style="margin-left:0.5rem;color:#64748b;"></span>
+          </div>
+
+          <!-- Action buttons -->
+          <div style="display:flex;gap:0.75rem;margin-top:1.25rem;justify-content:center;flex-wrap:wrap;">
+            <button id="equipCheckoutBtn"
+                    onclick="confirmEquipmentCheckout()"
+                    style="display:none;padding:0.85rem 2rem;border-radius:0.65rem;font-family:inherit;font-size:0.85rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;transition:all 0.2s;">
+              CHECKOUT THIS ITEM
+            </button>
+            <button id="equipReturnBtn"
+                    onclick="confirmEquipmentReturn()"
+                    style="display:none;padding:0.85rem 2rem;border-radius:0.65rem;font-family:inherit;font-size:0.85rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.15);color:#60a5fa;transition:all 0.2s;">
+              RETURN THIS ITEM
+            </button>
+          </div>
+        </div>
+
+        <p style="margin-top:1.5rem;font-size:0.72rem;color:#334155;text-align:center;">
+          Scan a barcode label to check out or return equipment.<br>
+          For books, use the <strong style="color:#475569;">CHECK OUT</strong> and <strong style="color:#475569;">RETURN</strong> tabs.
+        </p>
+      </div>
+    </div>
+
   </main>
 
   <!-- Floating nav -->
   <div class="dash-nav-shell">
     <nav class="dash-nav">
-      <button class="nav-btn active" id="nav-catalog"  onclick="showView('catalog')">
+      <button class="nav-btn active" id="nav-catalog"   onclick="showView('catalog')">
         <img src="/assets/ph-squares-four.svg" alt="" /><span>BROWSE</span>
       </button>
-      <button class="nav-btn"        id="nav-checkout" onclick="showView('checkout')">
+      <button class="nav-btn"        id="nav-checkout"  onclick="showView('checkout')">
         <img src="/assets/ph-shopping-cart.svg" alt="" /><span>CHECK<br>OUT</span>
       </button>
-      <button class="nav-btn"        id="nav-return"   onclick="showView('return')">
+      <button class="nav-btn"        id="nav-return"    onclick="showView('return')">
         <img src="/assets/ph-arrow-u-down-left.svg" alt="" /><span>RETURN</span>
       </button>
-      <button class="nav-btn"        id="nav-mybooks"  onclick="showView('mybooks')">
-        <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY<br>BOOKS</span>
+      <button class="nav-btn"        id="nav-mybooks"   onclick="showView('mybooks')">
+        <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY<br>ITEMS</span>
       </button>
-      <button class="nav-btn"        id="nav-donate"   onclick="showView('donate')">
+      <button class="nav-btn"        id="nav-donate"    onclick="showView('donate')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span>DONATE</span>
+      </button>
+      <button class="nav-btn"        id="nav-equipment" onclick="showView('equipment')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span>EQUIP<br>MENT</span>
       </button>
     </nav>
     <div class="nav-search-stack">
@@ -217,6 +283,9 @@
     const scannerState = { buffer: '', lastAt: 0 };
     const renewedLoanIds = new Set();
 
+    // ── Equipment state ────────────────────────────────────────────────────────
+    let currentEquipUnit = null;
+
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
       const el = document.createElement('div');
@@ -233,14 +302,16 @@
 
     function getScannerTargetView() {
       const activeView = getActiveView();
-      if (activeView === 'return') return 'return';
-      if (activeView === 'donate') return 'donate';
+      if (activeView === 'return')    return 'return';
+      if (activeView === 'donate')    return 'donate';
+      if (activeView === 'equipment') return 'equipment';
       return 'checkout';
     }
 
     function getScannerInput(view = getScannerTargetView()) {
-      if (view === 'return') return document.getElementById('returnInput');
-      if (view === 'donate') return document.getElementById('donateIsbnInput');
+      if (view === 'return')    return document.getElementById('returnInput');
+      if (view === 'donate')    return document.getElementById('donateIsbnInput');
+      if (view === 'equipment') return document.getElementById('equipmentInput');
       return document.getElementById('checkoutInput');
     }
 
@@ -253,6 +324,7 @@
         'donateAuthorInput',
         'donateManualTitle',
         'donateManualAuthor',
+        'equipmentInput',
         'searchInput',
       ]);
     }
@@ -270,7 +342,7 @@
 
     function focusPrimaryScannerInput() {
       const activeView = getActiveView();
-      if (!['checkout', 'return', 'donate'].includes(activeView)) return;
+      if (!['checkout', 'return', 'donate', 'equipment'].includes(activeView)) return;
 
       const activeElement = document.activeElement;
       const interactiveInputIds = getInteractiveTextInputIds();
@@ -314,6 +386,10 @@
         await lookupDonation();
         return;
       }
+      if (targetView === 'equipment') {
+        await scanEquipment();
+        return;
+      }
       await scanISBN();
     }
 
@@ -324,10 +400,11 @@
       document.getElementById(`ws-${view}`).classList.add('active');
       const nb = document.getElementById(`nav-${view}`);
       if (nb) nb.classList.add('active');
-      if (view === 'checkout') document.getElementById('checkoutInput').focus();
-      if (view === 'return')   document.getElementById('returnInput').focus();
-      if (view === 'mybooks')  loadMyBooks();
-      if (view === 'donate')   document.getElementById('donateIsbnInput')?.focus();
+      if (view === 'checkout')  document.getElementById('checkoutInput').focus();
+      if (view === 'return')    document.getElementById('returnInput').focus();
+      if (view === 'mybooks')   loadMyBooks();
+      if (view === 'donate')    document.getElementById('donateIsbnInput')?.focus();
+      if (view === 'equipment') document.getElementById('equipmentInput')?.focus();
     }
 
     // ── Search ─────────────────────────────────────────────────────────────────
@@ -495,7 +572,6 @@
         if (!r.ok) { toast(d.error ?? 'Could not add book.', r.status===409?'warning':'negative'); return; }
         cart = [...cart, d.book];
         refreshCartUI();
-        // Update preview panel
         document.getElementById('checkoutCover').src    = d.book.cover || '/assets/book-placeholder.svg';
         document.getElementById('checkoutTitle').textContent  = d.book.title;
         document.getElementById('checkoutAuthor').textContent = d.book.author;
@@ -528,10 +604,8 @@
       e.stopPropagation();
       const inp = document.getElementById('checkoutInput');
       inp.value = isbn;
-      
       const preCartSize = cart.length;
       await scanISBN();
-      
       if (cart.length > preCartSize) {
         toast('Added to cart!', 'positive');
       }
@@ -575,31 +649,39 @@
       finally { focusPrimaryScannerInput(); }
     }
 
-    // ── Return ─────────────────────────────────────────────────────────────────
+    // ── Return (smart — handles both books and equipment) ─────────────────────
     async function scanReturn() {
       registerActivity();
-      const inp  = document.getElementById('returnInput');
-      const isbn = inp.value.trim(); inp.value='';
-      if (!isbn) return;
+      const inp   = document.getElementById('returnInput');
+      const input = inp.value.trim(); inp.value = '';
+      if (!input) return;
       try {
         const r = await fetch('/api/return', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({isbn}),
+          body: JSON.stringify({ isbn: input }),
         });
         const d = await r.json();
-        if (!r.ok) { toast(d.error??'Return failed.', r.status===409?'warning':'negative'); return; }
-        document.getElementById('returnCover').src   = d.book?.cover || '/assets/book-placeholder.svg';
-        document.getElementById('returnTitle').textContent = d.book?.title ?? isbn;
+        if (!r.ok) { toast(d.error ?? 'Return failed.', r.status===409?'warning':'negative'); return; }
+
         const badge = document.getElementById('returnStatus');
         badge.textContent = 'RETURNED SUCCESSFULLY';
         badge.className   = 'return-status returned';
-        toast('Book returned!','positive');
-        await loadCatalog();
+
+        if (d.type === 'equipment') {
+          document.getElementById('returnCover').src = d.image || '/assets/book-placeholder.svg';
+          document.getElementById('returnTitle').textContent = d.name ?? input;
+          toast(`${d.name ?? 'Equipment'} returned!`, 'positive');
+        } else {
+          document.getElementById('returnCover').src = d.book?.cover || '/assets/book-placeholder.svg';
+          document.getElementById('returnTitle').textContent = d.book?.title ?? input;
+          toast('Book returned!', 'positive');
+          await loadCatalog();
+        }
       } catch { toast('Server error.','negative'); }
       finally { focusPrimaryScannerInput(); }
     }
 
-    // ── My Books ───────────────────────────────────────────────────────────────
+    // ── My Books (books + equipment) ──────────────────────────────────────────
     async function loadMyBooks() {
       try {
         const r = await fetch('/api/my-loans');
@@ -609,7 +691,7 @@
         const history = loans.filter(l =>  l.returned);
 
         document.getElementById('activeCount').textContent =
-          `Currently Checked Out${active.length ? ` — Total: ${active.length}` : ''}`;
+          `Books Checked Out${active.length ? ` — Total: ${active.length}` : ''}`;
         document.getElementById('noActiveLoans').style.display = active.length  ? 'none' : 'flex';
         document.getElementById('noHistory').style.display     = history.length ? 'none' : 'flex';
 
@@ -650,6 +732,9 @@
             </div>`;
         }).join('');
       } catch { toast('Could not load loans.','negative'); }
+
+      // Load equipment loans alongside book loans
+      await loadEquipmentLoans();
     }
 
     async function renewLoan(loanId, btn) {
@@ -666,6 +751,154 @@
         toast('Book renewed for 14 more days!','positive');
         await loadMyBooks();
       } catch { toast('Server error.','negative'); btn.disabled=false; }
+    }
+
+    // ── Equipment loans (My Items section) ────────────────────────────────────
+    async function loadEquipmentLoans() {
+      try {
+        const r = await fetch('/api/equipment/loans');
+        const d = await r.json();
+        const active = (d.loans ?? []).filter(l => !l.returned);
+
+        document.getElementById('equipmentLoanTitle').textContent =
+          `Equipment Checked Out${active.length ? ` — Total: ${active.length}` : ''}`;
+        document.getElementById('noEquipmentLoans').style.display =
+          active.length ? 'none' : 'flex';
+
+        document.getElementById('activeEquipmentLoans').innerHTML = active.map(loan => {
+          const due     = new Date(loan.dueDate);
+          const overdue = due < new Date();
+          const dueStr  = due.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          const dueClass = overdue ? 'due-overdue' : 'due-ok';
+          const dueLabel = overdue ? `OVERDUE: ${dueStr}` : `Due: ${dueStr}`;
+          return `
+            <div class="loan-row active">
+              <img src="${esc(loan.image||'')}" loading="lazy" decoding="async"
+                   onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.name)}</p>
+                <p class="loan-author">${esc(loan.category || 'Equipment')}</p>
+                <p class="loan-due-label ${dueClass}">${dueLabel}</p>
+              </div>
+            </div>`;
+        }).join('');
+      } catch {
+        // Silent fail — don't block the books section
+      }
+    }
+
+    // ── Equipment scan & actions ───────────────────────────────────────────────
+    async function scanEquipment() {
+      registerActivity();
+      const inp     = document.getElementById('equipmentInput');
+      const barcode = inp.value.trim().toUpperCase();
+      inp.value     = '';
+      if (!barcode) return;
+
+      try {
+        const r = await fetch(`/api/equipment/scan/${encodeURIComponent(barcode)}`);
+        const d = await r.json();
+
+        if (!r.ok) {
+          toast(d.error ?? 'Equipment not found.', 'negative');
+          hideEquipPreview();
+          return;
+        }
+
+        currentEquipUnit = d.unit;
+        const activeLoan = d.activeLoan;
+
+        document.getElementById('equipPreviewImg').src =
+          d.unit.image || '/assets/book-placeholder.svg';
+        document.getElementById('equipPreviewName').textContent    = d.unit.name;
+        document.getElementById('equipPreviewCat').textContent     = d.unit.category || '';
+        document.getElementById('equipPreviewBarcode').textContent = `Barcode: ${d.unit.barcode}`;
+
+        const badge       = document.getElementById('equipPreviewBadge');
+        const loanInfo    = document.getElementById('equipLoanInfo');
+        const checkoutBtn = document.getElementById('equipCheckoutBtn');
+        const returnBtn   = document.getElementById('equipReturnBtn');
+
+        if (d.unit.status === 'Available' && !activeLoan) {
+          badge.textContent         = 'AVAILABLE';
+          badge.className           = 'return-status returned';
+          loanInfo.style.display    = 'none';
+          checkoutBtn.style.display = '';
+          returnBtn.style.display   = 'none';
+        } else if (activeLoan) {
+          badge.textContent         = 'CHECKED OUT';
+          badge.className           = 'return-status waiting';
+          document.getElementById('equipLoanName').textContent = activeLoan.borrowerName;
+          document.getElementById('equipLoanDue').textContent  =
+            '— Due: ' + new Date(activeLoan.dueDate).toLocaleDateString('en-US', {
+              month: 'long', day: 'numeric', year: 'numeric',
+            });
+          loanInfo.style.display    = '';
+          checkoutBtn.style.display = 'none';
+          // Show Return — user may be returning their own item
+          returnBtn.style.display   = '';
+        } else {
+          badge.textContent         = d.unit.status.toUpperCase();
+          badge.className           = 'return-status waiting';
+          loanInfo.style.display    = 'none';
+          checkoutBtn.style.display = 'none';
+          returnBtn.style.display   = 'none';
+        }
+
+        document.getElementById('equipmentPreview').style.display = '';
+      } catch {
+        toast('Server error.', 'negative');
+      } finally {
+        focusPrimaryScannerInput();
+      }
+    }
+
+    function hideEquipPreview() {
+      currentEquipUnit = null;
+      document.getElementById('equipmentPreview').style.display = 'none';
+    }
+
+    async function confirmEquipmentCheckout() {
+      registerActivity();
+      if (!currentEquipUnit) return;
+      try {
+        const r = await fetch('/api/equipment/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode: currentEquipUnit.barcode }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Checkout failed.', 'negative'); return; }
+        const due = new Date(d.dueDate).toLocaleDateString('en-US', {
+          month: 'long', day: 'numeric', year: 'numeric',
+        });
+        toast(`${d.name} checked out! Return by ${due}.`, 'positive');
+        hideEquipPreview();
+      } catch {
+        toast('Server error.', 'negative');
+      } finally {
+        focusPrimaryScannerInput();
+      }
+    }
+
+    async function confirmEquipmentReturn() {
+      registerActivity();
+      if (!currentEquipUnit) return;
+      try {
+        const r = await fetch('/api/equipment/return', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ barcode: currentEquipUnit.barcode }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Return failed.', 'negative'); return; }
+        toast(`${d.name ?? 'Equipment'} returned successfully!`, 'positive');
+        hideEquipPreview();
+      } catch {
+        toast('Server error.', 'negative');
+      } finally {
+        focusPrimaryScannerInput();
+      }
     }
 
     // ── Donate ──────────────────────────────────────────────────────────────────
@@ -880,7 +1113,6 @@
     });
 
     // ── Boot ───────────────────────────────────────────────────────────────────
-    // Show welcome toast if redirected here after login
     <% if (welcome) { %>
       toast(decodeURIComponent('<%= encodeURIComponent(welcome) %>'), 'positive');
     <% } %>

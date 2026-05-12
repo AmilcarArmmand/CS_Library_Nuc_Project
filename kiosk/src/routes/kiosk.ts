@@ -12,9 +12,13 @@
 //   GET  /api/books/:isbn
 //   POST /api/cart/add
 //   POST /api/checkout
-//   POST /api/return
+//   POST /api/return            ← smart return: handles both books and equipment
 //   GET  /api/my-loans
 //   POST /api/renew
+//   GET  /api/equipment/scan/:barcode
+//   POST /api/equipment/checkout
+//   POST /api/equipment/return
+//   GET  /api/equipment/loans
 // All of which are proxied below to the cloud server.
 
 import express from 'express';
@@ -291,11 +295,37 @@ router.post('/api/checkout', requireLogin, async (req: Request, res: Response) =
 });
 
 // POST /api/return
+// Smart return: tries book (ISBN) first, then equipment barcode as a fallback.
+// ISBNs are purely numeric (10 or 13 digits). Equipment barcodes contain
+// letters or other characters (e.g. "MIC-001"), so the distinction is clear.
 router.post('/api/return', requireLogin, async (req: Request, res: Response) => {
-  const isbn = String(req.body.isbn ?? '').replace(/[^0-9Xx]/g, '').toUpperCase();
-  const user = getUser(req)!;
-  const { ok, status, data } = await cloudFetch('POST', '/return', { userId: user.id, isbn });
-  res.status(ok ? 200 : status).json(data);
+  const rawInput = String(req.body.isbn ?? req.body.barcode ?? '').trim();
+  const user     = getUser(req)!;
+
+  if (!rawInput) {
+    res.status(400).json({ error: 'Scan a barcode to return.' });
+    return;
+  }
+
+  // Try book return first — ISBNs are numeric only (10 or 13 digits)
+  const cleanIsbn = rawInput.replace(/[^0-9Xx]/g, '').toUpperCase();
+  if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
+    const { ok, status, data } = await cloudFetch('POST', '/return', {
+      userId: user.id,
+      isbn:   cleanIsbn,
+    });
+    if (ok)             { res.json({ ...data, type: 'book' }); return; }
+    if (status !== 404) { res.status(status).json(data);       return; }
+    // 404 means no active book loan — fall through to try equipment
+  }
+
+  // Fall back to equipment return using the raw barcode
+  const barcode = rawInput.toUpperCase();
+  const { ok, status, data } = await cloudFetch('POST', '/equipment/return', {
+    userId:  user.id,
+    barcode,
+  });
+  res.status(ok ? 200 : status).json({ ...data, type: 'equipment' });
 });
 
 // GET /api/my-loans
@@ -368,6 +398,48 @@ router.post('/api/hold', requireLogin, async (req: Request, res: Response) => {
 router.get('/api/my-holds', requireLogin, async (req: Request, res: Response) => {
   const user = getUser(req)!;
   const { ok, status, data } = await cloudFetch('GET', `/holds/${user.id}`);
+  res.status(ok ? 200 : status).json(data);
+});
+
+// ── EQUIPMENT PROXY ROUTES ────────────────────────────────────────────────────
+
+// GET /api/equipment/scan/:barcode
+// Look up a unit by barcode — called when user scans in the Equipment tab.
+router.get('/api/equipment/scan/:barcode', requireLogin, async (req: Request, res: Response) => {
+  const barcode = String(req.params['barcode'] ?? '').trim().toUpperCase();
+  const { ok, status, data } = await cloudFetch(
+    'GET',
+    `/equipment/scan/${encodeURIComponent(barcode)}`,
+  );
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/equipment/checkout
+router.post('/api/equipment/checkout', requireLogin, async (req: Request, res: Response) => {
+  const user    = getUser(req)!;
+  const barcode = String(req.body.barcode ?? '').trim().toUpperCase();
+  const { ok, status, data } = await cloudFetch('POST', '/equipment/checkout', {
+    userId: user.id,
+    barcode,
+  });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// POST /api/equipment/return
+router.post('/api/equipment/return', requireLogin, async (req: Request, res: Response) => {
+  const user    = getUser(req)!;
+  const barcode = String(req.body.barcode ?? '').trim().toUpperCase();
+  const { ok, status, data } = await cloudFetch('POST', '/equipment/return', {
+    userId: user.id,
+    barcode,
+  });
+  res.status(ok ? 200 : status).json(data);
+});
+
+// GET /api/equipment/loans
+router.get('/api/equipment/loans', requireLogin, async (req: Request, res: Response) => {
+  const user = getUser(req)!;
+  const { ok, status, data } = await cloudFetch('GET', `/equipment/loans/${user.id}`);
   res.status(ok ? 200 : status).json(data);
 });
 

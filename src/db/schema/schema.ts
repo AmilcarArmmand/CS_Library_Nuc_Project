@@ -219,6 +219,86 @@ export const passwordResetTokensRelations = relations(passwordResetTokens, ({ on
   user: one(users, { fields: [passwordResetTokens.userId], references: [users.id] }),
 }));
 
+// EQUIPMENT TABLE
+
+// Represents a type/model of equipment available for loan.
+// e.g. "Blue Yeti Microphone" — one row regardless of how many physical units exist.
+// loan_duration_days overrides any system default for this item type.
+
+export const equipment = pgTable('equipment', {
+  id:              serial('id').primaryKey(),
+  name:            varchar('name', { length: 255 }).notNull(),
+  description:     text('description').notNull().default(''),
+  category:        varchar('category', { length: 100 }).notNull().default(''),
+  image:           text('image').notNull().default(''),
+  loanDurationDays: integer('loan_duration_days').notNull().default(7),
+  createdAt:       timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt:       timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxCategory: index('idx_equipment_category').on(table.category),
+  idxName:     index('idx_equipment_name').on(table.name),
+}));
+
+// EQUIPMENT UNITS TABLE
+
+// Represents an individual physical item — one row per barcode label.
+// e.g. four microphones = four rows here, all pointing to the same equipment_id.
+// barcode is what the scanner reads at the kiosk. It is whatever the admin
+// labels the item with (asset tags, printed QR codes, etc.).
+// status: 'Available' | 'Checked Out' | 'Maintenance' | 'Retired'
+// condition: 'Good' | 'Fair' | 'Poor'
+
+export const equipmentUnits = pgTable('equipment_units', {
+  id:          serial('id').primaryKey(),
+  equipmentId: integer('equipment_id').notNull().references(() => equipment.id, { onDelete: 'cascade' }),
+  barcode:     varchar('barcode', { length: 100 }).unique().notNull(),
+  condition:   varchar('condition', { length: 50 }).notNull().default('Good'),
+  status:      varchar('status', { length: 50 }).notNull().default('Available'),
+  notes:       text('notes').notNull().default(''),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  idxBarcode:      index('idx_equipment_units_barcode').on(table.barcode),
+  idxEquipmentId:  index('idx_equipment_units_equipment_id').on(table.equipmentId),
+  idxStatus:       index('idx_equipment_units_status').on(table.status),
+}));
+
+// EQUIPMENT LOANS TABLE
+
+// One row per checkout event for a physical unit.
+// The one-per-user rule (a user may not have two active loans for the same
+// equipment type) is enforced at the application layer before insert.
+
+export const equipmentLoans = pgTable('equipment_loans', {
+  id:                    serial('id').primaryKey(),
+  userId:                integer('user_id').notNull().references(() => users.id),
+  unitId:                integer('unit_id').notNull().references(() => equipmentUnits.id),
+  checkedOut:            timestamp('checked_out', { withTimezone: true }).defaultNow().notNull(),
+  dueDate:               timestamp('due_date', { withTimezone: true }).notNull(),
+  returned:              boolean('returned').notNull().default(false),
+  returnedDate:          timestamp('returned_date', { withTimezone: true }),
+  dueReminderSentAt:     timestamp('due_reminder_sent_at', { withTimezone: true }),
+  overdueNoticeSentAt:   timestamp('overdue_notice_sent_at', { withTimezone: true }),
+}, (table) => ({
+  idxUserCheckedOut: index('idx_equipment_loans_user_checked_out').on(table.userId, table.checkedOut),
+  idxUnitReturned:   index('idx_equipment_loans_unit_returned').on(table.unitId, table.returned),
+}));
+
+// EQUIPMENT RELATIONS
+
+export const equipmentRelations = relations(equipment, ({ many }) => ({
+  units: many(equipmentUnits),
+}));
+
+export const equipmentUnitsRelations = relations(equipmentUnits, ({ one, many }) => ({
+  equipment: one(equipment, { fields: [equipmentUnits.equipmentId], references: [equipment.id] }),
+  loans:     many(equipmentLoans),
+}));
+
+export const equipmentLoansRelations = relations(equipmentLoans, ({ one }) => ({
+  user: one(users,          { fields: [equipmentLoans.userId],  references: [users.id] }),
+  unit: one(equipmentUnits, { fields: [equipmentLoans.unitId],  references: [equipmentUnits.id] }),
+}));
+
 // TYPE EXPORTS
 
 export type User       = typeof users.$inferSelect;
@@ -231,3 +311,8 @@ export type Suggestion = typeof suggestions.$inferSelect;
 export type Donation   = typeof donations.$inferSelect;
 export type RenewalRequest = typeof renewalRequests.$inferSelect;
 export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type Equipment      = typeof equipment.$inferSelect;
+export type NewEquipment   = typeof equipment.$inferInsert;
+export type EquipmentUnit  = typeof equipmentUnits.$inferSelect;
+export type NewEquipmentUnit = typeof equipmentUnits.$inferInsert;
+export type EquipmentLoan  = typeof equipmentLoans.$inferSelect;
