@@ -25,6 +25,70 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/app.css" />
+  <style>
+  body.modal-open { overflow: hidden; }
+  .book-title-link { cursor: pointer; }
+
+  .idx-modal {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(2,6,23,0.85); backdrop-filter: blur(6px);
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .idx-modal.open { display: flex; }
+  .idx-modal-card {
+    position: relative; background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem;
+    max-width: 680px; width: 100%; max-height: 88vh;
+    overflow-y: auto; padding: 1.5rem;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.7);
+  }
+  .idx-modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    color: #94a3b8; border-radius: 50%; width: 2rem; height: 2rem;
+    font-size: 1.1rem; cursor: pointer; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .idx-modal-close:hover { background: rgba(255,255,255,0.12); color: white; }
+  .idx-modal-layout { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; }
+  .idx-modal-cover {
+    width: 100px; height: 148px; object-fit: cover;
+    border-radius: 0.5rem; border: 1px solid rgba(71,85,105,0.5);
+    flex-shrink: 0;
+  }
+  .idx-modal-body { flex: 1; min-width: 0; }
+  .idx-modal-title { font-size: 1.1rem; font-weight: 800; color: white; margin-bottom: 0.25rem; line-height: 1.3; }
+  .idx-modal-author { font-size: 0.85rem; color: #60a5fa; margin-bottom: 0.2rem; }
+  .idx-modal-subline { font-size: 0.75rem; color: #64748b; margin-bottom: 0.75rem; }
+  .idx-modal-meta {
+    display: grid; gap: 0.6rem;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    margin-top: 0.85rem;
+  }
+  .idx-meta-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 0.65rem; padding: 0.65rem 0.75rem;
+  }
+  .idx-meta-label { display: block; font-size: 0.6rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 0.3rem; }
+  .idx-meta-value { font-size: 0.78rem; color: #e2e8f0; word-break: break-word; }
+  .idx-meta-value.empty { color: #334155; }
+  .idx-modal-copy { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .idx-copy-card {
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 0.65rem; padding: 0.75rem 0.85rem;
+  }
+  .idx-copy-card h3 { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; margin-bottom: 0.4rem; }
+  .idx-copy-card p { font-size: 0.8rem; color: #cbd5e1; line-height: 1.6; }
+  .idx-copy-card p.empty { color: #334155; }
+  .idx-modal-cta {
+    margin-top: 1rem; padding: 0.75rem 1rem;
+    background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 0.65rem; font-size: 0.78rem; color: #93c5fd; text-align: center;
+  }
+  .idx-modal-cta a { color: #60a5fa; font-weight: 700; text-decoration: none; }
+  .idx-modal-cta a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
   <!-- Starfield layers -->
@@ -95,7 +159,7 @@
               </div>
 
               <div class="book-info">
-                <span class="book-title-link"><%= book.title %></span>
+                <span class="book-title-link" onclick="openIndexModal('<%= book.isbn %>')"><%= book.title %></span>
                 <span class="book-author-link"><%= book.author %></span>
                 <div class="book-meta">
                   <% if (book.shelf) { %>
@@ -128,9 +192,100 @@
     
   </div>
 
+  <div class="idx-modal" id="idxModal" onclick="maybeCloseIndexModal(event)">
+    <div class="idx-modal-card">
+      <button class="idx-modal-close" type="button" aria-label="Close" onclick="closeIndexModal()">×</button>
+      <div class="idx-modal-layout">
+        <img class="idx-modal-cover" id="idxModalCover" src="/assets/book-placeholder.svg" alt="" />
+        <div class="idx-modal-body">
+          <h2 class="idx-modal-title" id="idxModalTitle"></h2>
+          <p class="idx-modal-author" id="idxModalAuthor"></p>
+          <p class="idx-modal-subline" id="idxModalSubline"></p>
+          <span class="badge" id="idxModalStatus"></span>
+        </div>
+      </div>
+      <div class="idx-modal-meta" id="idxModalMeta"></div>
+      <div class="idx-modal-copy" id="idxModalCopy"></div>
+      <div class="idx-modal-cta" id="idxModalCta"></div>
+    </div>
+  </div>
+
   <%- include('../partials/footer') %>
 
   <script>
+    // ── Index book modal ────────────────────────────────────────────────────────
+    const indexBooks = <%- JSON.stringify(newestBooks) %>;
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+    function dash(v) { return (v && String(v).trim()) ? String(v).trim() : null; }
+
+    function idxMetaCard(label, value) {
+      const v = dash(value);
+      return `<div class="idx-meta-card">
+        <span class="idx-meta-label">${esc(label)}</span>
+        <span class="idx-meta-value ${v ? '' : 'empty'}">${esc(v || '—')}</span>
+      </div>`;
+    }
+    function idxCopyCard(label, value) {
+      const v = dash(value);
+      return `<div class="idx-copy-card">
+        <h3>${esc(label)}</h3>
+        <p class="${v ? '' : 'empty'}">${esc(v || '—')}</p>
+      </div>`;
+    }
+
+    function openIndexModal(isbn) {
+      const book = indexBooks.find(b => b.isbn === isbn);
+      if (!book) return;
+
+      document.getElementById('idxModalCover').src = book.cover || '/assets/book-placeholder.svg';
+      document.getElementById('idxModalCover').alt = book.title || '';
+      document.getElementById('idxModalTitle').textContent = book.title || 'Untitled';
+      document.getElementById('idxModalAuthor').textContent = book.author || 'Unknown author';
+      document.getElementById('idxModalSubline').textContent =
+        [book.publisher, book.creationDate].filter(Boolean).join(' · ') || '';
+
+      const badge = document.getElementById('idxModalStatus');
+      const avail = book.status === 'Available';
+      badge.className = `badge ${avail ? 'status-available' : 'status-out'}`;
+      badge.textContent = (book.status || 'Unknown').toUpperCase();
+
+      document.getElementById('idxModalMeta').innerHTML = [
+        idxMetaCard('ISBN', book.isbn),
+        idxMetaCard('Shelf', book.shelf),
+        idxMetaCard('Edition', book.edition),
+        idxMetaCard('Language', book.language),
+        idxMetaCard('Type', book.bookType),
+        idxMetaCard('Publisher', book.publisher),
+      ].join('');
+
+      document.getElementById('idxModalCopy').innerHTML = [
+        book.description   ? idxCopyCard('Description', book.description) : '',
+        book.subjects      ? idxCopyCard('Subjects', book.subjects) : '',
+        book.series        ? idxCopyCard('Series', book.series) : '',
+      ].join('');
+
+      const ctaEl = document.getElementById('idxModalCta');
+      <% if (!user) { %>
+      ctaEl.innerHTML = 'Want to borrow this book? <a href="/auth/register">Create a free account</a> or <a href="/auth/login">sign in</a> to place a hold.';
+      <% } else { %>
+      ctaEl.innerHTML = 'Browse the full catalog and manage loans in your <a href="/web-dashboard">dashboard</a>.';
+      <% } %>
+
+      document.getElementById('idxModal').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeIndexModal() {
+      document.getElementById('idxModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    function maybeCloseIndexModal(e) {
+      if (e.target.id === 'idxModal') closeIndexModal();
+    }
     function toggleMenu() {
       const btn  = document.getElementById('hamburgerBtn');
       const menu = document.getElementById('mobileMenu');
@@ -145,6 +300,8 @@
         document.getElementById('mobileMenu').classList.remove('open');
       });
     });
+
+    
   </script>
 </body>
 </html>
