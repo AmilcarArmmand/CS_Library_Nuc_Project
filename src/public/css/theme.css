@@ -1,0 +1,485 @@
+/*
+  src/public/css/theme.css
+  ─────────────────────────────────────────────────────────────────────────────
+  Dark mode is the default (already defined by app.css / auth.css / admin pages).
+  This file defines CSS variables and overrides key selectors for light mode
+  when the OS/browser has prefers-color-scheme: light.
+
+  Imported at the bottom of:
+    - app.css          (index, web-dashboard, about, contact, settings, error)
+    - auth.css         (login, register, forgot-password, reset-password)
+    - admin-mobile.css (all admin pages)
+  ─────────────────────────────────────────────────────────────────────────────
+*/
+
+/* ── CSS custom properties — dark defaults ── */
+:root {
+  --cs-bg:             #020617;
+  --cs-bg-card:        rgba(21, 25, 36, 0.84);
+  --cs-bg-header:      rgba(8, 12, 24, 0.92);
+  --cs-bg-sidebar:     rgba(10, 15, 28, 0.95);
+  --cs-bg-mobile-menu: rgba(8, 12, 24, 0.97);
+  --cs-bg-input:       rgba(255, 255, 255, 0.05);
+  --cs-text:           #ffffff;
+  --cs-text-sub:       #94a3b8;
+  --cs-text-muted:     #64748b;
+  --cs-text-faint:     #475569;
+  --cs-border:         rgba(71, 85, 105, 0.55);
+  --cs-border-faint:   rgba(255, 255, 255, 0.08);
+  --cs-border-input:   rgba(255, 255, 255, 0.12);
+  --cs-nebula-1:       rgba(29, 78, 216, 0.15);
+  --cs-nebula-2:       rgba(6, 182, 212, 0.12);
+  --cs-nebula-3:       rgba(88, 28, 135, 0.08);
+}
+
+/* ── Light mode overrides ── */
+@media (prefers-color-scheme: light) {
+
+  :root {
+    --cs-bg:             #f1f5f9;
+    --cs-bg-card:        rgba(255, 255, 255, 0.96);
+    --cs-bg-header:      rgba(248, 250, 252, 0.97);
+    --cs-bg-sidebar:     rgba(241, 245, 249, 0.99);
+    --cs-bg-mobile-menu: rgba(248, 250, 252, 0.98);
+    --cs-bg-input:       rgba(0, 0, 0, 0.03);
+    --cs-text:           #0f172a;
+    --cs-text-sub:       #475569;
+    --cs-text-muted:     #64748b;
+    --cs-text-faint:     #94a3b8;
+    --cs-border:         rgba(148, 163, 184, 0.35);
+    --cs-border-faint:   rgba(0, 0, 0, 0.07);
+    --cs-border-input:   rgba(148, 163, 184, 0.35);
+    --cs-nebula-1:       rgba(29, 78, 216, 0.05);
+    --cs-nebula-2:       rgba(6, 182, 212, 0.04);
+    --cs-nebula-3:       rgba(88, 28, 135, 0.02);
+  }
+
+  /* ── Starfield — hidden in light mode ── */
+  .stars-1, .stars-2, .stars-3 { display: none !important; }
+
+  /* ── Page background & text ── */
+  body {
+    background-color: var(--cs-bg) !important;
+    color: var(--cs-text) !important;
+  }
+
+  /* Soften nebula */
+  body::before {
+    background:
+      radial-gradient(ellipse at 15% 50%, var(--cs-nebula-1), transparent 35%),
+      radial-gradient(ellipse at 85% 30%, var(--cs-nebula-2), transparent 35%),
+      radial-gradient(ellipse at 50% 80%, var(--cs-nebula-3), transparent 40%) !important;
+  }
+
+  /* ── Header ── */
+  .top-header {
+    background: var(--cs-bg-header) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.06) !important;
+  }
+  .brand-cs   { color: #0f172a !important; }
+  .brand-scsu { color: #2563eb !important; }
+  .hdr-pipe   { background: rgba(0, 0, 0, 0.12) !important; }
+  .hdr-nav-btn {
+    color: #475569 !important;
+  }
+  .hdr-nav-btn:hover {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+  .hdr-nav-btn.active {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.07) !important;
+  }
+  .header-user-name { color: #475569 !important; }
+  .sign-in-link { color: #475569 !important; }
+  .sign-in-link:hover { color: #0f172a !important; }
+
+  /* User dropdown */
+  .user-dropdown-menu {
+    background: rgba(255, 255, 255, 0.99) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+  }
+  .user-dropdown-name  { color: #0f172a !important; }
+  .user-dropdown-email { color: #64748b !important; }
+  .user-dropdown-item  { color: #475569 !important; }
+  .user-dropdown-item:hover  { color: #0f172a !important; background: rgba(0, 0, 0, 0.04) !important; }
+  .user-dropdown-divider     { background: rgba(0, 0, 0, 0.06) !important; }
+
+  /* Mobile menu */
+  .mobile-menu {
+    background: var(--cs-bg-mobile-menu) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  .mobile-item { color: #475569 !important; }
+  .mobile-item:hover { color: #0f172a !important; background: rgba(0, 0, 0, 0.04) !important; }
+  .mobile-item.active { color: #0f172a !important; }
+  .mobile-divider { background: rgba(0, 0, 0, 0.07) !important; }
+  .mobile-user { color: #64748b !important; }
+
+  /* Hamburger */
+  .hamburger span { background: #475569 !important; }
+
+  /* ── Panels / cards ── */
+  .panel {
+    background: var(--cs-bg-card) !important;
+    border-color: var(--cs-border) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06) !important;
+  }
+  .panel:hover { border-color: rgba(59, 130, 246, 0.35) !important; }
+  .panel-title {
+    background: linear-gradient(to right, #1d4ed8, #2563eb, #1d4ed8) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+  }
+  .section-title { color: #334155 !important; }
+
+  /* ── Catalog ── */
+  .catalog-title  { color: #0f172a !important; }
+  .catalog-count  { color: #334155 !important; }
+  .catalog-page   { color: #64748b !important; }
+
+  .filter-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.09) !important;
+    color: #475569 !important;
+  }
+  .filter-btn:hover  { background: rgba(0, 0, 0, 0.08) !important; color: #0f172a !important; }
+  .filter-btn.active {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #1d4ed8 !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.15) !important;
+  }
+
+  /* Search bar */
+  .search-bar input {
+    background: var(--cs-bg-input) !important;
+    border-color: var(--cs-border-input) !important;
+    color: #0f172a !important;
+  }
+  .search-bar input::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .search-bar input:focus {
+    border-color: rgba(59, 130, 246, 0.5) !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Book cards */
+  .book-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  .book-card:hover { border-color: rgba(59, 130, 246, 0.4) !important; }
+  .book-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(255, 255, 255, 0.98) 40%,
+      rgba(255, 255, 255, 0.85) 100%
+    ) !important;
+  }
+  .book-title  { color: #0f172a !important; }
+  .book-author { color: #475569 !important; }
+  .book-isbn   { color: #64748b !important; }
+  .book-card-hint { color: #94a3b8 !important; }
+  .hold-state-note       { color: #64748b !important; }
+  .hold-state-note.ready { color: #16a34a !important; }
+  .hold-state-note.active { color: #2563eb !important; }
+
+  /* ── Book modal ── */
+  .book-modal { background: rgba(15, 23, 42, 0.55) !important; }
+  .book-modal-card {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15) !important;
+  }
+  .book-modal-close {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #475569 !important;
+  }
+  .book-modal-close:hover { background: rgba(0, 0, 0, 0.1) !important; color: #0f172a !important; }
+  .book-modal-title   { color: #0f172a !important; }
+  .book-modal-author  { color: #2563eb !important; }
+  .book-modal-subline { color: #64748b !important; }
+  .book-meta-card {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+  .book-meta-label { color: #64748b !important; }
+  .book-meta-value { color: #0f172a !important; }
+  .book-meta-value.empty { color: #94a3b8 !important; }
+  .book-copy-card {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+  .book-copy-card h3 { color: #64748b !important; }
+  .book-copy-card p  { color: #334155 !important; }
+  .book-copy-card p.empty { color: #94a3b8 !important; }
+
+  /* ── Loans (My Books) ── */
+  .mybooks-panel { background: rgba(255, 255, 255, 0.95) !important; border-color: var(--cs-border) !important; }
+  .loans-summary { border-bottom-color: rgba(148, 163, 184, 0.2) !important; }
+  .summary-card {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+  }
+  .summary-num   { color: #0f172a !important; }
+  .summary-label { color: #64748b !important; }
+
+  .loan-row {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(148, 163, 184, 0.25) !important;
+  }
+  .loan-row:hover  { border-color: rgba(59, 130, 246, 0.25) !important; }
+  .loan-row.history { background: rgba(255, 255, 255, 0.6) !important; opacity: 0.85 !important; }
+  .loan-title  { color: #0f172a !important; }
+  .loan-author { color: #475569 !important; }
+  .loan-isbn   { color: #64748b !important; }
+  .divider     { background: rgba(148, 163, 184, 0.25) !important; }
+
+  /* Empty states */
+  .empty-state p    { color: #334155 !important; }
+  .empty-state span { color: #64748b !important; }
+
+  /* ── Pagination ── */
+  .page-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    color: #475569 !important;
+  }
+  .page-btn:hover  { background: rgba(0, 0, 0, 0.08) !important; color: #0f172a !important; }
+  .page-btn.active { background: rgba(59, 130, 246, 0.12) !important; color: #1d4ed8 !important; border-color: rgba(59, 130, 246, 0.4) !important; }
+  .page-dots { color: #94a3b8 !important; }
+
+  /* ── Index page ── */
+  .welcome-banner h1 { color: #0f172a !important; }
+  .welcome-banner p  { color: #475569 !important; }
+  .stats-bar {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.05) !important;
+  }
+  .stat-num   { color: #0f172a !important; }
+  .stat-label { color: #64748b !important; }
+  .book-row {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(148, 163, 184, 0.3) !important;
+  }
+  .book-row:hover { background: rgba(255, 255, 255, 0.98) !important; }
+  .book-title-link  { color: #1d4ed8 !important; }
+  .book-author-link { color: #475569 !important; }
+  .book-shelf       { color: #2563eb !important; }
+  .book-isbn-meta   { color: #64748b !important; }
+  .section-header h2   { color: #0f172a !important; }
+  .section-header span { color: #64748b !important; }
+  .book-status.status-available { color: #16a34a !important; background: rgba(34,197,94,0.1) !important; border-color: rgba(34,197,94,0.25) !important; }
+  .book-status.status-out       { color: #dc2626 !important; background: rgba(239,68,68,0.08) !important; border-color: rgba(239,68,68,0.2) !important; }
+  .cta-block {
+    background: rgba(59, 130, 246, 0.06) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+  }
+  .cta-block p { color: #334155 !important; }
+  .notice-bar { background: rgba(59, 130, 246, 0.06) !important; border-color: rgba(59, 130, 246, 0.2) !important; }
+  .notice { color: #1d4ed8 !important; }
+
+  /* ── Toast notifications ── */
+  .toast {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+  }
+  .toast.positive { background: rgba(34, 197, 94, 0.1) !important; color: #15803d !important; border-color: rgba(34,197,94,0.3) !important; }
+  .toast.negative { background: rgba(239, 68, 68, 0.08) !important; color: #dc2626 !important; border-color: rgba(239,68,68,0.25) !important; }
+  .toast.warning  { background: rgba(245,158,11,0.08) !important;  color: #b45309 !important; border-color: rgba(245,158,11,0.25) !important; }
+
+  /* ── Auth pages ── */
+  .auth-card {
+    background: rgba(255, 255, 255, 0.96) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08) !important;
+  }
+  .auth-title   { color: #0f172a !important; }
+  .auth-sub     { color: #475569 !important; }
+  .auth-label   { color: #475569 !important; }
+  .auth-input {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #0f172a !important;
+  }
+  .auth-input::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .auth-input:focus { border-color: rgba(59, 130, 246, 0.5) !important; background: rgba(0, 0, 0, 0.05) !important; }
+  .auth-link { color: #2563eb !important; }
+  .auth-link:hover { color: #1d4ed8 !important; }
+  .auth-divider span { color: #94a3b8 !important; }
+  .auth-divider::before, .auth-divider::after { background: rgba(148, 163, 184, 0.3) !important; }
+
+  /* ── Admin sidebar (sidebar.ejs partial) ── */
+  .sidebar {
+    background: var(--cs-bg-sidebar) !important;
+    border-right-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04) !important;
+  }
+  .sidebar-brand { border-bottom-color: rgba(0, 0, 0, 0.07) !important; }
+  .sidebar-brand h1 { color: #0f172a !important; }
+  .sidebar-brand span { color: #2563eb !important; }
+  .nav-item { color: #475569 !important; }
+  .nav-item:hover { background: rgba(0, 0, 0, 0.05) !important; color: #0f172a !important; }
+  .nav-item.active { background: rgba(59, 130, 246, 0.1) !important; color: #1d4ed8 !important; }
+  .nav-item svg { opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+  .sidebar-footer {
+    border-top-color: rgba(0, 0, 0, 0.07) !important;
+  }
+  .admin-name  { color: #0f172a !important; }
+  .admin-email { color: #64748b !important; }
+  .signout-btn {
+    background: rgba(239, 68, 68, 0.07) !important;
+    border-color: rgba(239, 68, 68, 0.18) !important;
+    color: #dc2626 !important;
+  }
+  .signout-btn:hover { background: rgba(239, 68, 68, 0.14) !important; }
+
+  /* Admin main */
+  .main { background: transparent !important; }
+  .page-title { color: #0f172a !important; }
+  .page-sub   { color: #64748b !important; }
+
+  /* Admin panel */
+  .panel { /* already handled above */ }
+
+  /* Admin tables */
+  table { border-collapse: collapse; }
+  th {
+    color: #64748b !important;
+    border-bottom-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  td {
+    color: #334155 !important;
+    border-bottom-color: rgba(148, 163, 184, 0.18) !important;
+  }
+  tr:hover td { background: rgba(0, 0, 0, 0.02) !important; }
+
+  /* Admin badges */
+  .badge-avail { background: rgba(34,197,94,0.1) !important;   color: #16a34a !important; }
+  .badge-out   { background: rgba(239,68,68,0.08) !important;  color: #dc2626 !important; }
+  .badge-hold  { background: rgba(245,158,11,0.1) !important;  color: #b45309 !important; }
+  .badge-maint { background: rgba(148,163,184,0.1) !important; color: #475569 !important; }
+
+  /* Admin toolbar */
+  .toolbar { border-bottom-color: rgba(148, 163, 184, 0.2) !important; }
+  .search-input {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #0f172a !important;
+  }
+  .search-input::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .search-input:focus { border-color: rgba(59, 130, 246, 0.5) !important; }
+
+  /* Admin buttons */
+  .btn-blue  { background: rgba(59,130,246,0.1) !important;  color: #1d4ed8 !important; border-color: rgba(59,130,246,0.3) !important; }
+  .btn-green { background: rgba(34,197,94,0.08) !important;  color: #16a34a !important; border-color: rgba(34,197,94,0.25) !important; }
+  .btn-red   { background: rgba(239,68,68,0.07) !important;  color: #dc2626 !important; border-color: rgba(239,68,68,0.2) !important; }
+  .btn-slate { background: rgba(100,116,139,0.08) !important; color: #475569 !important; border-color: rgba(100,116,139,0.2) !important; }
+  .btn-amber { background: rgba(245,158,11,0.08) !important; color: #b45309 !important; border-color: rgba(245,158,11,0.2) !important; }
+
+  /* Admin form inputs */
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #0f172a !important;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: rgba(59, 130, 246, 0.5) !important; }
+  .form-group label { color: #475569 !important; }
+  .form-group select option { background: #f8fafc; color: #0f172a; }
+
+  /* Admin mobile topbar */
+  .admin-mobile-topbar {
+    background: rgba(248, 250, 252, 0.97) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  .admin-mobile-title { color: #0f172a !important; }
+  .admin-mobile-menu-btn {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  .admin-mobile-menu-btn span { background: #334155 !important; }
+  .admin-sidebar-backdrop { background: rgba(15, 23, 42, 0.3) !important; }
+
+  /* Stat cards (admin dashboard) */
+  .stat-card {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  .stat-card:hover { border-color: rgba(59, 130, 246, 0.3) !important; }
+  .stat-label { color: #64748b !important; }
+  .stat-value.blue  { color: #1d4ed8 !important; }
+  .stat-value.green { color: #16a34a !important; }
+  .stat-value.amber { color: #b45309 !important; }
+  .stat-value.red   { color: #dc2626 !important; }
+
+  /* Popular items list (admin dashboard) */
+  .pop-item { border-bottom-color: rgba(148, 163, 184, 0.2) !important; }
+  .pop-rank  { background: rgba(59, 130, 246, 0.08) !important; color: #1d4ed8 !important; }
+  .pop-title { color: #0f172a !important; }
+  .pop-author { color: #64748b !important; }
+  .pop-count { color: #1d4ed8 !important; }
+
+  /* Settings page — inline color:white values */
+  .panel [style*="color:white"] { color: #0f172a !important; }
+  .panel [style*="color: white"] { color: #0f172a !important; }
+
+  /* ── About page ── */
+  .about-hero h1 { color: #0f172a !important; }
+  .about-hero p  { color: #475569 !important; }
+  .section-eyebrow { color: #2563eb !important; }
+
+  .about-blurb {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #334155 !important;
+  }
+  .about-blurb strong { color: #0f172a !important; }
+  .about-blurb a { color: #2563eb !important; }
+
+  .team-card {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  .team-card:hover { border-color: rgba(59, 130, 246, 0.35) !important; }
+  .team-name  { color: #0f172a !important; }
+  .team-role  { color: #2563eb !important; }
+  .team-extra { color: #64748b !important; }
+
+  .contact-panel {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+  }
+  .contact-panel h2 { color: #0f172a !important; }
+  .contact-panel .sub { color: #64748b !important; }
+
+  .contact-form .form-group input,
+  .contact-form .form-group select,
+  .contact-form .form-group textarea {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.35) !important;
+    color: #0f172a !important;
+  }
+  .contact-form .form-group input::placeholder,
+  .contact-form .form-group textarea::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .contact-form .form-group label { color: #475569 !important; }
+  .contact-form .form-group select option { background: #f8fafc; color: #0f172a; }
+
+  .login-prompt {
+    background: rgba(59, 130, 246, 0.05) !important;
+    border-color: rgba(59, 130, 246, 0.2) !important;
+    color: #1d4ed8 !important;
+  }
+  .login-prompt a { color: #1d4ed8 !important; }
+
+  .flash-success { background: rgba(34,197,94,0.08) !important; color: #15803d !important; border-color: rgba(34,197,94,0.25) !important; }
+  .flash-error   { background: rgba(239,68,68,0.07) !important; color: #dc2626 !important; border-color: rgba(239,68,68,0.2) !important; }
+}

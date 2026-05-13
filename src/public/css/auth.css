@@ -5,6 +5,8 @@ This style sheet serves the following pages:
 Anyt page related to authentication, please use this.
 */
 
+@import url('theme.css');
+
 /* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -162,7 +162,7 @@
               <div class="book-cover">
                 <img src="<%= book.cover || '' %>"
                      loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/200x300?text=No+Cover'"
+                     onerror="this.src='/assets/book-placeholder.svg'"
                      alt="<%= book.title %>" />
               </div>
 
@@ -210,7 +210,7 @@
               <div class="book-cover">
                 <img src="<%= item.image || '' %>"
                      loading="lazy"
-                     onerror="this.src='https://via.placeholder.com/200x300?text=No+Image'"
+                     onerror="this.src='/assets/book-placeholder.svg'"
                      alt="<%= item.name %>" />
               </div>
               <div class="book-info">
