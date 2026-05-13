@@ -8,6 +8,71 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/kiosk-dashboard.css" />
+  <style>
+    /* ── Equipment catalog grid ── */
+    .equip-card {
+      background: rgba(21,25,36,0.9); border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 0.85rem; overflow: hidden; display: flex;
+      flex-direction: column; transition: border-color 0.2s;
+    }
+    .equip-card:hover { border-color: rgba(59,130,246,0.4); }
+    .equip-card.unavailable { opacity: 0.5; }
+    .equip-card-img {
+      width: 100%; aspect-ratio: 1; object-fit: cover;
+      background: rgba(15,23,42,0.8);
+    }
+    .equip-card-body {
+      padding: 0.65rem 0.7rem; display: flex; flex-direction: column; gap: 0.3rem; flex: 1;
+    }
+    .equip-card-name { font-size: 0.78rem; font-weight: 700; color: white; line-height: 1.3; }
+    .equip-card-cat  { font-size: 0.63rem; color: #64748b; }
+    .equip-card-meta { font-size: 0.6rem; color: #475569; }
+    .equip-avail-badge {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em;
+    }
+    .avail-yes { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .avail-no  { background: rgba(239,68,68,0.15);  color: #f87171; }
+    .equip-add-btn {
+      margin-top: auto; width: 100%; padding: 0.5rem; border-radius: 0.45rem;
+      font-family: inherit; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.06em;
+      cursor: pointer; border: 1px solid rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.15); color: #60a5fa; transition: all 0.2s;
+    }
+    .equip-add-btn:hover:not(:disabled) { background: rgba(59,130,246,0.3); }
+    .equip-add-btn:disabled {
+      border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.12);
+      color: #4ade80; cursor: default;
+    }
+    .equip-search {
+      width: 100%; max-width: 430px; padding: 0.65rem 1rem; border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05);
+      color: white; font-family: inherit; font-size: 0.82rem; outline: none;
+      margin-bottom: 1rem; transition: border-color 0.2s;
+    }
+    .equip-search:focus { border-color: rgba(59,130,246,0.5); }
+
+    /* ── Mixed cart items ── */
+    .cart-item-equip {
+      display: flex; align-items: center; gap: 0.65rem;
+      padding: 0.6rem 0.65rem; border-radius: 0.5rem;
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.2);
+      margin-bottom: 0.5rem;
+    }
+    .cart-item-equip img {
+      width: 38px; height: 38px; object-fit: cover; border-radius: 0.35rem;
+      border: 1px solid rgba(71,85,105,0.4); background: rgba(15,23,42,0.6); flex-shrink: 0;
+    }
+    .cart-item-equip-info { flex: 1; min-width: 0; }
+    .cart-item-equip-name { font-size: 0.74rem; font-weight: 700; color: white; }
+    .cart-item-equip-days { font-size: 0.62rem; color: #64748b; }
+    .cart-type-label {
+      font-size: 0.55rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.1rem 0.4rem; border-radius: 9999px; margin-bottom: 0.35rem; display: inline-block;
+    }
+    .cart-type-book  { background: rgba(34,197,94,0.12);  color: #4ade80; }
+    .cart-type-equip { background: rgba(59,130,246,0.12); color: #60a5fa; }
+  </style>
 </head>
 <body>
 
@@ -46,7 +111,7 @@
 
   <main class="page-wrap">
 
-    <!-- ── CATALOG ── -->
+    <!-- ── CATALOG (Books) ── -->
     <div class="workspace active" id="ws-catalog">
       <div class="catalog-header">
         <h1 class="catalog-title">Library Catalog</h1>
@@ -66,14 +131,31 @@
       <div class="pagination"   id="pagination"></div>
     </div>
 
+    <!-- ── EQUIPMENT CATALOG ── -->
+    <div class="workspace" id="ws-equip-catalog">
+      <div class="catalog-header">
+        <h1 class="catalog-title">Equipment Catalog</h1>
+        <div class="catalog-meta">
+          <span class="catalog-count" id="equipCatalogCount">Loading…</span>
+        </div>
+      </div>
+      <input type="text" class="equip-search" id="equipCatalogSearch"
+             placeholder="Search equipment by name or category…"
+             oninput="filterEquipCatalog(this.value)" />
+      <div class="catalog-grid" id="equipCatalogGrid">
+        <p style="color:#334155;font-size:0.82rem;">Loading…</p>
+      </div>
+    </div>
+
     <!-- ── CHECKOUT ── -->
     <div class="workspace" id="ws-checkout">
       <div class="checkout-row">
         <div class="panel scan-panel">
           <p class="panel-title" style="margin-bottom:1.25rem;">SCAN TO ADD TO CART</p>
+          <!-- Accepts both ISBNs and equipment barcodes -->
           <input type="text" class="scan-input" id="checkoutInput"
-                 placeholder="Scan ISBN…" autocomplete="off"
-                 onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanISBN(); }" />
+                 placeholder="Scan ISBN or equipment barcode…" autocomplete="off"
+                 onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanCheckout(); }" />
           <img id="checkoutCover" src="/assets/book-placeholder.svg"
                class="checkout-cover" alt="cover" />
           <p class="checkout-title"  id="checkoutTitle">---</p>
@@ -141,6 +223,14 @@
           <img src="/assets/ph-check-circle.svg" alt="" />
           <p>No equipment currently checked out</p>
         </div>
+
+        <div class="divider"></div>
+        <p class="section-title">Equipment Borrowing History</p>
+        <div id="equipmentLoanHistory"></div>
+        <div class="empty-state" id="noEquipmentHistory" style="display:none;">
+          <img src="/assets/ph-clock-counter-clockwise.svg" alt="" />
+          <p>No equipment borrowing history yet</p>
+        </div>
       </div>
     </div>
 
@@ -172,7 +262,7 @@
       </div>
     </div>
 
-    <!-- ── EQUIPMENT ── -->
+    <!-- ── EQUIPMENT (scan-based checkout/return) ── -->
     <div class="workspace" id="ws-equipment">
       <div class="panel return-panel">
         <p class="panel-title" style="margin-bottom:1.25rem;">EQUIPMENT CHECKOUT / RETURN</p>
@@ -181,13 +271,10 @@
                placeholder="Scan equipment barcode…" autocomplete="off"
                onkeydown="if(event.key==='Enter' || event.key==='Tab'){ event.preventDefault(); scanEquipment(); }" />
 
-        <!-- Preview card — hidden until a scan succeeds -->
         <div id="equipmentPreview" style="display:none;margin-top:1.5rem;">
           <div style="display:flex;gap:1rem;align-items:flex-start;justify-content:center;flex-wrap:wrap;">
-            <img id="equipPreviewImg"
-                 src="/assets/book-placeholder.svg"
-                 style="width:80px;height:80px;object-fit:cover;border-radius:0.5rem;border:1px solid rgba(71,85,105,0.4);flex-shrink:0;"
-                 alt="" />
+            <img id="equipPreviewImg" src="/assets/book-placeholder.svg"
+                 style="width:80px;height:80px;object-fit:cover;border-radius:0.5rem;border:1px solid rgba(71,85,105,0.4);flex-shrink:0;" alt="" />
             <div style="text-align:left;">
               <p id="equipPreviewName"    style="font-size:1rem;font-weight:800;color:white;margin-bottom:0.2rem;"></p>
               <p id="equipPreviewCat"     style="font-size:0.72rem;color:#64748b;margin-bottom:0.35rem;"></p>
@@ -196,21 +283,17 @@
             </div>
           </div>
 
-          <!-- Loan info (shown when unit is checked out by someone else) -->
           <div id="equipLoanInfo" style="display:none;margin-top:1rem;padding:0.65rem 0.85rem;border-radius:0.6rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);font-size:0.76rem;color:#fca5a5;text-align:center;">
             Checked out by <strong id="equipLoanName"></strong>
             <span id="equipLoanDue" style="margin-left:0.5rem;color:#64748b;"></span>
           </div>
 
-          <!-- Action buttons -->
           <div style="display:flex;gap:0.75rem;margin-top:1.25rem;justify-content:center;flex-wrap:wrap;">
-            <button id="equipCheckoutBtn"
-                    onclick="confirmEquipmentCheckout()"
+            <button id="equipCheckoutBtn" onclick="confirmEquipmentCheckout()"
                     style="display:none;padding:0.85rem 2rem;border-radius:0.65rem;font-family:inherit;font-size:0.85rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.15);color:#4ade80;transition:all 0.2s;">
               CHECKOUT THIS ITEM
             </button>
-            <button id="equipReturnBtn"
-                    onclick="confirmEquipmentReturn()"
+            <button id="equipReturnBtn" onclick="confirmEquipmentReturn()"
                     style="display:none;padding:0.85rem 2rem;border-radius:0.65rem;font-family:inherit;font-size:0.85rem;font-weight:800;letter-spacing:0.06em;cursor:pointer;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.15);color:#60a5fa;transition:all 0.2s;">
               RETURN THIS ITEM
             </button>
@@ -219,7 +302,7 @@
 
         <p style="margin-top:1.5rem;font-size:0.72rem;color:#334155;text-align:center;">
           Scan a barcode label to check out or return equipment.<br>
-          For books, use the <strong style="color:#475569;">CHECK OUT</strong> and <strong style="color:#475569;">RETURN</strong> tabs.
+          To browse equipment, use the <strong style="color:#475569;">EQUIPMENT</strong> catalog tab.
         </p>
       </div>
     </div>
@@ -229,23 +312,26 @@
   <!-- Floating nav -->
   <div class="dash-nav-shell">
     <nav class="dash-nav">
-      <button class="nav-btn active" id="nav-catalog"   onclick="showView('catalog')">
+      <button class="nav-btn active" id="nav-catalog"       onclick="showView('catalog')">
         <img src="/assets/ph-squares-four.svg" alt="" /><span>BROWSE</span>
       </button>
-      <button class="nav-btn"        id="nav-checkout"  onclick="showView('checkout')">
+      <button class="nav-btn"        id="nav-equip-catalog" onclick="showView('equip-catalog')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span>EQUIP<br>MENT</span>
+      </button>
+      <button class="nav-btn"        id="nav-checkout"      onclick="showView('checkout')">
         <img src="/assets/ph-shopping-cart.svg" alt="" /><span>CHECK<br>OUT</span>
       </button>
-      <button class="nav-btn"        id="nav-return"    onclick="showView('return')">
+      <button class="nav-btn"        id="nav-return"        onclick="showView('return')">
         <img src="/assets/ph-arrow-u-down-left.svg" alt="" /><span>RETURN</span>
       </button>
-      <button class="nav-btn"        id="nav-mybooks"   onclick="showView('mybooks')">
+      <button class="nav-btn"        id="nav-mybooks"       onclick="showView('mybooks')">
         <img src="/assets/ph-book-open-text.svg" alt="" /><span>MY<br>ITEMS</span>
       </button>
-      <button class="nav-btn"        id="nav-donate"    onclick="showView('donate')">
+      <button class="nav-btn"        id="nav-donate"        onclick="showView('donate')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><span>DONATE</span>
       </button>
-      <button class="nav-btn"        id="nav-equipment" onclick="showView('equipment')">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" style="opacity:0.55;"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg><span>EQUIP<br>MENT</span>
+      <button class="nav-btn"        id="nav-equipment"     onclick="showView('equipment')">
+        <img src="/assets/ph-clock-counter-clockwise.svg" alt="" /><span>SCAN<br>EQUIP</span>
       </button>
     </nav>
     <div class="nav-search-stack">
@@ -284,7 +370,11 @@
     const renewedLoanIds = new Set();
 
     // ── Equipment state ────────────────────────────────────────────────────────
-    let currentEquipUnit = null;
+    let currentEquipUnit   = null;  // for scan-based checkout (ws-equipment)
+    let allEquipment       = [];    // equipment catalog
+    let filteredEquipment  = [];
+    let equipCatalogLoaded = false;
+    let equipCart          = [];    // [{ id, name, category, image, loanDurationDays, barcode|null }]
 
     // ── Toast ──────────────────────────────────────────────────────────────────
     function toast(msg, type = 'positive') {
@@ -301,10 +391,10 @@
     }
 
     function getScannerTargetView() {
-      const activeView = getActiveView();
-      if (activeView === 'return')    return 'return';
-      if (activeView === 'donate')    return 'donate';
-      if (activeView === 'equipment') return 'equipment';
+      const v = getActiveView();
+      if (v === 'return')    return 'return';
+      if (v === 'donate')    return 'donate';
+      if (v === 'equipment') return 'equipment';
       return 'checkout';
     }
 
@@ -317,15 +407,10 @@
 
     function getInteractiveTextInputIds() {
       return new Set([
-        'checkoutInput',
-        'returnInput',
-        'donateIsbnInput',
-        'donateTitleInput',
-        'donateAuthorInput',
-        'donateManualTitle',
-        'donateManualAuthor',
-        'equipmentInput',
-        'searchInput',
+        'checkoutInput', 'returnInput', 'donateIsbnInput',
+        'donateTitleInput', 'donateAuthorInput',
+        'donateManualTitle', 'donateManualAuthor',
+        'equipmentInput', 'equipCatalogSearch', 'searchInput',
       ]);
     }
 
@@ -335,21 +420,14 @@
         element instanceof HTMLSelectElement ||
         element?.isContentEditable;
     }
-
-    function isVisible(element) {
-      return !!element && element.offsetParent !== null;
-    }
+    function isVisible(element) { return !!element && element.offsetParent !== null; }
 
     function focusPrimaryScannerInput() {
       const activeView = getActiveView();
       if (!['checkout', 'return', 'donate', 'equipment'].includes(activeView)) return;
-
       const activeElement = document.activeElement;
-      const interactiveInputIds = getInteractiveTextInputIds();
-      if (isEditableElement(activeElement) && interactiveInputIds.has(activeElement.id) && activeElement.id !== 'searchInput') {
-        return;
-      }
-
+      const ids = getInteractiveTextInputIds();
+      if (isEditableElement(activeElement) && ids.has(activeElement.id) && activeElement.id !== 'searchInput') return;
       const targetInput = getScannerInput(activeView);
       if (!isVisible(targetInput)) return;
       requestAnimationFrame(() => targetInput.focus());
@@ -360,37 +438,21 @@
       if (!(activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement)) return;
       if (activeElement === intendedInput) return;
       if (typeof activeElement.value !== 'string') return;
-      if (activeElement.value.endsWith(buffer)) {
-        activeElement.value = activeElement.value.slice(0, -buffer.length);
-      }
+      if (activeElement.value.endsWith(buffer)) activeElement.value = activeElement.value.slice(0, -buffer.length);
     }
 
     async function submitScannerBuffer(buffer) {
       const targetView = getScannerTargetView();
       const activeView = getActiveView();
-
-      if (targetView !== activeView) {
-        showView(targetView);
-      }
-
+      if (targetView !== activeView) showView(targetView);
       const input = getScannerInput(targetView);
       if (!input) return;
       removeScannerLeak(buffer, input);
       input.value = buffer;
-
-      if (targetView === 'return') {
-        await scanReturn();
-        return;
-      }
-      if (targetView === 'donate') {
-        await lookupDonation();
-        return;
-      }
-      if (targetView === 'equipment') {
-        await scanEquipment();
-        return;
-      }
-      await scanISBN();
+      if (targetView === 'return')    { await scanReturn();     return; }
+      if (targetView === 'donate')    { await lookupDonation(); return; }
+      if (targetView === 'equipment') { await scanEquipment();  return; }
+      await scanCheckout();
     }
 
     function showView(view) {
@@ -400,11 +462,14 @@
       document.getElementById(`ws-${view}`).classList.add('active');
       const nb = document.getElementById(`nav-${view}`);
       if (nb) nb.classList.add('active');
-      if (view === 'checkout')  document.getElementById('checkoutInput').focus();
-      if (view === 'return')    document.getElementById('returnInput').focus();
-      if (view === 'mybooks')   loadMyBooks();
-      if (view === 'donate')    document.getElementById('donateIsbnInput')?.focus();
-      if (view === 'equipment') document.getElementById('equipmentInput')?.focus();
+      if (view === 'checkout')      document.getElementById('checkoutInput').focus();
+      if (view === 'return')        document.getElementById('returnInput').focus();
+      if (view === 'mybooks')       loadMyBooks();
+      if (view === 'donate')        document.getElementById('donateIsbnInput')?.focus();
+      if (view === 'equipment')     document.getElementById('equipmentInput')?.focus();
+      if (view === 'equip-catalog') {
+        if (!equipCatalogLoaded) { loadEquipmentCatalog(); equipCatalogLoaded = true; }
+      }
     }
 
     // ── Search ─────────────────────────────────────────────────────────────────
@@ -419,14 +484,10 @@
     }
     function handleSearch(val) {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => {
-        searchQuery = val.toLowerCase().trim();
-        currentPage = 1;
-        applyFilters();
-      }, 250);
+      searchTimer = setTimeout(() => { searchQuery = val.toLowerCase().trim(); currentPage = 1; applyFilters(); }, 250);
     }
 
-    // ── Catalog ────────────────────────────────────────────────────────────────
+    // ── Book Catalog ────────────────────────────────────────────────────────────
     async function loadCatalog() {
       try {
         const r = await fetch('/api/catalog');
@@ -439,8 +500,7 @@
     function setFilter(f) {
       registerActivity();
       currentFilter = f; currentPage = 1;
-      document.querySelectorAll('.filter-btn').forEach(b =>
-        b.classList.toggle('active', b.dataset.filter === f));
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
       applyFilters();
     }
 
@@ -452,8 +512,7 @@
                           (x.isbn||'').toLowerCase().includes(searchQuery));
       if (currentFilter === 'available')   b = b.filter(x => x.status === 'Available');
       if (currentFilter === 'checked_out') b = b.filter(x => x.status === 'Checked Out');
-      if (currentFilter === 'on_hold')
-        b = b.filter(x => x.status === 'On Hold' || x.heldByCurrentUser);
+      if (currentFilter === 'on_hold')     b = b.filter(x => x.status === 'On Hold' || x.heldByCurrentUser);
       filtered = b;
       const tp = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
       if (currentPage > tp) currentPage = tp;
@@ -461,15 +520,9 @@
     }
 
     function getHoldState(b, isBorrower) {
-      if (isBorrower) {
-        return { label: 'YOU HAVE THIS BOOK', className: 'hold-state-note muted' };
-      }
-      if (b.heldByCurrentUser && b.status === 'On Hold') {
-        return { label: 'READY FOR PICKUP', className: 'hold-state-note ready' };
-      }
-      if (b.heldByCurrentUser) {
-        return { label: 'YOUR HOLD IS ACTIVE', className: 'hold-state-note active' };
-      }
+      if (isBorrower)                                     return { label: 'YOU HAVE THIS BOOK',   className: 'hold-state-note muted'  };
+      if (b.heldByCurrentUser && b.status === 'On Hold')  return { label: 'READY FOR PICKUP',     className: 'hold-state-note ready'  };
+      if (b.heldByCurrentUser)                            return { label: 'YOUR HOLD IS ACTIVE',  className: 'hold-state-note active' };
       return null;
     }
 
@@ -478,18 +531,15 @@
       const start = (currentPage - 1) * PER_PAGE;
       const page  = filtered.slice(start, start + PER_PAGE);
       const tp    = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-      document.getElementById('catalogCount').textContent =
-        `Showing ${page.length} of ${filtered.length} book${filtered.length !== 1 ? 's' : ''}`;
-      document.getElementById('catalogPage').textContent =
-        `Page ${currentPage} of ${tp}`;
+      document.getElementById('catalogCount').textContent = `Showing ${page.length} of ${filtered.length} book${filtered.length !== 1 ? 's' : ''}`;
+      document.getElementById('catalogPage').textContent  = `Page ${currentPage} of ${tp}`;
       grid.innerHTML = page.map((b, i) => {
-        const avail = b.status === 'Available';
+        const avail    = b.status === 'Available';
         const isOnHold = b.status === 'On Hold';
         const isBorrower = b.borrowerUserId && b.borrowerUserId === currentUserId;
-        const holdState = getHoldState(b, isBorrower);
+        const holdState  = getHoldState(b, isBorrower);
         return `<div class="book-card ${avail ? '' : 'checked-out'} ${b.heldByCurrentUser ? 'held-for-user' : ''}" style="animation-delay:${Math.min(i*.04,.24)}s">
-          <img src="${esc(b.cover||'')}" loading="lazy" decoding="async"
-               onerror="this.src='/assets/book-placeholder.svg'" alt="${esc(b.title)}" />
+          <img src="${esc(b.cover||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="${esc(b.title)}" />
           <div class="book-overlay">
             <p class="book-title">${esc(b.title)}</p>
             <p class="book-author">${esc(b.author)}</p>
@@ -497,15 +547,11 @@
             <span class="badge ${isOnHold ? 'badge-hold' : (avail ? 'badge-avail' : 'badge-out')}">${isOnHold ? 'ON HOLD' : (avail ? 'AVAILABLE' : 'CHECKED OUT')}</span>
             ${(() => {
               if (!avail) {
-                if (holdState) {
-                  return `<span class="${holdState.className}">${holdState.label}</span>`;
-                }
+                if (holdState) return `<span class="${holdState.className}">${holdState.label}</span>`;
                 return `<button class="catalog-add-btn" onclick="event.stopPropagation(); placeHold('${esc(b.isbn)}')" style="background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.3);">PLACE HOLD</button>`;
               }
               const inCart = cart.some(c => c.isbn === b.isbn);
-              if (inCart) {
-                return `<button class="catalog-add-btn" disabled style="background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); cursor: default;">ADDED TO CART</button>`;
-              }
+              if (inCart) return `<button class="catalog-add-btn" disabled style="background: rgba(34,197,94,0.15); color: #4ade80; border-color: rgba(34,197,94,0.3); cursor: default;">ADDED TO CART</button>`;
               return `<button class="catalog-add-btn" onclick="addToCartByIsbn(event, '${esc(b.isbn)}')">ADD TO CART</button>`;
             })()}
           </div>
@@ -524,31 +570,97 @@
       let pages = [];
       if (tp <= 7) { pages = Array.from({length:tp},(_,i)=>i+1); }
       else {
-        pages=[1];
-        if (currentPage>3) pages.push('…');
-        for (let p=Math.max(2,currentPage-1); p<=Math.min(tp-1,currentPage+1); p++) if(!pages.includes(p)) pages.push(p);
-        if (currentPage<tp-2) pages.push('…');
-        if (!pages.includes(tp)) pages.push(tp);
+        pages=[1]; if(currentPage>3) pages.push('…');
+        for(let p=Math.max(2,currentPage-1); p<=Math.min(tp-1,currentPage+1); p++) if(!pages.includes(p)) pages.push(p);
+        if(currentPage<tp-2) pages.push('…'); if(!pages.includes(tp)) pages.push(tp);
       }
-      return (
-        `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>` +
-        pages.map(p => p==='…'
-          ? `<span class="page-dots">···</span>`
-          : `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`
-        ).join('') +
-        `<button class="page-btn" ${currentPage>=tp?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`
-      );
+      return `<button class="page-btn" ${currentPage<=1?'disabled':''} onclick="goPage(${currentPage-1})">‹</button>` +
+        pages.map(p => p==='…' ? `<span class="page-dots">···</span>` : `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`).join('') +
+        `<button class="page-btn" ${currentPage>=tp?'disabled':''} onclick="goPage(${currentPage+1})">›</button>`;
     }
 
     function goPage(p) {
-      registerActivity();
-      currentPage = Math.max(1, p);
-      renderCatalog();
-      renderPagination(Math.ceil(filtered.length/PER_PAGE));
+      registerActivity(); currentPage = Math.max(1, p);
+      renderCatalog(); renderPagination(Math.ceil(filtered.length/PER_PAGE));
       window.scrollTo({top:0,behavior:'smooth'});
     }
 
-    // ── Checkout ───────────────────────────────────────────────────────────────
+    // ── Equipment Catalog ──────────────────────────────────────────────────────
+    async function loadEquipmentCatalog() {
+      try {
+        const r = await fetch('/api/equipment/catalog');
+        const d = await r.json();
+        allEquipment = d.equipment ?? [];
+        filteredEquipment = allEquipment;
+        renderEquipmentCatalog();
+      } catch { toast('Could not load equipment catalog.', 'negative'); }
+    }
+
+    function filterEquipCatalog(query) {
+      const q = query.toLowerCase().trim();
+      filteredEquipment = q
+        ? allEquipment.filter(e => e.name.toLowerCase().includes(q) || (e.category||'').toLowerCase().includes(q))
+        : allEquipment;
+      renderEquipmentCatalog();
+    }
+
+    function renderEquipmentCatalog() {
+      const grid = document.getElementById('equipCatalogGrid');
+      document.getElementById('equipCatalogCount').textContent =
+        `${filteredEquipment.length} item${filteredEquipment.length !== 1 ? 's' : ''}`;
+
+      if (!filteredEquipment.length) {
+        grid.innerHTML = '<p style="color:#334155;font-size:0.82rem;grid-column:1/-1;">No equipment found.</p>';
+        return;
+      }
+
+      grid.innerHTML = filteredEquipment.map((item, i) => {
+        const avail  = item.availableUnits > 0;
+        const inCart = equipCart.some(e => e.id === item.id);
+        return `
+          <div class="equip-card ${avail ? '' : 'unavailable'}" style="animation-delay:${Math.min(i*.03,.2)}s">
+            <img class="equip-card-img"
+                 src="${esc(item.image||'')}"
+                 onerror="this.src='/assets/book-placeholder.svg'"
+                 alt="${esc(item.name)}" />
+            <div class="equip-card-body">
+              <p class="equip-card-name">${esc(item.name)}</p>
+              <p class="equip-card-cat">${esc(item.category || 'Equipment')}</p>
+              <span class="equip-avail-badge ${avail ? 'avail-yes' : 'avail-no'}">
+                ${avail ? item.availableUnits + ' AVAILABLE' : 'UNAVAILABLE'}
+              </span>
+              <p class="equip-card-meta">${item.loanDurationDays}-day loan</p>
+              ${avail
+                ? (inCart
+                    ? `<button class="equip-add-btn" disabled>✓ IN CART</button>`
+                    : `<button class="equip-add-btn" onclick="addEquipToCart(${item.id})">ADD TO CART</button>`)
+                : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function addEquipToCart(equipmentId) {
+      registerActivity();
+      const item = allEquipment.find(e => e.id === equipmentId);
+      if (!item) return;
+      if (equipCart.some(e => e.id === equipmentId)) {
+        toast('Already in cart.', 'warning'); return;
+      }
+      equipCart.push({ id: item.id, name: item.name, category: item.category, image: item.image, loanDurationDays: item.loanDurationDays });
+      renderEquipmentCatalog(); // update button to "IN CART"
+      refreshCartUI();
+      toast(`${item.name} added to cart.`, 'positive');
+    }
+
+    function removeEquipFromCart(equipmentId) {
+      registerActivity();
+      equipCart = equipCart.filter(e => e.id !== equipmentId);
+      renderEquipmentCatalog(); // restore ADD TO CART button
+      refreshCartUI();
+    }
+
+    // ── Checkout (smart — handles ISBNs and equipment barcodes) ───────────────
     function dueString() {
       const d = new Date(); d.setDate(d.getDate()+14);
       return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
@@ -558,11 +670,24 @@
       return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     }
 
-    async function scanISBN() {
+    async function scanCheckout() {
       registerActivity();
-      const inp  = document.getElementById('checkoutInput');
-      const isbn = inp.value.trim(); inp.value = '';
-      if (!isbn) return;
+      const inp = document.getElementById('checkoutInput');
+      const raw = inp.value.trim(); inp.value = '';
+      if (!raw) return;
+
+      // ISBNs are numeric only (10 or 13 digits)
+      const cleanIsbn = raw.replace(/[^0-9Xx]/g, '').toUpperCase();
+      if (cleanIsbn.length === 10 || cleanIsbn.length === 13) {
+        await addBookByIsbn(cleanIsbn);
+        return;
+      }
+
+      // Anything else → try as equipment barcode
+      await addEquipByBarcode(raw.toUpperCase());
+    }
+
+    async function addBookByIsbn(isbn) {
       try {
         const r = await fetch('/api/cart/add', {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -580,35 +705,89 @@
       finally { focusPrimaryScannerInput(); }
     }
 
+    async function addEquipByBarcode(barcode) {
+      try {
+        const r = await fetch(`/api/equipment/scan/${encodeURIComponent(barcode)}`);
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Not found — check the barcode and try again.', 'negative'); return; }
+
+        if (d.availableUnits === 0 && !d.userActiveLoan) {
+          toast(`${d.name} has no units available.`, 'warning'); return;
+        }
+        if (d.userActiveLoan) {
+          toast(`You already have ${d.name} checked out.`, 'warning'); return;
+        }
+        if (equipCart.some(e => e.id === d.equipmentId)) {
+          toast(`${d.name} is already in your cart.`, 'warning'); return;
+        }
+
+        equipCart.push({
+          id:              d.equipmentId,
+          name:            d.name,
+          category:        d.category,
+          image:           d.image,
+          loanDurationDays: d.loanDurationDays,
+          barcode,
+        });
+        refreshCartUI();
+        // update catalog "IN CART" button if catalog was loaded
+        if (equipCatalogLoaded) renderEquipmentCatalog();
+        document.getElementById('checkoutCover').src    = d.image || '/assets/book-placeholder.svg';
+        document.getElementById('checkoutTitle').textContent  = d.name;
+        document.getElementById('checkoutAuthor').textContent = d.category || 'Equipment';
+        document.getElementById('checkoutDue').textContent    = `${d.loanDurationDays}-day loan`;
+        toast(`${d.name} added to cart.`, 'positive');
+      } catch { toast('Server error.', 'negative'); }
+      finally { focusPrimaryScannerInput(); }
+    }
+
+    // scanISBN kept for backward compat (called from catalog add-to-cart button)
+    async function scanISBN() { await scanCheckout(); }
+
     function refreshCartUI() {
       const empty = document.getElementById('emptyCart');
       const items = document.getElementById('cartItems');
       const btn   = document.getElementById('confirmBtn');
-      empty.style.display = cart.length ? 'none' : 'flex';
-      items.innerHTML = cart.map(b=>`
+      const total = cart.length + equipCart.length;
+
+      empty.style.display = total ? 'none' : 'flex';
+
+      const bookRows = cart.map(b => `
         <div class="cart-item">
           <img src="${esc(b.cover||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
-          <div><p class="cart-item-title">${esc(b.title)}</p>
-               <p class="cart-item-author">${esc(b.author)}</p>
-               <p class="cart-item-due">Due: ${dueShort()}</p></div>
+          <div>
+            <span class="cart-type-label cart-type-book">BOOK</span>
+            <p class="cart-item-title">${esc(b.title)}</p>
+            <p class="cart-item-author">${esc(b.author)}</p>
+            <p class="cart-item-due">Due: ${dueShort()}</p>
+          </div>
           <button class="remove-btn" onclick="removeFromCart('${esc(b.isbn)}')">✕</button>
         </div>`).join('');
-      btn.textContent = `CONFIRM CHECKOUT (${cart.length})`;
-      btn.className   = `confirm-btn ${cart.length?'on':'off'}`;
-      if (typeof renderCatalog === 'function' && filtered && filtered.length) {
-        renderCatalog();
-      }
+
+      const equipRows = equipCart.map(e => `
+        <div class="cart-item-equip">
+          <img src="${esc(e.image||'')}" loading="lazy" decoding="async" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+          <div class="cart-item-equip-info">
+            <span class="cart-type-label cart-type-equip">EQUIPMENT</span>
+            <p class="cart-item-equip-name">${esc(e.name)}</p>
+            <p class="cart-item-equip-days">${e.loanDurationDays}-day loan</p>
+          </div>
+          <button class="remove-btn" onclick="removeEquipFromCart(${e.id})">✕</button>
+        </div>`).join('');
+
+      items.innerHTML = bookRows + equipRows;
+      btn.textContent = `CONFIRM CHECKOUT (${total})`;
+      btn.className   = `confirm-btn ${total ? 'on' : 'off'}`;
+
+      if (filtered && filtered.length) renderCatalog();
     }
 
     async function addToCartByIsbn(e, isbn) {
       e.stopPropagation();
-      const inp = document.getElementById('checkoutInput');
-      inp.value = isbn;
-      const preCartSize = cart.length;
-      await scanISBN();
-      if (cart.length > preCartSize) {
-        toast('Added to cart!', 'positive');
-      }
+      document.getElementById('checkoutInput').value = isbn;
+      const prev = cart.length;
+      await scanCheckout();
+      if (cart.length > prev) toast('Added to cart!', 'positive');
     }
 
     async function removeFromCart(isbn) {
@@ -621,32 +800,62 @@
         if (!r.ok) return;
         cart = cart.filter(b => b.isbn !== isbn);
         refreshCartUI();
-      } catch (err) { toast('Error removing item.', 'negative'); }
+      } catch { toast('Error removing item.', 'negative'); }
     }
 
     async function confirmCheckout() {
       registerActivity();
-      if (!cart.length) return;
-      try {
-        const r = await fetch('/api/checkout', {method:'POST'});
-        const d = await r.json();
-        if (!r.ok) { toast(d.error??'Checkout failed.','negative'); return; }
-        const {checkedOut, requested} = d;
-        if (checkedOut === requested)
-          toast(`Checked out ${checkedOut} item(s)! Return by ${dueString()}.`, 'positive');
-        else if (checkedOut > 0)
-          toast(`Checked out ${checkedOut} of ${requested} item(s). Some were unavailable.`, 'warning');
-        else
-          toast('No items checked out — books may be unavailable.', 'warning');
-        cart = [];
-        refreshCartUI();
-        document.getElementById('checkoutCover').src = '/assets/book-placeholder.svg';
-        document.getElementById('checkoutTitle').textContent  = '---';
-        document.getElementById('checkoutAuthor').textContent = '---';
-        document.getElementById('checkoutDue').textContent    = '';
-        await loadCatalog();
-      } catch { toast('Server error.','negative'); }
-      finally { focusPrimaryScannerInput(); }
+      if (!cart.length && !equipCart.length) return;
+
+      let bookSuccess = 0, equipSuccess = 0;
+      const errors = [];
+
+      // ── Books ──────────────────────────────────────────────────────────────
+      if (cart.length) {
+        try {
+          const r = await fetch('/api/checkout', {method:'POST'});
+          const d = await r.json();
+          if (!r.ok) {
+            errors.push(d.error ?? 'Book checkout failed.');
+          } else {
+            bookSuccess = d.checkedOut ?? cart.length;
+            cart = [];
+          }
+        } catch { errors.push('Book checkout server error.'); }
+      }
+
+      // ── Equipment ──────────────────────────────────────────────────────────
+      const equipDone = [];
+      for (const item of equipCart) {
+        try {
+          const body = item.id ? { equipmentId: item.id } : { barcode: item.barcode };
+          const r = await fetch('/api/equipment/checkout', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(body),
+          });
+          const d = await r.json();
+          if (r.ok) { equipSuccess++; equipDone.push(item.id); }
+          else errors.push(`${item.name}: ${d.error ?? 'Failed'}`);
+        } catch { errors.push(`${item.name}: Server error`); }
+      }
+      equipCart = equipCart.filter(e => !equipDone.includes(e.id));
+
+      // ── Feedback ───────────────────────────────────────────────────────────
+      const total = bookSuccess + equipSuccess;
+      if (total > 0) {
+        toast(`${total} item${total !== 1 ? 's' : ''} checked out! Return by ${dueString()}.`, 'positive');
+      }
+      errors.forEach(msg => toast(msg, 'negative'));
+
+      refreshCartUI();
+      document.getElementById('checkoutCover').src = '/assets/book-placeholder.svg';
+      document.getElementById('checkoutTitle').textContent  = '---';
+      document.getElementById('checkoutAuthor').textContent = '---';
+      document.getElementById('checkoutDue').textContent    = '';
+
+      if (equipCatalogLoaded) { equipCatalogLoaded = false; await loadEquipmentCatalog(); equipCatalogLoaded = true; }
+      await loadCatalog();
+      focusPrimaryScannerInput();
     }
 
     // ── Return (smart — handles both books and equipment) ─────────────────────
@@ -671,6 +880,7 @@
           document.getElementById('returnCover').src = d.image || '/assets/book-placeholder.svg';
           document.getElementById('returnTitle').textContent = d.name ?? input;
           toast(`${d.name ?? 'Equipment'} returned!`, 'positive');
+          if (equipCatalogLoaded) { equipCatalogLoaded = false; await loadEquipmentCatalog(); equipCatalogLoaded = true; }
         } else {
           document.getElementById('returnCover').src = d.book?.cover || '/assets/book-placeholder.svg';
           document.getElementById('returnTitle').textContent = d.book?.title ?? input;
@@ -733,13 +943,11 @@
         }).join('');
       } catch { toast('Could not load loans.','negative'); }
 
-      // Load equipment loans alongside book loans
       await loadEquipmentLoans();
     }
 
     async function renewLoan(loanId, btn) {
-      registerActivity();
-      btn.disabled = true;
+      registerActivity(); btn.disabled = true;
       try {
         const r = await fetch('/api/renew', {
           method:'POST', headers:{'Content-Type':'application/json'},
@@ -753,17 +961,18 @@
       } catch { toast('Server error.','negative'); btn.disabled=false; }
     }
 
-    // ── Equipment loans (My Items section) ────────────────────────────────────
     async function loadEquipmentLoans() {
       try {
         const r = await fetch('/api/equipment/loans');
         const d = await r.json();
-        const active = (d.loans ?? []).filter(l => !l.returned);
+        const allLoans = d.loans ?? [];
+        const active  = allLoans.filter(l => !l.returned);
+        const history = allLoans.filter(l =>  l.returned);
 
         document.getElementById('equipmentLoanTitle').textContent =
           `Equipment Checked Out${active.length ? ` — Total: ${active.length}` : ''}`;
-        document.getElementById('noEquipmentLoans').style.display =
-          active.length ? 'none' : 'flex';
+        document.getElementById('noEquipmentLoans').style.display   = active.length  ? 'none' : 'flex';
+        document.getElementById('noEquipmentHistory').style.display = history.length ? 'none' : 'flex';
 
         document.getElementById('activeEquipmentLoans').innerHTML = active.map(loan => {
           const due     = new Date(loan.dueDate);
@@ -782,17 +991,31 @@
               </div>
             </div>`;
         }).join('');
-      } catch {
-        // Silent fail — don't block the books section
-      }
+
+        document.getElementById('equipmentLoanHistory').innerHTML = history.map(loan => {
+          const ret = loan.returnedDate
+            ? new Date(loan.returnedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : 'N/A';
+          return `
+            <div class="loan-row history">
+              <img src="${esc(loan.image||'')}" loading="lazy" decoding="async"
+                   onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.name)}</p>
+                <p class="loan-author">${esc(loan.category || 'Equipment')}</p>
+              </div>
+              <span class="loan-due-label due-returned">Returned: ${ret}</span>
+            </div>`;
+        }).join('');
+      } catch { /* silent */ }
     }
 
-    // ── Equipment scan & actions ───────────────────────────────────────────────
+    // ── Equipment scan-based checkout/return (ws-equipment) ───────────────────
     async function scanEquipment() {
       registerActivity();
       const inp     = document.getElementById('equipmentInput');
       const barcode = inp.value.trim().toUpperCase();
-      inp.value     = '';
+      inp.value = '';
       if (!barcode) return;
 
       try {
@@ -801,13 +1024,12 @@
 
         if (!r.ok) {
           toast(d.error ?? 'Equipment not found.', 'negative');
-          hideEquipPreview();
-          return;
+          hideEquipPreview(); return;
         }
 
         currentEquipUnit = { barcode: d.barcode, name: d.name, image: d.image };
 
-        document.getElementById('equipPreviewImg').src        = d.image || '/assets/book-placeholder.svg';
+        document.getElementById('equipPreviewImg').src             = d.image || '/assets/book-placeholder.svg';
         document.getElementById('equipPreviewName').textContent    = d.name;
         document.getElementById('equipPreviewCat').textContent     = d.category || '';
         document.getElementById('equipPreviewBarcode').textContent =
@@ -819,14 +1041,11 @@
         const returnBtn   = document.getElementById('equipReturnBtn');
 
         if (d.userActiveLoan) {
-          // Current user already has this item checked out — show return
           badge.textContent         = 'YOU HAVE THIS';
           badge.className           = 'return-status waiting';
           document.getElementById('equipLoanName').textContent = 'Checked out by you';
           document.getElementById('equipLoanDue').textContent  =
-            '— Due: ' + new Date(d.userActiveLoan.dueDate).toLocaleDateString('en-US', {
-              month: 'long', day: 'numeric', year: 'numeric',
-            });
+            '— Due: ' + new Date(d.userActiveLoan.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           loanInfo.style.display    = '';
           checkoutBtn.style.display = 'none';
           returnBtn.style.display   = '';
@@ -845,11 +1064,8 @@
         }
 
         document.getElementById('equipmentPreview').style.display = '';
-      } catch {
-        toast('Server error.', 'negative');
-      } finally {
-        focusPrimaryScannerInput();
-      }
+      } catch { toast('Server error.', 'negative'); }
+      finally { focusPrimaryScannerInput(); }
     }
 
     function hideEquipPreview() {
@@ -862,22 +1078,17 @@
       if (!currentEquipUnit) return;
       try {
         const r = await fetch('/api/equipment/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ barcode: currentEquipUnit.barcode }),
         });
         const d = await r.json();
         if (!r.ok) { toast(d.error ?? 'Checkout failed.', 'negative'); return; }
-        const due = new Date(d.dueDate).toLocaleDateString('en-US', {
-          month: 'long', day: 'numeric', year: 'numeric',
-        });
+        const due = new Date(d.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
         toast(`${d.name} checked out! Return by ${due}.`, 'positive');
         hideEquipPreview();
-      } catch {
-        toast('Server error.', 'negative');
-      } finally {
-        focusPrimaryScannerInput();
-      }
+        if (equipCatalogLoaded) { equipCatalogLoaded = false; await loadEquipmentCatalog(); equipCatalogLoaded = true; }
+      } catch { toast('Server error.', 'negative'); }
+      finally { focusPrimaryScannerInput(); }
     }
 
     async function confirmEquipmentReturn() {
@@ -885,22 +1096,19 @@
       if (!currentEquipUnit) return;
       try {
         const r = await fetch('/api/equipment/return', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ barcode: currentEquipUnit.barcode }),
         });
         const d = await r.json();
         if (!r.ok) { toast(d.error ?? 'Return failed.', 'negative'); return; }
         toast(`${d.name ?? 'Equipment'} returned successfully!`, 'positive');
         hideEquipPreview();
-      } catch {
-        toast('Server error.', 'negative');
-      } finally {
-        focusPrimaryScannerInput();
-      }
+        if (equipCatalogLoaded) { equipCatalogLoaded = false; await loadEquipmentCatalog(); equipCatalogLoaded = true; }
+      } catch { toast('Server error.', 'negative'); }
+      finally { focusPrimaryScannerInput(); }
     }
 
-    // ── Donate ──────────────────────────────────────────────────────────────────
+    // ── Donate ─────────────────────────────────────────────────────────────────
     let donateIsbn = '';
     let donateMeta = {};
 
@@ -909,22 +1117,15 @@
       const isbn = document.getElementById('donateIsbnInput').value.trim();
       if (!isbn) return;
       donateIsbn = isbn;
-
       document.getElementById('donatePreview').style.display = 'none';
-      document.getElementById('donateManual').style.display = 'none';
-
+      document.getElementById('donateManual').style.display  = 'none';
       try {
         const r = await fetch('/api/donate/lookup', {
           method: 'POST', headers: {'Content-Type':'application/json'},
           body: JSON.stringify({ isbn }),
         });
         const d = await r.json();
-
-        if (!r.ok) {
-          document.getElementById('donateManual').style.display = 'block';
-          return;
-        }
-
+        if (!r.ok) { document.getElementById('donateManual').style.display = 'block'; return; }
         donateMeta = d;
         document.getElementById('donateCover').src = d.cover || '';
         document.getElementById('donateTitle').textContent = d.title;
@@ -932,9 +1133,7 @@
         document.getElementById('donateTitleInput').value = d.title;
         document.getElementById('donateAuthorInput').value = d.author;
         document.getElementById('donatePreview').style.display = 'block';
-      } catch {
-        document.getElementById('donateManual').style.display = 'block';
-      }
+      } catch { document.getElementById('donateManual').style.display = 'block'; }
       finally { focusPrimaryScannerInput(); }
     }
 
@@ -953,9 +1152,7 @@
         toast('Book donated! Thank you! 📚', 'positive');
         document.getElementById('donateIsbnInput').value = '';
         document.getElementById('donatePreview').style.display = 'none';
-        donateIsbn = '';
-        donateMeta = {};
-        loadCatalog();
+        donateIsbn = ''; donateMeta = {}; loadCatalog();
       } catch { toast('Server error.', 'negative'); }
       finally { focusPrimaryScannerInput(); }
     }
@@ -975,8 +1172,7 @@
         toast('Book donated! Thank you! 📚', 'positive');
         document.getElementById('donateIsbnInput').value = '';
         document.getElementById('donateManual').style.display = 'none';
-        donateIsbn = '';
-        loadCatalog();
+        donateIsbn = ''; loadCatalog();
       } catch { toast('Server error.', 'negative'); }
       finally { focusPrimaryScannerInput(); }
     }
@@ -991,9 +1187,7 @@
         });
         const d = await r.json();
         if (!r.ok) { toast(d.error ?? 'Could not place hold.', r.status===409 ? 'warning' : 'negative'); return; }
-        allBooks = allBooks.map(book =>
-          book.isbn === isbn ? { ...book, heldByCurrentUser: true } : book
-        );
+        allBooks = allBooks.map(book => book.isbn === isbn ? { ...book, heldByCurrentUser: true } : book);
         applyFilters();
         toast('Hold placed! You will be notified when available.', 'positive');
       } catch { toast('Server error.', 'negative'); }
@@ -1009,102 +1203,64 @@
     document.addEventListener('keydown', (event) => {
       if (event.ctrlKey || event.metaKey || event.altKey) return;
       if (document.getElementById('idleOverlay').classList.contains('open')) return;
-
       const { key } = event;
-      const isPrintable = key.length === 1;
+      const isPrintable  = key.length === 1;
       const isTerminator = key === 'Enter' || key === 'Tab';
       if (!isPrintable && !isTerminator) return;
-
       const now = performance.now();
       if (!isTerminator) {
-        if (!scannerState.lastAt || now - scannerState.lastAt > SCANNER_CHAR_GAP_MS) {
-          scannerState.buffer = '';
-        }
-        scannerState.buffer += key;
-        scannerState.lastAt = now;
-        return;
+        if (!scannerState.lastAt || now - scannerState.lastAt > SCANNER_CHAR_GAP_MS) scannerState.buffer = '';
+        scannerState.buffer += key; scannerState.lastAt = now; return;
       }
-
       if (scannerState.buffer.length >= MIN_SCANNER_LENGTH) {
         const buffer = scannerState.buffer;
-        scannerState.buffer = '';
-        scannerState.lastAt = 0;
+        scannerState.buffer = ''; scannerState.lastAt = 0;
         event.preventDefault();
         submitScannerBuffer(buffer).catch(() => toast('Scanner input failed.', 'negative'));
         return;
       }
-
-      scannerState.buffer = '';
-      scannerState.lastAt = 0;
+      scannerState.buffer = ''; scannerState.lastAt = 0;
     }, true);
 
     // ── Idle timeout ───────────────────────────────────────────────────────────
     function closeIdleWarning() {
-      clearInterval(idleCountdownInterval);
-      idleCountdownInterval = null;
+      clearInterval(idleCountdownInterval); idleCountdownInterval = null;
       const overlay = document.getElementById('idleOverlay');
-      overlay.classList.remove('open');
-      overlay.setAttribute('aria-hidden', 'true');
+      overlay.classList.remove('open'); overlay.setAttribute('aria-hidden', 'true');
     }
-
     function updateIdleCountdown() {
-      const secondsRemaining = Math.max(0, Math.ceil((idleDeadline - Date.now()) / 1000));
-      document.getElementById('idleCountdown').textContent = String(secondsRemaining);
-      if (secondsRemaining <= 0) {
-        logoutForIdle();
-      }
+      const s = Math.max(0, Math.ceil((idleDeadline - Date.now()) / 1000));
+      document.getElementById('idleCountdown').textContent = String(s);
+      if (s <= 0) logoutForIdle();
     }
-
     function showIdleWarning() {
       const overlay = document.getElementById('idleOverlay');
       idleDeadline = Date.now() + IDLE_WARNING_MS;
-      overlay.classList.add('open');
-      overlay.setAttribute('aria-hidden', 'false');
+      overlay.classList.add('open'); overlay.setAttribute('aria-hidden', 'false');
       updateIdleCountdown();
       clearInterval(idleCountdownInterval);
       idleCountdownInterval = setInterval(updateIdleCountdown, 1000);
       toast('Session will end soon due to inactivity.', 'warning');
     }
-
     async function pingSessionIfNeeded() {
       const now = Date.now();
       if (now - lastSessionPingAt < SESSION_PING_MS) return;
       lastSessionPingAt = now;
       try {
-        await fetch('/api/session/ping', {
-          method: 'POST',
-          keepalive: true,
-          headers: { 'Content-Type': 'application/json' },
-        });
-      } catch {
-        // Silent on purpose — the timeout flow will handle a dead session naturally.
-      }
+        await fetch('/api/session/ping', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' } });
+      } catch {}
     }
-
     function scheduleIdleTimers() {
-      clearTimeout(idleTimer);
-      clearTimeout(idleWarningTimer);
+      clearTimeout(idleTimer); clearTimeout(idleWarningTimer);
       idleWarningTimer = setTimeout(showIdleWarning, Math.max(1000, IDLE_TIMEOUT_MS - IDLE_WARNING_MS));
       idleTimer = setTimeout(logoutForIdle, IDLE_TIMEOUT_MS);
     }
+    function registerActivity() { closeIdleWarning(); scheduleIdleTimers(); pingSessionIfNeeded(); }
+    function continueSession() { registerActivity(); toast('Session extended.', 'positive'); }
+    function logoutForIdle() { window.location.assign('/logout?reason=idle'); }
 
-    function registerActivity() {
-      closeIdleWarning();
-      scheduleIdleTimers();
-      pingSessionIfNeeded();
-    }
-
-    function continueSession() {
-      registerActivity();
-      toast('Session extended.', 'positive');
-    }
-
-    function logoutForIdle() {
-      window.location.assign('/logout?reason=idle');
-    }
-
-    ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach((eventName) => {
-      window.addEventListener(eventName, registerActivity, { passive: true });
+    ['pointerdown', 'pointermove', 'keydown', 'scroll', 'touchstart', 'wheel'].forEach(n => {
+      window.addEventListener(n, registerActivity, { passive: true });
     });
     window.addEventListener('focus', focusPrimaryScannerInput);
     document.addEventListener('visibilitychange', () => {

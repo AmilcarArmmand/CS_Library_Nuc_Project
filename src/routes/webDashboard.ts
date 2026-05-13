@@ -289,36 +289,40 @@ router.post('/api/renewal-request', async (req: Request, res: Response) => {
 // GET /web-dashboard/api/equipment-catalog
 // Returns all equipment types with their unit availability summary.
 
-router.get('/api/equipment-catalog', async (req: Request, res: Response) => {
+router.get('/api/equipment-catalog', async (_req: Request, res: Response) => {
   try {
-    const allEquipment = await db
-      .select()
-      .from(equipment)
-      .orderBy(equipment.name);
+    const allEquipment = await db.select().from(equipment).orderBy(equipment.name);
 
     const allUnits = await db
       .select({
-        id:          equipmentUnits.id,
         equipmentId: equipmentUnits.equipmentId,
         status:      equipmentUnits.status,
         condition:   equipmentUnits.condition,
       })
-      .from(equipmentUnits)
-      .where(eq(equipmentUnits.status, 'Available'));
+      .from(equipmentUnits);
 
-    // Count available units per equipment type
-    const availableByType = new Map<number, number>();
+    const byType = new Map<number, { total: number; available: number; conditions: string[] }>();
     for (const unit of allUnits) {
-      availableByType.set(
-        unit.equipmentId,
-        (availableByType.get(unit.equipmentId) ?? 0) + 1,
-      );
+      const cur = byType.get(unit.equipmentId) ?? { total: 0, available: 0, conditions: [] };
+      cur.total++;
+      if (unit.status === 'Available') cur.available++;
+      cur.conditions.push(unit.condition);
+      byType.set(unit.equipmentId, cur);
     }
 
-    const enriched = allEquipment.map(item => ({
-      ...item,
-      availableUnits: availableByType.get(item.id) ?? 0,
-    }));
+    const enriched = allEquipment.map(item => {
+      const data = byType.get(item.id) ?? { total: 0, available: 0, conditions: [] };
+      const condCount = { Good: 0, Fair: 0, Poor: 0 };
+      for (const c of data.conditions) {
+        if (c === 'Good' || c === 'Fair' || c === 'Poor') condCount[c]++;
+      }
+      return {
+        ...item,
+        totalUnits:       data.total,
+        availableUnits:   data.available,
+        conditionSummary: condCount,
+      };
+    });
 
     res.json({ equipment: enriched });
   } catch (err) {

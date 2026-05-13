@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .about-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+
+    /* ── Page hero ── */
+    .about-hero {
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .about-hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-weight: 900;
+      margin-bottom: 0.75rem;
+      line-height: 1.15;
+    }
+    .about-hero h1 span { color: #60a5fa; }
+    .about-hero p {
+      font-size: 0.95rem;
+      color: #94a3b8;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ── Section label ── */
+    .section-eyebrow {
+      font-size: 0.62rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #60a5fa;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Team grid ── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3.5rem;
+    }
+    .team-card {
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 1rem;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s;
+    }
+    .team-card:hover { border-color: rgba(96,165,250,0.35); }
+    .team-name  { font-size: 0.88rem; font-weight: 700; color: white; margin-bottom: 0.2rem; }
+    .team-role  { font-size: 0.7rem; color: #60a5fa; font-weight: 600; margin-bottom: 0.15rem; }
+    .team-extra { font-size: 0.65rem; color: #475569; }
+
+    /* ── About blurb ── */
+    .about-blurb {
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      backdrop-filter: blur(12px);
+      margin-bottom: 3.5rem;
+      line-height: 1.75;
+      color: #94a3b8;
+      font-size: 0.88rem;
+    }
+    .about-blurb p + p { margin-top: 0.85rem; }
+    .about-blurb strong { color: #e2e8f0; }
+
+    /* ── Contact form ── */
+    .contact-panel {
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 1rem;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+    }
+    .contact-panel h2 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 0.35rem;
+    }
+    .contact-panel .sub {
+      font-size: 0.8rem;
+      color: #64748b;
+      margin-bottom: 1.5rem;
+    }
+    .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+    .form-row { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-group label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 0.65rem 0.85rem;
+      border-radius: 0.65rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: rgba(59,130,246,0.5); }
+    .form-group select option { background: #0f172a; }
+    .form-group textarea { min-height: 7rem; resize: vertical; line-height: 1.6; }
+    .form-submit {
+      padding: 0.7rem 1.5rem;
+      border-radius: 0.65rem;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border: 1px solid rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.2);
+      color: #60a5fa;
+      transition: all 0.2s;
+      align-self: flex-start;
+    }
+    .form-submit:hover { background: rgba(59,130,246,0.35); }
+    .form-submit:disabled { opacity: 0.5; cursor: default; }
+
+    /* flash messages */
+    .flash-success {
+      padding: 0.75rem 1rem; border-radius: 0.65rem; font-size: 0.82rem; font-weight: 600;
+      background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3); color: #4ade80;
+      margin-bottom: 1rem;
+    }
+    .flash-error {
+      padding: 0.75rem 1rem; border-radius: 0.65rem; font-size: 0.82rem; font-weight: 600;
+      background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3); color: #f87171;
+      margin-bottom: 1rem;
+    }
+
+    /* login prompt */
+    .login-prompt {
+      padding: 1.25rem;
+      border-radius: 0.75rem;
+      background: rgba(59,130,246,0.07);
+      border: 1px solid rgba(59,130,246,0.2);
+      font-size: 0.85rem;
+      color: #93c5fd;
+      text-align: center;
+    }
+    .login-prompt a { color: #60a5fa; font-weight: 700; text-decoration: none; }
+    .login-prompt a:hover { text-decoration: underline; }
+
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .team-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
+
+  <%- include('../partials/header', { pageMode: 'index' }) %>
+
+  <div class="page">
+    <div class="about-wrap">
+
+      <!-- ── Hero ── -->
+      <div class="about-hero">
+        <h1>About the <span>CS Library</span></h1>
+        <p>A digital library system built by students, for students. Made for the Department of Computer Science, Southern Connecticut State University.</p>
+      </div>
+
+      <!-- ── About blurb ── -->
+      <div class="section-eyebrow">The Project</div>
+      <div class="about-blurb">
+        <p>
+          The <strong>CS Library</strong> is a full-stack library management system developed as a senior
+          capstone project for the SCSU Department of Computer Science. It provides students and faculty
+          with a browsable book and equipment catalog, a self-service kiosk for checkouts and returns,
+          and an admin panel for library staff.
+        </p>
+        <p>
+          The system is built with <strong>Node.js</strong>, <strong>TypeScript</strong>,
+          <strong>Express</strong>, <strong>PostgreSQL</strong>, and <strong>Drizzle ORM</strong>,
+          with a Raspberry Pi kiosk client deployed in Morril Hall 122.
+        </p>
+        <p>
+          We are located in <strong>Morril Hall 122</strong> on the SCSU campus.
+          Stop by, browse the shelves, and check out a book or piece of equipment at the kiosk.
+        </p>
+      </div>
+
+      <div class="section-eyebrow">Our Code</div>
+      <div class="about-blurb">
+        <p>
+          Our source code is available to view below. Please take a look at our work.
+        </p>
+        <p>
+          <a href="https://github.com/AmilcarArmmand/CS_Library_Nuc_Project">https://github.com/AmilcarArmmand/CS_Library_Nuc_Project</a>
+        </p>
+      </div>
+
+      <!-- ── Team ── -->
+      <div class="section-eyebrow">The Team</div>
+      <div class="team-grid">
+
+        <div class="team-card">
+          <div class="team-name">Amilcar Armmand</div>
+          <div class="team-role">Project Lead</div>
+          <div class="team-extra">Hardware Integration · Database · Deployment</div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-name">Jose Gaspar Marin</div>
+          <div class="team-role">Web Developer</div>
+          <div class="team-extra">Frontend · Admin Tools · Catalog · Reports</div>
+        </div>
+
+        <div class="team-card">
+          <div class="team-name">Kenneth Molina</div>
+          <div class="team-role">Kiosk Developer</div>
+          <div class="team-extra">Kiosk Interface · Scanner Workflows · Demo</div>
+        </div>
+
+      </div>
+
+      <!-- ── Contact form ── -->
+      <div class="section-eyebrow">Contact Us</div>
+      <div class="contact-panel">
+        <h2>Get in Touch</h2>
+        <p class="sub">Report a catalog issue, ask a question about borrowing, or reach out to the CS Library team.</p>
+
+        <% if (flash && flash.success) { %>
+          <div class="flash-success"><%= flash.success %></div>
+        <% } %>
+        <% if (flash && flash.error) { %>
+          <div class="flash-error"><%= flash.error %></div>
+        <% } %>
+
+        <% if (user) { %>
+          <form class="contact-form" method="POST" action="/about/contact">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" value="<%= user.name %>" disabled />
+              </div>
+              <div class="form-group">
+                <label>Your Email</label>
+                <input type="email" value="<%= user.email %>" disabled />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Subject</label>
+              <select name="subject" required>
+                <option value="" disabled selected>Select a topic…</option>
+                <option value="Catalog Issue">Catalog Issue (wrong info, missing book, etc.)</option>
+                <option value="Equipment Issue">Equipment Issue</option>
+                <option value="Account Question">Account Question</option>
+                <option value="Borrowing Question">Borrowing / Return Question</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Message</label>
+              <textarea name="message" placeholder="Describe your issue or question in detail…" required><%= formData && formData.message ? formData.message : '' %></textarea>
+            </div>
+            <button type="submit" class="form-submit">SEND MESSAGE →</button>
+          </form>
+        <% } else { %>
+          <div class="login-prompt">
+            You need to be signed in to send a message.
+            <br /><br />
+            <a href="/auth/login">Sign in</a> or <a href="/auth/register">create a free account</a> to contact the CS Library team.
+          </div>
+        <% } %>
+      </div>
+
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

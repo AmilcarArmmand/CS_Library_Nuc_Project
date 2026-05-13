@@ -417,11 +417,13 @@ router.get('/api/equipment/scan/:barcode', requireLogin, async (req: Request, re
 
 // POST /api/equipment/checkout
 router.post('/api/equipment/checkout', requireLogin, async (req: Request, res: Response) => {
-  const user    = getUser(req)!;
-  const barcode = String(req.body.barcode ?? '').trim().toUpperCase();
+  const user        = getUser(req)!;
+  const barcode     = req.body.barcode ? String(req.body.barcode).trim().toUpperCase() : undefined;
+  const equipmentId = req.body.equipmentId ? Number(req.body.equipmentId) : undefined;
   const { ok, status, data } = await cloudFetch('POST', '/equipment/checkout', {
     userId: user.id,
-    barcode,
+    ...(barcode     ? { barcode }     : {}),
+    ...(equipmentId ? { equipmentId } : {}),
   });
   res.status(ok ? 200 : status).json(data);
 });

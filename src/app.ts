@@ -1,6 +1,7 @@
 import { db } from './db/database.js';
-import { books } from './db/schema/schema.js';
+import { books, users, equipment, equipmentUnits } from './db/schema/schema.js';
 import { desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 import express from 'express';
 import path from 'path';
@@ -11,6 +12,8 @@ import type { ErrorRequestHandler } from 'express';
 import { connectDatabase } from './db/database.js';
 import passport, { authProviders } from './config/passport.js';
 import sessionConfig from './config/session.js';
+
+import { sendEmail } from './utils/emailService.js';
 
 import authRoutes         from './routes/auth.js';
 import webDashboardRoutes from './routes/webDashboard.js';
@@ -79,11 +82,38 @@ app.get('/', async (req, res) => {
     const newest   = allBooks
       .slice()
       .sort((a, b) => b.isbn.localeCompare(a.isbn))
-      // Show only top 5 newest books on homepage
       .slice(0, 5);
 
     const total     = allBooks.length;
     const available = allBooks.filter(b => b.status === 'Available').length;
+
+    // Equipment stats
+    const allEquipment = await db.select().from(equipment).orderBy(equipment.createdAt);
+    const allUnits     = await db.select({ status: equipmentUnits.status }).from(equipmentUnits);
+    const newestEquipment = allEquipment.slice().reverse().slice(0, 5);
+
+    const totalUnits     = allUnits.length;
+    const availableUnits = allUnits.filter(u => u.status === 'Available').length;
+
+    // Attach availability counts to each equipment item
+    const unitsByEquipId = new Map<number, { total: number; available: number }>();
+    for (const u of allUnits) {
+      // we need equipmentId — re-query with it
+    }
+    const unitsWithId = await db
+      .select({ equipmentId: equipmentUnits.equipmentId, status: equipmentUnits.status })
+      .from(equipmentUnits);
+    for (const u of unitsWithId) {
+      const cur = unitsByEquipId.get(u.equipmentId) ?? { total: 0, available: 0 };
+      cur.total++;
+      if (u.status === 'Available') cur.available++;
+      unitsByEquipId.set(u.equipmentId, cur);
+    }
+    const newestEquipmentEnriched = newestEquipment.map(e => ({
+      ...e,
+      totalUnits:     unitsByEquipId.get(e.id)?.total     ?? 0,
+      availableUnits: unitsByEquipId.get(e.id)?.available ?? 0,
+    }));
 
     res.render('pages/index', {
       title:          'CS Library',
@@ -94,6 +124,10 @@ app.get('/', async (req, res) => {
       totalBooks:     total,
       availableBooks: available,
       checkedOutBooks: total - available,
+      newestEquipment: newestEquipmentEnriched,
+      totalEquipmentTypes: allEquipment.length,
+      totalEquipmentUnits: totalUnits,
+      availableEquipmentUnits: availableUnits,
     });
   } catch {
     res.render('pages/index', {
@@ -102,6 +136,84 @@ app.get('/', async (req, res) => {
       newestBooks: [], totalBooks: 0, availableBooks: 0, checkedOutBooks: 0,
     });
   }
+});
+
+// ── ABOUT PAGE ────────────────────────────────────────────────────────────────
+app.get('/about', (req, res) => {
+  res.render('pages/about', {
+    title: 'About — CS Library',
+    user:  req.user ?? null,
+    flash: req.session['aboutFlash'] ? (() => {
+      const f = req.session['aboutFlash'];
+      delete req.session['aboutFlash'];
+      return f;
+    })() : null,
+    formData: {},
+  });
+});
+
+app.post('/about/contact', async (req, res) => {
+  if (!req.isAuthenticated() || !req.user) {
+    res.redirect('/auth/login');
+    return;
+  }
+
+  const user    = req.user as any;
+  const subject = String(req.body.subject ?? '').trim();
+  const message = String(req.body.message ?? '').trim();
+
+  if (!subject || !message) {
+    req.session['aboutFlash'] = { error: 'Subject and message are required.' };
+    res.redirect('/about');
+    return;
+  }
+
+  const adminUsers = await db
+    .select({ email: users.email })
+    .from(users)
+    .where(eq(users.role, 'admin'));
+
+  if (!adminUsers.length) {
+    req.session['aboutFlash'] = { error: 'No admins available to receive your message. Please try again later.' };
+    res.redirect('/about');
+    return;
+  }
+
+  const adminEmail = adminUsers.map(u => u.email);
+
+  try {
+    const result = await (sendEmail as any)({
+      to:      adminEmail,
+      subject: `[CS Library Contact] ${subject}`,
+      text: [
+        `From: ${user.name} <${user.email}>`,
+        `Subject: ${subject}`,
+        '',
+        message,
+        '',
+        `--- Sent via CS Library contact form ---`,
+      ].join('\n'),
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#0f172a;">
+          <h2 style="margin-bottom:12px;">CS Library — Contact Form Message</h2>
+          <p><strong>From:</strong> ${user.name} &lt;${user.email}&gt;</p>
+          <p><strong>Subject:</strong> ${subject}</p>
+          <hr style="border:none;border-top:1px solid #e2e8f0;margin:1rem 0;" />
+          <p style="white-space:pre-wrap;">${message.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</p>
+        </div>
+      `,
+    });
+
+    if (result.success) {
+      req.session['aboutFlash'] = { success: 'Your message was sent! We\'ll get back to you soon.' };
+    } else {
+      req.session['aboutFlash'] = { error: 'Message could not be delivered. Please try again later.' };
+    }
+  } catch {
+    req.session['aboutFlash'] = { error: 'Something went wrong. Please try again later.' };
+  }
+
+  res.redirect('/about');
 });
 
 // CHECK HEALTH

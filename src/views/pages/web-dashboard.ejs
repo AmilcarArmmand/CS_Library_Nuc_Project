@@ -121,6 +121,15 @@
           <p>No equipment currently checked out</p>
           <span>Equipment borrowed from the kiosk will appear here</span>
         </div>
+
+        <div class="divider"></div>
+
+        <p class="section-title">Equipment Borrowing History</p>
+        <div id="equipmentLoanHistory"></div>
+        <div class="empty-state" id="noEquipmentHistory" style="display:none;">
+          <img src="/assets/ph-clock-counter-clockwise.svg" alt="" />
+          <p>No equipment borrowing history yet</p>
+        </div>
       </div>
 
     </div>
@@ -185,6 +194,32 @@
             </div>
             <div class="book-modal-meta" id="bookModalMeta"></div>
             <div class="book-modal-copy" id="bookModalCopy"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipment detail modal -->
+  <div class="book-modal" id="equipModal" onclick="maybeCloseEquipModal(event)">
+    <div class="book-modal-card">
+      <button class="book-modal-close" type="button" aria-label="Close" onclick="closeEquipModal()">×</button>
+      <div class="book-modal-content">
+        <div class="book-modal-layout">
+          <div>
+            <img class="book-modal-cover" id="equipModalCover" src="/assets/book-placeholder.svg" alt="" />
+          </div>
+          <div>
+            <div class="book-modal-head">
+              <h2 class="book-modal-title"   id="equipModalName"></h2>
+              <p class="book-modal-author"   id="equipModalCategory"></p>
+              <p class="book-modal-subline"  id="equipModalSubline"></p>
+            </div>
+            <div class="book-modal-actions">
+              <span class="badge"            id="equipModalStatus"></span>
+            </div>
+            <div class="book-modal-meta"     id="equipModalMeta"></div>
+            <div class="book-modal-copy"     id="equipModalCopy"></div>
           </div>
         </div>
       </div>
@@ -595,20 +630,23 @@
     }
 
     // ── Equipment loans ────────────────────────────────────────────────────────
-    async function loadMyEquipmentLoans(showSpinner = false) {
+   async function loadMyEquipmentLoans(showSpinner = false) {
       const btn = document.getElementById('refreshEquipBtn');
       if (showSpinner && btn) btn.classList.add('spinning');
 
       try {
         const r = await fetch('/web-dashboard/api/my-equipment-loans');
         const d = await r.json();
-        const now    = new Date();
-        const active = (d.loans ?? []).filter(l => !l.returned);
+        const now     = new Date();
+        const allLoans = d.loans ?? [];
+        const active  = allLoans.filter(l => !l.returned);
+        const history = allLoans.filter(l =>  l.returned);
         const overdue = active.filter(l => new Date(l.dueDate) < now);
 
-        document.getElementById('totalEquipOut').textContent    = String(active.length);
+        document.getElementById('totalEquipOut').textContent     = String(active.length);
         document.getElementById('totalEquipOverdue').textContent = String(overdue.length);
-        document.getElementById('noEquipmentLoans').style.display = active.length ? 'none' : 'flex';
+        document.getElementById('noEquipmentLoans').style.display   = active.length  ? 'none' : 'flex';
+        document.getElementById('noEquipmentHistory').style.display = history.length ? 'none' : 'flex';
 
         document.getElementById('activeEquipmentLoans').innerHTML = active.map(loan => {
           const due     = new Date(loan.dueDate);
@@ -628,8 +666,7 @@
           const fullDue = due.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
           return `
             <div class="loan-row">
-              <img src="${esc(loan.image || '')}"
-                  onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <img src="${esc(loan.image || '')}" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
               <div class="loan-info">
                 <p class="loan-title">${esc(loan.name)}</p>
                 <p class="loan-author">${esc(loan.category || 'Equipment')}</p>
@@ -641,6 +678,24 @@
                   <p class="loan-due ${dueClass}" style="font-size:0.65rem;margin-top:0.2rem;">${fullDue}</p>
                 </div>
                 <p style="font-size:0.65rem;color:#475569;margin-top:0.35rem;">Return at the kiosk</p>
+              </div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('equipmentLoanHistory').innerHTML = history.map(loan => {
+          const ret = loan.returnedDate
+            ? new Date(loan.returnedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : 'N/A';
+          return `
+            <div class="loan-row history">
+              <img src="${esc(loan.image || '')}" onerror="this.src='/assets/book-placeholder.svg'" alt="" />
+              <div class="loan-info">
+                <p class="loan-title">${esc(loan.name)}</p>
+                <p class="loan-author">${esc(loan.category || 'Equipment')}</p>
+              </div>
+              <div class="loan-due">
+                <span class="due-badge" style="background:rgba(71,85,105,0.2);color:#475569;border-color:rgba(71,85,105,0.3);">RETURNED</span>
+                <p class="loan-due due-returned" style="font-size:0.65rem;margin-top:0.2rem;">${ret}</p>
               </div>
             </div>`;
         }).join('');
@@ -744,7 +799,10 @@
       grid.innerHTML = filteredEquip.map((item, i) => {
         const avail = item.availableUnits > 0;
         return `
-          <div class="book-card ${avail ? '' : 'checked-out'}" style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
+          <div class="book-card ${avail ? '' : 'checked-out'}"
+               onclick="openEquipModal(${item.id})"
+               role="button" tabindex="0"
+               style="animation-delay:${Math.min(i * 0.04, 0.24)}s">
             <img src="${esc(item.image || '')}"
                 onerror="this.src='/assets/book-placeholder.svg'"
                 alt="${esc(item.name)}" />
@@ -758,7 +816,7 @@
               ${item.description
                 ? `<p style="font-size:0.65rem;color:#94a3b8;margin-top:0.5rem;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(item.description)}</p>`
                 : ''}
-              <p style="font-size:0.62rem;color:#475569;margin-top:0.5rem;">Visit the kiosk to borrow</p>
+              <p class="book-card-hint">Tap for details</p>
             </div>
           </div>`;
       }).join('');
@@ -784,6 +842,52 @@
         toast('Server error.', 'negative');
         if (btn) btn.disabled = false;
       }
+    }
+
+    // ── Equipment modal ────────────────────────────────────────────────────────
+    function openEquipModal(id) {
+      const item = filteredEquip.find(e => e.id === id) ?? allEquipment.find(e => e.id === id);
+      if (!item) return;
+
+      const avail = item.availableUnits > 0;
+      const cond  = item.conditionSummary ?? { Good: 0, Fair: 0, Poor: 0 };
+
+      document.getElementById('equipModalCover').src = item.image || '/assets/book-placeholder.svg';
+      document.getElementById('equipModalCover').alt = item.name;
+      document.getElementById('equipModalName').textContent     = item.name;
+      document.getElementById('equipModalCategory').textContent = item.category || 'Equipment';
+      document.getElementById('equipModalSubline').textContent  =
+        `${item.availableUnits} of ${item.totalUnits ?? '?'} unit${(item.totalUnits ?? 0) !== 1 ? 's' : ''} available`;
+
+      const badge = document.getElementById('equipModalStatus');
+      badge.className   = `badge ${avail ? 'badge-avail' : 'badge-out'}`;
+      badge.textContent = avail ? 'AVAILABLE' : 'UNAVAILABLE';
+
+      document.getElementById('equipModalMeta').innerHTML = [
+        renderMetaCard('Category',    item.category),
+        renderMetaCard('Loan Period', item.loanDurationDays ? item.loanDurationDays + ' days' : null),
+        renderMetaCard('Total Units', item.totalUnits ?? '—'),
+        renderMetaCard('Available',   item.availableUnits),
+        renderMetaCard('Good Condition',  cond.Good  || '—'),
+        renderMetaCard('Fair Condition',  cond.Fair  || '—'),
+        renderMetaCard('Poor Condition',  cond.Poor  || '—'),
+      ].join('');
+
+      document.getElementById('equipModalCopy').innerHTML = item.description
+        ? renderCopyCard('Description', item.description, true)
+        : '';
+
+      document.getElementById('equipModal').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeEquipModal() {
+      document.getElementById('equipModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    function maybeCloseEquipModal(e) {
+      if (e.target.id === 'equipModal') closeEquipModal();
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────────

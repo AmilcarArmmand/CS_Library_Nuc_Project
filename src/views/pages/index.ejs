@@ -136,6 +136,14 @@
         <span class="stat-num"><%= checkedOutBooks %></span>
         <span class="stat-label">Checked Out</span>
       </div>
+      <div class="stat-item">
+        <span class="stat-num"><%= totalEquipmentTypes %></span>
+        <span class="stat-label">Equipment Types</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num"><%= availableEquipmentUnits %></span>
+        <span class="stat-label">Equipment Available</span>
+      </div>
     </div>
 
     <!-- ── Book list ── -->
@@ -187,9 +195,43 @@
           <a href="/auth/register" class="cta-btn">Create Account →</a>
         </div>
       <% } %>
-    </div>
 
-    
+      <!-- ── Equipment list ── -->
+      <div class="section-header" style="margin-top:2.5rem;">
+        <h2>Recently Added Equipment</h2>
+        <span>Showing latest <%= newestEquipment.length %> additions</span>
+      </div>
+
+      <div class="book-list">
+        <% if (newestEquipment && newestEquipment.length > 0) { %>
+          <% newestEquipment.forEach(function(item, i) { %>
+            <div class="book-row">
+              <span class="book-num"><%= i + 1 %></span>
+              <div class="book-cover">
+                <img src="<%= item.image || '' %>"
+                     loading="lazy"
+                     onerror="this.src='https://via.placeholder.com/200x300?text=No+Image'"
+                     alt="<%= item.name %>" />
+              </div>
+              <div class="book-info">
+                <span class="book-title-link" onclick="openEquipModal(<%= item.id %>)"><%= item.name %></span>
+                <span class="book-author-link"><%= item.category || 'Equipment' %></span>
+                <div class="book-meta">
+                  <span class="book-isbn-meta"><%= item.loanDurationDays %>-day loan</span>
+                </div>
+              </div>
+              <span class="book-status <%= item.availableUnits > 0 ? 'status-available' : 'status-out' %>">
+                <%= item.availableUnits > 0 ? item.availableUnits + ' Available' : 'Unavailable' %>
+              </span>
+            </div>
+          <% }); %>
+        <% } else { %>
+          <div class="empty-state">No equipment in the catalog yet.</div>
+        <% } %>
+      </div>
+
+    </div><!-- end main-layout -->
+  
   </div>
 
   <div class="idx-modal" id="idxModal" onclick="maybeCloseIndexModal(event)">
@@ -207,6 +249,25 @@
       <div class="idx-modal-meta" id="idxModalMeta"></div>
       <div class="idx-modal-copy" id="idxModalCopy"></div>
       <div class="idx-modal-cta" id="idxModalCta"></div>
+    </div>
+  </div>
+
+  <!-- Equipment modal -->
+  <div class="idx-modal" id="equipModal" onclick="maybeCloseEquipModal(event)">
+    <div class="idx-modal-card">
+      <button class="idx-modal-close" type="button" aria-label="Close" onclick="closeEquipModal()">×</button>
+      <div class="idx-modal-layout">
+        <img class="idx-modal-cover" id="equipModalCover" src="/assets/book-placeholder.svg" alt="" />
+        <div class="idx-modal-body">
+          <h2 class="idx-modal-title"  id="equipModalName"></h2>
+          <p class="idx-modal-author"  id="equipModalCategory"></p>
+          <p class="idx-modal-subline" id="equipModalSubline"></p>
+          <span class="badge"          id="equipModalStatus"></span>
+        </div>
+      </div>
+      <div class="idx-modal-meta" id="equipModalMeta"></div>
+      <div class="idx-modal-copy" id="equipModalCopy"></div>
+      <div class="idx-modal-cta"  id="equipModalCta"></div>
     </div>
   </div>
 
@@ -301,7 +362,54 @@
       });
     });
 
-    
+    // ── Equipment modal ──────────────────────────────────────────────────────
+    const indexEquipment = <%- JSON.stringify(newestEquipment) %>;
+
+    function openEquipModal(id) {
+      const item = indexEquipment.find(e => e.id === id);
+      if (!item) return;
+
+      document.getElementById('equipModalCover').src = item.image || '/assets/book-placeholder.svg';
+      document.getElementById('equipModalName').textContent     = item.name || 'Unknown';
+      document.getElementById('equipModalCategory').textContent = item.category || 'Equipment';
+      document.getElementById('equipModalSubline').textContent  =
+        item.availableUnits + ' of ' + item.totalUnits + ' unit' + (item.totalUnits !== 1 ? 's' : '') + ' available';
+
+      const badge = document.getElementById('equipModalStatus');
+      const avail = item.availableUnits > 0;
+      badge.className   = `badge ${avail ? 'status-available' : 'status-out'}`;
+      badge.textContent = avail ? 'AVAILABLE' : 'UNAVAILABLE';
+
+      document.getElementById('equipModalMeta').innerHTML = [
+        idxMetaCard('Category',    item.category),
+        idxMetaCard('Loan Period', item.loanDurationDays ? item.loanDurationDays + ' days' : null),
+        idxMetaCard('Total Units', item.totalUnits),
+        idxMetaCard('Available',   item.availableUnits),
+      ].join('');
+
+      document.getElementById('equipModalCopy').innerHTML =
+        item.description ? idxCopyCard('Description', item.description) : '';
+
+      const ctaEl = document.getElementById('equipModalCta');
+      <% if (!user) { %>
+      ctaEl.innerHTML = 'Want to borrow this item? <a href="/auth/register">Create a free account</a> or <a href="/auth/login">sign in</a>.';
+      <% } else { %>
+      ctaEl.innerHTML = 'Visit the library kiosk to check out this item, or browse more in your <a href="/web-dashboard?view=equipment">dashboard</a>.';
+      <% } %>
+
+      document.getElementById('equipModal').classList.add('open');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeEquipModal() {
+      document.getElementById('equipModal').classList.remove('open');
+      document.body.classList.remove('modal-open');
+    }
+
+    function maybeCloseEquipModal(e) {
+      if (e.target.id === 'equipModal') closeEquipModal();
+    }
+
   </script>
 </body>
 </html>
