@@ -172,6 +172,29 @@
       <div class="catalog-grid" id="equipCatalogGrid"></div>
     </div>
 
+    <!-- MY REVIEWS WORKSPACE -->
+    <div class="workspace" id="ws-reviews">
+      <div class="mybooks-panel panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+          <p class="panel-title">MY REVIEWS</p>
+          <button class="refresh-btn" onclick="loadMyReviews()" id="refreshReviewsBtn">
+            ↻ Refresh
+          </button>
+        </div>
+        <p style="font-size:0.8rem;color:#64748b;margin-bottom:1.25rem;">
+          All ratings and reviews you have written for books and equipment.
+          Click any item to open it and edit or delete your review.
+        </p>
+
+        <div id="myReviewsList"></div>
+        <div class="empty-state" id="noMyReviews" style="display:none;">
+          <img src="/assets/ph-clock-counter-clockwise.svg" alt="" />
+          <p>No reviews yet</p>
+          <span>Browse the catalog and tap any book or item to leave a review</span>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <div class="book-modal" id="bookModal" onclick="maybeCloseBookModal(event)">
@@ -194,6 +217,49 @@
             </div>
             <div class="book-modal-meta" id="bookModalMeta"></div>
             <div class="book-modal-copy" id="bookModalCopy"></div>
+
+            <!-- Reviews -->
+            <div class="review-section" id="bookReviewSection">
+              <div class="review-section-title">Ratings & Reviews</div>
+              <div class="review-loading" id="bookReviewLoading">Loading reviews…</div>
+              <div id="bookReviewAvg" style="display:none;">
+                <div class="review-avg">
+                  <span class="review-avg-num" id="bookAvgNum">—</span>
+                  <div>
+                    <div class="stars-display" id="bookAvgStars"></div>
+                    <div class="review-avg-sub" id="bookAvgSub"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Write / edit your review -->
+              <% if (user) { %>
+              <div id="bookReviewForm">
+                <div class="review-form">
+                  <div class="star-input" id="bookStarInput">
+                    <button type="button" data-val="1" onclick="setBookRating(1)">★</button>
+                    <button type="button" data-val="2" onclick="setBookRating(2)">★</button>
+                    <button type="button" data-val="3" onclick="setBookRating(3)">★</button>
+                    <button type="button" data-val="4" onclick="setBookRating(4)">★</button>
+                    <button type="button" data-val="5" onclick="setBookRating(5)">★</button>
+                  </div>
+                  <textarea class="review-textarea" id="bookReviewBody"
+                            placeholder="Write an optional review… (max 2000 characters)"></textarea>
+                  <div class="review-submit-row">
+                    <button class="review-submit-btn" onclick="submitBookReview()">SUBMIT REVIEW</button>
+                    <button class="review-delete-btn" id="bookDeleteBtn" style="display:none;" onclick="deleteBookReview()">DELETE MY REVIEW</button>
+                    <span class="review-hint" id="bookReviewHint"></span>
+                  </div>
+                </div>
+              </div>
+              <% } else { %>
+              <div class="review-login-prompt">
+                <a href="/auth/login">Sign in</a> to leave a review.
+              </div>
+              <% } %>
+
+              <div class="review-list" id="bookReviewList"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -220,6 +286,49 @@
             </div>
             <div class="book-modal-meta"     id="equipModalMeta"></div>
             <div class="book-modal-copy"     id="equipModalCopy"></div>
+
+            <!-- Reviews -->
+            <div class="review-section" id="equipReviewSection">
+              <div class="review-section-title">Ratings & Reviews</div>
+              <div class="review-loading" id="equipReviewLoading">Loading reviews…</div>
+              <div id="equipReviewAvg" style="display:none;">
+                <div class="review-avg">
+                  <span class="review-avg-num" id="equipAvgNum">—</span>
+                  <div>
+                    <div class="stars-display" id="equipAvgStars"></div>
+                    <div class="review-avg-sub" id="equipAvgSub"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Write / edit your review -->
+              <% if (user) { %>
+              <div id="equipReviewForm">
+                <div class="review-form">
+                  <div class="star-input" id="equipStarInput">
+                    <button type="button" data-val="1" onclick="setEquipRating(1)">★</button>
+                    <button type="button" data-val="2" onclick="setEquipRating(2)">★</button>
+                    <button type="button" data-val="3" onclick="setEquipRating(3)">★</button>
+                    <button type="button" data-val="4" onclick="setEquipRating(4)">★</button>
+                    <button type="button" data-val="5" onclick="setEquipRating(5)">★</button>
+                  </div>
+                  <textarea class="review-textarea" id="equipReviewBody"
+                            placeholder="Write an optional review… (max 2000 characters)"></textarea>
+                  <div class="review-submit-row">
+                    <button class="review-submit-btn" onclick="submitEquipReview()">SUBMIT REVIEW</button>
+                    <button class="review-delete-btn" id="equipDeleteBtn" style="display:none;" onclick="deleteEquipReview()">DELETE MY REVIEW</button>
+                    <span class="review-hint" id="equipReviewHint"></span>
+                  </div>
+                </div>
+              </div>
+              <% } else { %>
+              <div class="review-login-prompt">
+                <a href="/auth/login">Sign in</a> to leave a review.
+              </div>
+              <% } %>
+
+              <div class="review-list" id="equipReviewList"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -267,6 +376,7 @@
 
       if (view === 'mybooks')  loadMyBooks(false);
       if (view === 'equipment') loadEquipmentCatalog();
+      if (view === 'reviews')  loadMyReviews();
     }
 
     // ── Search ──────────────────────────────────────────────────────────────────
@@ -428,6 +538,7 @@
       renderBookModal(book);
       document.getElementById('bookModal').classList.add('open');
       document.body.classList.add('modal-open');
+      loadBookReviews(isbn);
     }
 
     function closeBookModal() {
@@ -879,6 +990,7 @@
 
       document.getElementById('equipModal').classList.add('open');
       document.body.classList.add('modal-open');
+      loadEquipReviews(String(id));
     }
 
     function closeEquipModal() {
@@ -888,6 +1000,269 @@
 
     function maybeCloseEquipModal(e) {
       if (e.target.id === 'equipModal') closeEquipModal();
+    }
+
+    // ── Book reviews ───────────────────────────────────────────────────────────
+    let bookRatingSelected = 0;
+
+    function setBookRating(val) {
+      bookRatingSelected = val;
+      document.querySelectorAll('#bookStarInput button').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.val) <= val);
+      });
+      document.getElementById('bookReviewHint').textContent = '';
+    }
+
+    function starsHTML(rating) {
+      return Array.from({length: 5}, (_, i) =>
+        `<span class="${i < Math.round(rating) ? 'star-filled' : 'star-empty'}">★</span>`
+      ).join('');
+    }
+
+    async function loadBookReviews(isbn) {
+      const loading  = document.getElementById('bookReviewLoading');
+      const avgEl    = document.getElementById('bookReviewAvg');
+      const listEl   = document.getElementById('bookReviewList');
+      const deleteBtn = document.getElementById('bookDeleteBtn');
+
+      if (!loading) return;
+      loading.style.display = '';
+      avgEl.style.display   = 'none';
+      listEl.innerHTML      = '';
+      bookRatingSelected    = 0;
+
+      // Reset star input
+      document.querySelectorAll('#bookStarInput button').forEach(b => b.classList.remove('active'));
+      const bodyEl = document.getElementById('bookReviewBody');
+      if (bodyEl) bodyEl.value = '';
+      if (deleteBtn) deleteBtn.style.display = 'none';
+
+      try {
+        const r = await fetch(`/web-dashboard/api/reviews/book/${encodeURIComponent(isbn)}`);
+        const d = await r.json();
+        loading.style.display = 'none';
+
+        if (d.avgRating !== null) {
+          document.getElementById('bookAvgNum').textContent  = d.avgRating.toFixed(1);
+          document.getElementById('bookAvgStars').innerHTML  = starsHTML(d.avgRating);
+          document.getElementById('bookAvgSub').textContent  =
+            `${d.total} review${d.total !== 1 ? 's' : ''}`;
+          avgEl.style.display = '';
+        }
+
+        // Pre-fill form if user already has a review
+        if (d.myReview) {
+          setBookRating(d.myReview.rating);
+          if (bodyEl) bodyEl.value = d.myReview.body ?? '';
+          if (deleteBtn) deleteBtn.style.display = '';
+          document.getElementById('bookReviewHint').textContent = 'You have already reviewed this book — submitting will update your review.';
+        }
+
+        // Render other users' reviews (exclude own — they can see it in the form)
+        const others = d.reviews.filter(rv => !d.myReview || rv.id !== d.myReview.id);
+        if (others.length === 0 && !d.myReview) {
+          listEl.innerHTML = '<div class="review-no-reviews">No reviews yet. Be the first!</div>';
+        } else {
+          listEl.innerHTML = others.map(rv => `
+            <div class="review-item">
+              <div class="review-item-header">
+                <span class="review-item-name">${esc(rv.userName)}</span>
+                <span class="stars-display">${starsHTML(rv.rating)}</span>
+                <span class="review-item-date">${new Date(rv.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</span>
+              </div>
+              ${rv.body ? `<p class="review-item-body">${esc(rv.body)}</p>` : ''}
+            </div>`).join('');
+        }
+      } catch {
+        if (loading) loading.textContent = 'Could not load reviews.';
+      }
+    }
+
+    async function submitBookReview() {
+      if (!activeDetailIsbn) return;
+      if (!bookRatingSelected) {
+        document.getElementById('bookReviewHint').textContent = 'Please select a star rating first.';
+        return;
+      }
+      const body = (document.getElementById('bookReviewBody')?.value ?? '').trim();
+      try {
+        const r = await fetch('/web-dashboard/api/reviews', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ targetType: 'book', targetId: activeDetailIsbn, rating: bookRatingSelected, body }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Could not save review.', 'negative'); return; }
+        toast('Review saved!', 'positive');
+        loadBookReviews(activeDetailIsbn);
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    async function deleteBookReview() {
+      if (!activeDetailIsbn) return;
+      if (!confirm('Delete your review for this book?')) return;
+      // Need the review id — re-fetch to get it
+      try {
+        const r = await fetch(`/web-dashboard/api/reviews/book/${encodeURIComponent(activeDetailIsbn)}`);
+        const d = await r.json();
+        if (!d.myReview) { toast('No review found.', 'warning'); return; }
+        const dr = await fetch(`/web-dashboard/api/reviews/${d.myReview.id}`, { method: 'DELETE' });
+        if (!dr.ok) { toast('Could not delete review.', 'negative'); return; }
+        toast('Review deleted.', 'positive');
+        loadBookReviews(activeDetailIsbn);
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    // ── Equipment reviews ──────────────────────────────────────────────────────
+    let equipRatingSelected = 0;
+    let activeEquipId = null;
+
+    function setEquipRating(val) {
+      equipRatingSelected = val;
+      document.querySelectorAll('#equipStarInput button').forEach(btn => {
+        btn.classList.toggle('active', Number(btn.dataset.val) <= val);
+      });
+      document.getElementById('equipReviewHint').textContent = '';
+    }
+
+    async function loadEquipReviews(equipId) {
+      activeEquipId = equipId;
+      const loading   = document.getElementById('equipReviewLoading');
+      const avgEl     = document.getElementById('equipReviewAvg');
+      const listEl    = document.getElementById('equipReviewList');
+      const deleteBtn = document.getElementById('equipDeleteBtn');
+
+      if (!loading) return;
+      loading.style.display = '';
+      avgEl.style.display   = 'none';
+      listEl.innerHTML      = '';
+      equipRatingSelected   = 0;
+
+      // Reset star input
+      document.querySelectorAll('#equipStarInput button').forEach(b => b.classList.remove('active'));
+      const bodyEl = document.getElementById('equipReviewBody');
+      if (bodyEl) bodyEl.value = '';
+      if (deleteBtn) deleteBtn.style.display = 'none';
+
+      try {
+        const r = await fetch(`/web-dashboard/api/reviews/equipment/${encodeURIComponent(equipId)}`);
+        const d = await r.json();
+        loading.style.display = 'none';
+
+        if (d.avgRating !== null) {
+          document.getElementById('equipAvgNum').textContent  = d.avgRating.toFixed(1);
+          document.getElementById('equipAvgStars').innerHTML  = starsHTML(d.avgRating);
+          document.getElementById('equipAvgSub').textContent  =
+            `${d.total} review${d.total !== 1 ? 's' : ''}`;
+          avgEl.style.display = '';
+        }
+
+        // Pre-fill form if user already has a review
+        if (d.myReview) {
+          setEquipRating(d.myReview.rating);
+          if (bodyEl) bodyEl.value = d.myReview.body ?? '';
+          if (deleteBtn) deleteBtn.style.display = '';
+          document.getElementById('equipReviewHint').textContent =
+            'You have already reviewed this item — submitting will update your review.';
+        }
+
+        // Render other users' reviews
+        const others = d.reviews.filter(rv => !d.myReview || rv.id !== d.myReview.id);
+        if (others.length === 0 && !d.myReview) {
+          listEl.innerHTML = '<div class="review-no-reviews">No reviews yet. Be the first!</div>';
+        } else {
+          listEl.innerHTML = others.map(rv => `
+            <div class="review-item">
+              <div class="review-item-header">
+                <span class="review-item-name">${esc(rv.userName)}</span>
+                <span class="stars-display">${starsHTML(rv.rating)}</span>
+                <span class="review-item-date">${new Date(rv.createdAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}</span>
+              </div>
+              ${rv.body ? `<p class="review-item-body">${esc(rv.body)}</p>` : ''}
+            </div>`).join('');
+        }
+      } catch {
+        if (loading) loading.textContent = 'Could not load reviews.';
+      }
+    }
+
+    async function submitEquipReview() {
+      if (!activeEquipId) return;
+      if (!equipRatingSelected) {
+        document.getElementById('equipReviewHint').textContent = 'Please select a star rating first.';
+        return;
+      }
+      const body = (document.getElementById('equipReviewBody')?.value ?? '').trim();
+      try {
+        const r = await fetch('/web-dashboard/api/reviews', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ targetType: 'equipment', targetId: activeEquipId, rating: equipRatingSelected, body }),
+        });
+        const d = await r.json();
+        if (!r.ok) { toast(d.error ?? 'Could not save review.', 'negative'); return; }
+        toast('Review saved!', 'positive');
+        loadEquipReviews(activeEquipId);
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    async function deleteEquipReview() {
+      if (!activeEquipId) return;
+      if (!confirm('Delete your review for this item?')) return;
+      try {
+        const r = await fetch(`/web-dashboard/api/reviews/equipment/${encodeURIComponent(activeEquipId)}`);
+        const d = await r.json();
+        if (!d.myReview) { toast('No review found.', 'warning'); return; }
+        const dr = await fetch(`/web-dashboard/api/reviews/${d.myReview.id}`, { method: 'DELETE' });
+        if (!dr.ok) { toast('Could not delete review.', 'negative'); return; }
+        toast('Review deleted.', 'positive');
+        loadEquipReviews(activeEquipId);
+      } catch { toast('Server error.', 'negative'); }
+    }
+
+    // ── My Reviews ─────────────────────────────────────────────────────────────
+    async function loadMyReviews() {
+      const btn = document.getElementById('refreshReviewsBtn');
+      if (btn) btn.classList.add('spinning');
+
+      try {
+        const r = await fetch('/web-dashboard/api/my-reviews');
+        const d = await r.json();
+        const reviewList = d.reviews ?? [];
+
+        document.getElementById('noMyReviews').style.display = reviewList.length ? 'none' : 'flex';
+
+        document.getElementById('myReviewsList').innerHTML = reviewList.map(rv => {
+          const date = new Date(rv.createdAt).toLocaleDateString('en-US', {
+            month: 'long', day: 'numeric', year: 'numeric',
+          });
+          const updated = rv.updatedAt !== rv.createdAt
+            ? ` · edited ${new Date(rv.updatedAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'})}`
+            : '';
+          const typeLabel = rv.targetType === 'book' ? '📚 Book' : '🔧 Equipment';
+          const clickFn  = rv.targetType === 'book'
+            ? `openBookModal('${esc(rv.targetId)}')`
+            : `openEquipModal(${Number(rv.targetId)})`;
+
+          return `
+            <div class="loan-row" style="cursor:pointer;" onclick="${clickFn}">
+              <div class="loan-info" style="flex:1;">
+                <p class="loan-title">${esc(rv.itemName)}</p>
+                <p class="loan-author" style="font-size:0.68rem;color:#475569;">${typeLabel}</p>
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.3rem;">
+                  <span class="stars-display">${starsHTML(rv.rating)}</span>
+                  <span style="font-size:0.65rem;color:#64748b;">${date}${updated}</span>
+                </div>
+                ${rv.body
+                  ? `<p style="font-size:0.76rem;color:#94a3b8;margin-top:0.4rem;line-height:1.5;">${esc(rv.body)}</p>`
+                  : `<p style="font-size:0.72rem;color:#334155;margin-top:0.3rem;font-style:italic;">No written review</p>`}
+              </div>
+              <div style="font-size:0.65rem;color:#475569;flex-shrink:0;white-space:nowrap;">Tap to edit →</div>
+            </div>`;
+        }).join('');
+      } catch {
+        toast('Could not load reviews.', 'negative');
+      } finally {
+        if (btn) btn.classList.remove('spinning');
+      }
     }
 
     // ── Helper ──────────────────────────────────────────────────────────────────
@@ -902,7 +1277,7 @@
     // Read ?view= query param so header nav links from index.ejs navigate correctly
     const urlParams = new URLSearchParams(window.location.search);
     const startView = urlParams.get('view');
-    if (startView && ['catalog', 'mybooks', 'suggest', 'equipment'].includes(startView)) {
+    if (startView && ['catalog', 'mybooks', 'suggest', 'equipment', 'reviews'].includes(startView)) {
       showView(startView);
     } else {
       showView('catalog');

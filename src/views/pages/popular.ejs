@@ -174,9 +174,45 @@
       <!-- ── Hero ── -->
       <div class="popular-hero">
         <p style="font-size:0.68rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#60a5fa;margin-bottom:0.4rem;">Discover</p>
-        <h1>Popular Books</h1>
-        <p>See what students are borrowing most — updated in real time from checkout data.</p>
+        <h1>Trending</h1>
+        <p>See what people are saying about the books and equipment at the CS Library.</p>
       </div>
+
+      <!-- ── Recent Reviews ── -->
+      <div class="section-eyebrow">⭐ Recent Reviews</div>
+      <p style="font-size:0.8rem;color:#64748b;margin-bottom:1.25rem;">Latest ratings from students across books and equipment.</p>
+      <% if (recentReviews.length === 0) { %>
+        <div class="pop-empty" style="margin-bottom:3rem;">No reviews yet — be the first to leave one!</div>
+      <% } else { %>
+      <div class="pop-book-list" style="margin-bottom:3rem;">
+        <% recentReviews.forEach(function(rv) { %>
+          <div class="pop-book-row" style="flex-direction:column;align-items:flex-start;gap:0.6rem;">
+            <div style="display:flex;align-items:center;gap:0.75rem;width:100%;">
+              <!-- Stars -->
+              <div style="display:inline-flex;gap:2px;flex-shrink:0;">
+                <% for (let i = 1; i <= 5; i++) { %>
+                  <span style="font-size:0.9rem;color:<%= i <= rv.rating ? '#fbbf24' : '#1e293b' %>;">★</span>
+                <% } %>
+              </div>
+              <!-- Item name + type badge -->
+              <span style="font-size:0.85rem;font-weight:700;color:white;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= rv.itemName %></span>
+              <span style="flex-shrink:0;display:inline-block;padding:0.15rem 0.5rem;border-radius:9999px;font-size:0.58rem;font-weight:700;
+                background:<%= rv.targetType === 'book' ? 'rgba(59,130,246,0.15)' : 'rgba(168,85,247,0.15)' %>;
+                color:<%= rv.targetType === 'book' ? '#60a5fa' : '#c084fc' %>;">
+                <%= rv.targetType === 'book' ? 'BOOK' : 'EQUIPMENT' %>
+              </span>
+            </div>
+            <% if (rv.body && rv.body.trim()) { %>
+              <p style="font-size:0.78rem;color:#94a3b8;line-height:1.55;margin:0;">"<%= rv.body.length > 200 ? rv.body.slice(0, 200) + '…' : rv.body %>"</p>
+            <% } %>
+            <p style="font-size:0.65rem;color:#475569;margin:0;">
+              — <%= rv.userName %> ·
+              <%= new Date(rv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %>
+            </p>
+          </div>
+        <% }); %>
+      </div>
+      <% } %>
 
       <!-- ── Trending (last 30 days) ── -->
       <div class="section-eyebrow">Trending This Month</div>
@@ -303,6 +339,7 @@
           </div>
         <% }); %>
       </div>
+
       <!-- ── CTA ── -->
       <div class="pop-cta">
         <p><strong>Ready to borrow?</strong> Browse the full catalog or visit the kiosk in Morril Hall 122.</p>

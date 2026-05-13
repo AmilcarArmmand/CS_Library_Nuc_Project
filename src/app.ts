@@ -1,6 +1,6 @@
 import { db } from './db/database.js';
-import { books, users, loans, equipment, equipmentUnits, equipmentLoans } from './db/schema/schema.js';
-import { desc, count, and, eq, gt } from 'drizzle-orm';
+import { books, users, loans, equipment, equipmentUnits, equipmentLoans, reviews } from './db/schema/schema.js';
+import { desc, count, and, eq, gt, isNull, inArray } from 'drizzle-orm';
 
 import express from 'express';
 import path from 'path';
@@ -20,6 +20,7 @@ import kioskApiRoutes     from './routes/kioskApi.js';
 import { attachUser }     from './middleware/auth.js';
 import adminRoutes from './routes/admin.js';
 import equipmentAdminRoutes from './routes/equipmentAdmin.js';
+import reviewAdminRoutes from './routes/reviewAdmin.js';
 import settingsRoutes from './routes/settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -68,6 +69,7 @@ app.use('/web-dashboard', webDashboardRoutes);
 app.use('/api/kiosk',     kioskApiRoutes);   // Pi only — protected by API key
 app.use('/admin', adminRoutes);
 app.use('/admin/equipment', equipmentAdminRoutes);
+app.use('/admin/reviews', reviewAdminRoutes);
 app.use('/settings', settingsRoutes);
 
 // HOME
@@ -340,6 +342,45 @@ app.get('/popular', async (req, res) => {
 
       const availMap = new Map(availableUnits.map(u => [u.equipmentId, Number(u.cnt)]));
 
+      // Recent reviews (last 10 across books and equipment, visible only)
+    const recentReviewsRaw = await db
+      .select({
+        id:         reviews.id,
+        targetType: reviews.targetType,
+        targetId:   reviews.targetId,
+        rating:     reviews.rating,
+        body:       reviews.body,
+        createdAt:  reviews.createdAt,
+        userName:   users.name,
+      })
+      .from(reviews)
+      .innerJoin(users, eq(reviews.userId, users.id))
+      .where(isNull(reviews.deletedAt))
+      .orderBy(desc(reviews.createdAt))
+      .limit(10);
+
+    // Enrich with item names
+    const rvBookIsbns = recentReviewsRaw.filter(r => r.targetType === 'book').map(r => r.targetId);
+    const rvEquipIds  = recentReviewsRaw.filter(r => r.targetType === 'equipment').map(r => Number(r.targetId));
+    const rvBookMap   = new Map<string, string>();
+    const rvEquipMap  = new Map<number, string>();
+
+    if (rvBookIsbns.length) {
+      const rows = await db.select({ isbn: books.isbn, title: books.title }).from(books).where(inArray(books.isbn, rvBookIsbns));
+      rows.forEach(b => rvBookMap.set(b.isbn, b.title));
+    }
+    if (rvEquipIds.length) {
+      const rows = await db.select({ id: equipment.id, name: equipment.name }).from(equipment).where(inArray(equipment.id, rvEquipIds));
+      rows.forEach(e => rvEquipMap.set(e.id, e.name));
+    }
+
+    const recentReviews = recentReviewsRaw.map(r => ({
+      ...r,
+      itemName: r.targetType === 'book'
+        ? (rvBookMap.get(r.targetId) ?? 'Unknown Book')
+        : (rvEquipMap.get(Number(r.targetId)) ?? 'Unknown Item'),
+    }));
+
       const trendingEquip  = trendingEquipRaw.map(e  => ({ ...e,  availableUnits: availMap.get(e.id)  ?? 0 }));
       const allTimeEquip   = allTimeEquipRaw.map(e   => ({ ...e,  availableUnits: availMap.get(e.id)  ?? 0 }));
     res.render('pages/popular', {
@@ -350,6 +391,7 @@ app.get('/popular', async (req, res) => {
       recentlyReturned,
       trendingEquip,
       allTimeEquip,
+      recentReviews,
     });
   } catch (err) {
     console.error('[Popular] route error:', err);

@@ -299,6 +299,33 @@ export const equipmentLoansRelations = relations(equipmentLoans, ({ one }) => ({
   unit: one(equipmentUnits, { fields: [equipmentLoans.unitId],  references: [equipmentUnits.id] }),
 }));
 
+// REVIEWS TABLE
+//
+// targetType: 'book' | 'equipment'
+// targetId:   ISBN (string) for books, equipment.id (as string) for equipment
+// rating:     1–5
+// deletedAt:  null = visible, set = soft-deleted by admin
+
+export const reviews = pgTable('reviews', {
+  id:          serial('id').primaryKey(),
+  userId:      integer('user_id').notNull().references(() => users.id),
+  targetType:  varchar('target_type', { length: 20 }).notNull(), // 'book' | 'equipment'
+  targetId:    varchar('target_id', { length: 50 }).notNull(),   // ISBN or equipment id
+  rating:      integer('rating').notNull(),                       // 1–5
+  body:        text('body').notNull().default(''),
+  createdAt:   timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt:   timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  deletedAt:   timestamp('deleted_at', { withTimezone: true }),   // null = live
+}, (table) => ({
+  idxUserTarget:   index('idx_reviews_user_target').on(table.userId, table.targetType, table.targetId),
+  idxTarget:       index('idx_reviews_target').on(table.targetType, table.targetId),
+  idxCreatedAt:    index('idx_reviews_created_at').on(table.createdAt),
+}));
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  user: one(users, { fields: [reviews.userId], references: [users.id] }),
+}));
+
 // TYPE EXPORTS
 
 export type User       = typeof users.$inferSelect;
@@ -316,3 +343,5 @@ export type NewEquipment   = typeof equipment.$inferInsert;
 export type EquipmentUnit  = typeof equipmentUnits.$inferSelect;
 export type NewEquipmentUnit = typeof equipmentUnits.$inferInsert;
 export type EquipmentLoan  = typeof equipmentLoans.$inferSelect;
+export type Review    = typeof reviews.$inferSelect;
+export type NewReview = typeof reviews.$inferInsert;

@@ -1,8 +1,8 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
 import { db } from '../db/database.js';
-import { books, loans, holds, suggestions, renewalRequests, users, equipment, equipmentUnits, equipmentLoans } from '../db/schema/schema.js';
-import { eq, desc, and, or } from 'drizzle-orm';
+import { books, loans, holds, users, suggestions, equipment, equipmentUnits, equipmentLoans, renewalRequests, reviews } from '../db/schema/schema.js';
+import { eq, desc, and, or, isNull, inArray } from 'drizzle-orm';
 import { normalizeIsbn } from '../utils/openLibrary.js';
 import { sendRenewalRequestReceivedEmail } from '../utils/emailService.js';
 
@@ -360,6 +360,203 @@ router.get('/api/my-equipment-loans', async (req: Request, res: Response) => {
   } catch (err) {
     console.error('[WebDashboard] /api/my-equipment-loans error:', err);
     res.status(500).json({ error: 'Could not fetch equipment loans.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REVIEWS
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /web-dashboard/api/reviews/:type/:id
+// Fetch all visible reviews for a book (type=book, id=isbn) or equipment (type=equipment, id=equipId)
+// Also returns the current user's own review if logged in.
+
+router.get('/api/reviews/:type/:id', async (req: Request, res: Response) => {
+  try {
+    const targetType = String(req.params['type'] ?? '');
+    const targetId   = String(req.params['id']   ?? '');
+
+    if (!['book', 'equipment'].includes(targetType) || !targetId) {
+      res.status(400).json({ error: 'Invalid target.' }); return;
+    }
+
+    const allReviews = await db
+      .select({
+        id:        reviews.id,
+        userId:    reviews.userId,
+        rating:    reviews.rating,
+        body:      reviews.body,
+        createdAt: reviews.createdAt,
+        updatedAt: reviews.updatedAt,
+        userName:  users.name,
+      })
+      .from(reviews)
+      .innerJoin(users, eq(reviews.userId, users.id))
+      .where(
+        and(
+          eq(reviews.targetType, targetType),
+          eq(reviews.targetId, targetId),
+          isNull(reviews.deletedAt),
+        )
+      )
+      .orderBy(desc(reviews.createdAt));
+
+    const currentUserId = (req.user as any)?.id ?? null;
+    const myReview = currentUserId
+      ? allReviews.find(r => r.userId === currentUserId) ?? null
+      : null;
+
+    const avgRating = allReviews.length
+      ? Math.round((allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length) * 10) / 10
+      : null;
+
+    res.json({
+      reviews:   allReviews,
+      myReview,
+      avgRating,
+      total:     allReviews.length,
+    });
+  } catch (err) {
+    console.error('[Reviews] GET error:', err);
+    res.status(500).json({ error: 'Could not load reviews.' });
+  }
+});
+
+// POST /web-dashboard/api/reviews
+// Submit or update the current user's review for a book or equipment item.
+// One review per user per item — submitting again overwrites the previous one.
+
+router.post('/api/reviews', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId     = (req.user as any).id as number;
+    const targetType = String(req.body.targetType ?? '').trim();
+    const targetId   = String(req.body.targetId   ?? '').trim();
+    const rating     = parseInt(String(req.body.rating ?? ''), 10);
+    const body       = String(req.body.body ?? '').trim().slice(0, 2000);
+
+    if (!['book', 'equipment'].includes(targetType) || !targetId) {
+      res.status(400).json({ error: 'Invalid target type or ID.' }); return;
+    }
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400).json({ error: 'Rating must be between 1 and 5.' }); return;
+    }
+
+    // Check for existing review (including soft-deleted — user can re-review)
+    const [existing] = await db
+      .select({ id: reviews.id })
+      .from(reviews)
+      .where(
+        and(
+          eq(reviews.userId, userId),
+          eq(reviews.targetType, targetType),
+          eq(reviews.targetId, targetId),
+        )
+      )
+      .limit(1);
+
+    let review;
+    if (existing) {
+      // Update existing review, restore if it was soft-deleted
+      [review] = await db
+        .update(reviews)
+        .set({ rating, body, updatedAt: new Date(), deletedAt: null })
+        .where(eq(reviews.id, existing.id))
+        .returning();
+    } else {
+      [review] = await db
+        .insert(reviews)
+        .values({ userId, targetType, targetId, rating, body })
+        .returning();
+    }
+
+    res.json({ ok: true, review });
+  } catch (err) {
+    console.error('[Reviews] POST error:', err);
+    res.status(500).json({ error: 'Could not save review.' });
+  }
+});
+
+// DELETE /web-dashboard/api/reviews/:id
+// User deletes their own review (hard delete — it's their own content).
+
+router.delete('/api/reviews/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId   = (req.user as any).id as number;
+    const reviewId = parseInt(String(req.params['id'] ?? ''), 10);
+    if (!reviewId) { res.status(400).json({ error: 'Invalid review ID.' }); return; }
+
+    const [review] = await db
+      .select({ id: reviews.id, userId: reviews.userId })
+      .from(reviews)
+      .where(eq(reviews.id, reviewId))
+      .limit(1);
+
+    if (!review)               { res.status(404).json({ error: 'Review not found.' }); return; }
+    if (review.userId !== userId) { res.status(403).json({ error: 'You can only delete your own reviews.' }); return; }
+
+    await db.delete(reviews).where(eq(reviews.id, reviewId));
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Reviews] DELETE error:', err);
+    res.status(500).json({ error: 'Could not delete review.' });
+  }
+});
+
+// GET /web-dashboard/api/my-reviews
+// Returns all reviews written by the current user, enriched with item title/name.
+
+router.get('/api/my-reviews', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as any).id as number;
+
+    const allReviews = await db
+      .select({
+        id:         reviews.id,
+        targetType: reviews.targetType,
+        targetId:   reviews.targetId,
+        rating:     reviews.rating,
+        body:       reviews.body,
+        createdAt:  reviews.createdAt,
+        updatedAt:  reviews.updatedAt,
+      })
+      .from(reviews)
+      .where(and(eq(reviews.userId, userId), isNull(reviews.deletedAt)))
+      .orderBy(desc(reviews.createdAt));
+
+    // Enrich with item names
+    const bookIsbns   = allReviews.filter(r => r.targetType === 'book').map(r => r.targetId);
+    const equipIds    = allReviews.filter(r => r.targetType === 'equipment').map(r => Number(r.targetId));
+
+    const bookMap  = new Map<string, string>();
+    const equipMap = new Map<number, string>();
+
+    if (bookIsbns.length) {
+      const bookRows = await db
+        .select({ isbn: books.isbn, title: books.title })
+        .from(books)
+        .where(inArray(books.isbn, bookIsbns));
+      bookRows.forEach(b => bookMap.set(b.isbn, b.title));
+    }
+
+    if (equipIds.length) {
+      const equipRows = await db
+        .select({ id: equipment.id, name: equipment.name })
+        .from(equipment)
+        .where(inArray(equipment.id, equipIds));
+      equipRows.forEach(e => equipMap.set(e.id, e.name));
+    }
+
+    const enriched = allReviews.map(r => ({
+      ...r,
+      itemName: r.targetType === 'book'
+        ? (bookMap.get(r.targetId) ?? 'Unknown Book')
+        : (equipMap.get(Number(r.targetId)) ?? 'Unknown Item'),
+    }));
+
+    res.json({ reviews: enriched });
+  } catch (err) {
+    console.error('[Reviews] GET my-reviews error:', err);
+    res.status(500).json({ error: 'Could not load your reviews.' });
   }
 });
 
