@@ -482,4 +482,30 @@
 
   .flash-success { background: rgba(34,197,94,0.08) !important; color: #15803d !important; border-color: rgba(34,197,94,0.25) !important; }
   .flash-error   { background: rgba(239,68,68,0.07) !important; color: #dc2626 !important; border-color: rgba(239,68,68,0.2) !important; }
+
+  /* ── Popular page ── */
+  .popular-hero h1 { color: #0f172a !important; }
+  .popular-hero p  { color: #64748b !important; }
+  .pop-book-row {
+    background: rgba(255,255,255,0.92) !important;
+    border-color: rgba(148,163,184,0.35) !important;
+  }
+  .pop-book-row:hover { border-color: rgba(59,130,246,0.3) !important; }
+  .pop-title  { color: #0f172a !important; }
+  .pop-author { color: #475569 !important; }
+  .pop-isbn   { color: #64748b !important; }
+  .returned-card {
+    background: rgba(255,255,255,0.92) !important;
+    border-color: rgba(148,163,184,0.35) !important;
+  }
+  .returned-title  { color: #0f172a !important; }
+  .returned-author { color: #475569 !important; }
+  .returned-when   { color: #64748b !important; }
+  .pop-cta {
+    background: rgba(59,130,246,0.04) !important;
+    border-color: rgba(59,130,246,0.15) !important;
+  }
+  .pop-cta p { color: #475569 !important; }
+  .pop-cta p strong { color: #0f172a !important; }
+  .pop-empty { color: #64748b !important; }
 }

@@ -188,14 +188,6 @@
         <% } %>
       </div>
 
-      <!-- CTA for logged-out users -->
-      <% if (!user) { %>
-        <div class="cta-block">
-          <p><strong>Want to borrow books?</strong> Create a free account to track your loans and request renewals from the kiosk.</p>
-          <a href="/auth/register" class="cta-btn">Create Account →</a>
-        </div>
-      <% } %>
-
       <!-- ── Equipment list ── -->
       <div class="section-header" style="margin-top:2.5rem;">
         <h2>Recently Added Equipment</h2>
@@ -229,6 +221,14 @@
           <div class="empty-state">No equipment in the catalog yet.</div>
         <% } %>
       </div>
+
+      <!-- CTA for logged-out users -->
+      <% if (!user) { %>
+        <div class="cta-block">
+          <p><strong>Want to borrow books and equipment?</strong> Create a free account to track your loans and request renewals from the kiosk.</p>
+          <a href="/auth/register" class="cta-btn">Create Account →</a>
+        </div>
+      <% } %>
 
     </div><!-- end main-layout -->
   

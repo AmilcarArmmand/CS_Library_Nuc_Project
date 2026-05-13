@@ -21,6 +21,7 @@
 
   <div class="hdr-pipe"></div>
 
+  <!-- Normal Header -->
   <nav class="header-nav">
     <% if (_mode === 'dashboard') { %>
       <button class="hdr-nav-btn active" id="nav-catalog" onclick="showView('catalog')">My Library</button>
@@ -28,12 +29,14 @@
       <button class="hdr-nav-btn"        id="nav-equipment" onclick="showView('equipment')">Equipment</button>
       <button class="hdr-nav-btn"        id="nav-suggest" onclick="showView('suggest')">Suggest</button>
       <a href="/about" class="hdr-nav-btn">About</a>
+      <a href="/popular" class="hdr-nav-btn">Popular</a>
     <% } else { %>
       <a href="/web-dashboard?view=catalog" class="hdr-nav-btn">My Library</a>
       <a href="/web-dashboard?view=mybooks" class="hdr-nav-btn">My Books</a>
       <a href="/web-dashboard?view=equipment" class="hdr-nav-btn">Equipment</a>
       <a href="/web-dashboard?view=suggest" class="hdr-nav-btn">Suggest</a>
       <a href="/about" class="hdr-nav-btn">About</a>
+      <a href="/popular" class="hdr-nav-btn">Popular</a>
     <% } %>
   </nav>
 
@@ -69,6 +72,7 @@
     <span></span><span></span><span></span>
   </button>
 
+  <!-- Mobile Header -->
   <div class="mobile-menu" id="mobileMenu">
     <% if (_mode === 'dashboard') { %>
       <button class="mobile-item active" id="mnav-catalog" onclick="showView('catalog');closeMobileMenu()">My Library</button>
@@ -76,12 +80,14 @@
       <button class="mobile-item"        id="mnav-equipment" onclick="showView('equipment');closeMobileMenu()">Equipment</button>
       <button class="mobile-item"        id="mnav-suggest" onclick="showView('suggest');closeMobileMenu()">Suggest</button>
       <a href="/about" class="mobile-item">About</a>
+      <a href="/popular" class="mobile-item">Popular</a>
     <% } else { %>
       <a href="/web-dashboard?view=catalog" class="mobile-item">My Library</a>
       <a href="/web-dashboard?view=mybooks" class="mobile-item">My Books</a>
       <a href="/web-dashboard?view=equipment" class="mobile-item">Equipment</a>
       <a href="/web-dashboard?view=suggest" class="mobile-item">Suggest</a>
       <a href="/about" class="mobile-item">About</a>
+      <a href="/popular" class="mobile-item">Popular</a>
     <% } %>
     <div class="mobile-divider"></div>
     <% if (user) { %>

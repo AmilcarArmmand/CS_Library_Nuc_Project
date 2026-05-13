@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title><%= title %></title>
+  <link rel="icon" href="/favicon1.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    .popular-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Hero ── */
+    .popular-hero { margin-bottom: 2.5rem; }
+    .popular-hero h1 {
+      font-size: clamp(1.5rem, 4vw, 2.25rem);
+      font-weight: 900; margin-bottom: 0.4rem; line-height: 1.15;
+    }
+    .popular-hero p { font-size: 0.88rem; color: #64748b; }
+
+    /* ── Section label ── */
+    .section-eyebrow {
+      font-size: 0.62rem; font-weight: 900; letter-spacing: 0.2em;
+      text-transform: uppercase; color: #60a5fa; margin-bottom: 1rem;
+    }
+
+    /* ── Book list ── */
+    .pop-book-list {
+      display: flex; flex-direction: column; gap: 0.6rem;
+      margin-bottom: 3rem;
+    }
+
+    .pop-book-row {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 0.85rem 1rem;
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 0.85rem;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s;
+    }
+    .pop-book-row:hover { border-color: rgba(96,165,250,0.3); }
+
+    .pop-rank {
+      width: 2rem; height: 2rem; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 900;
+      background: rgba(59,130,246,0.15);
+      border: 1px solid rgba(59,130,246,0.25);
+      color: #60a5fa;
+    }
+    .pop-rank.top-3 {
+      background: rgba(245,158,11,0.15);
+      border-color: rgba(245,158,11,0.3);
+      color: #fbbf24;
+    }
+
+    .pop-cover {
+      width: 2.75rem; height: 3.75rem;
+      border-radius: 0.35rem; object-fit: cover; flex-shrink: 0;
+      border: 1px solid rgba(71,85,105,0.4);
+      background: rgba(15,23,42,0.6);
+    }
+
+    .pop-info { flex: 1; min-width: 0; }
+    .pop-title  {
+      font-size: 0.88rem; font-weight: 700; color: white;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin-bottom: 0.15rem;
+    }
+    .pop-author { font-size: 0.72rem; color: #94a3b8; }
+    .pop-isbn   { font-size: 0.62rem; color: #475569; margin-top: 0.1rem; }
+
+    .pop-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0; }
+    .pop-count-badge {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.2rem 0.6rem; border-radius: 9999px;
+      font-size: 0.65rem; font-weight: 700;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.25);
+      color: #93c5fd; white-space: nowrap;
+    }
+    .pop-count-badge.trending {
+      background: rgba(34,197,94,0.12);
+      border-color: rgba(34,197,94,0.25);
+      color: #4ade80;
+    }
+
+    /* Status badge */
+    .status-pill {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 9999px;
+      font-size: 0.58rem; font-weight: 700; letter-spacing: 0.08em;
+    }
+    .status-pill.avail { background: rgba(34,197,94,0.12); color: #4ade80; }
+    .status-pill.out   { background: rgba(239,68,68,0.12);  color: #f87171; }
+    .status-pill.hold  { background: rgba(245,158,11,0.12); color: #fbbf24; }
+
+    /* ── Recently returned ── */
+    .returned-grid {
+      display: grid; gap: 0.6rem;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      margin-bottom: 3rem;
+    }
+    .returned-card {
+      display: flex; gap: 0.75rem; align-items: flex-start;
+      padding: 0.85rem;
+      background: rgba(21,25,36,0.84);
+      border: 1px solid rgba(71,85,105,0.5);
+      border-radius: 0.85rem;
+      backdrop-filter: blur(12px);
+      transition: border-color 0.2s;
+    }
+    .returned-card:hover { border-color: rgba(34,197,94,0.3); }
+    .returned-cover {
+      width: 2.5rem; height: 3.25rem; object-fit: cover;
+      border-radius: 0.3rem; flex-shrink: 0;
+      border: 1px solid rgba(71,85,105,0.4);
+      background: rgba(15,23,42,0.6);
+    }
+    .returned-info { flex: 1; min-width: 0; }
+    .returned-title  { font-size: 0.82rem; font-weight: 700; color: white; line-height: 1.3; margin-bottom: 0.15rem; }
+    .returned-author { font-size: 0.68rem; color: #94a3b8; }
+    .returned-when   { font-size: 0.62rem; color: #475569; margin-top: 0.2rem; }
+
+    /* ── Empty state ── */
+    .pop-empty {
+      text-align: center; padding: 2rem; color: #334155;
+      font-size: 0.82rem;
+    }
+
+    /* ── CTA ── */
+    .pop-cta {
+      margin-top: 2.5rem;
+      padding: 1.25rem 1.5rem;
+      background: rgba(59,130,246,0.06);
+      border: 1px solid rgba(59,130,246,0.18);
+      border-radius: 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .pop-cta p { font-size: 0.85rem; color: #94a3b8; }
+    .pop-cta p strong { color: white; }
+    .pop-cta a {
+      padding: 0.55rem 1.25rem; border-radius: 9999px;
+      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+      text-decoration: none; color: #60a5fa;
+      border: 1px solid rgba(59,130,246,0.4);
+      background: rgba(59,130,246,0.12);
+      transition: all 0.2s; white-space: nowrap;
+    }
+    .pop-cta a:hover { background: rgba(59,130,246,0.25); }
+
+    @media (max-width: 640px) {
+      .returned-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars-1"></div>
+  <div class="stars-2"></div>
+  <div class="stars-3"></div>
+
+  <%- include('../partials/header', { pageMode: 'index' }) %>
+
+  <div class="page">
+    <div class="popular-wrap">
+
+      <!-- ── Hero ── -->
+      <div class="popular-hero">
+        <p style="font-size:0.68rem;font-weight:700;letter-spacing:0.25em;text-transform:uppercase;color:#60a5fa;margin-bottom:0.4rem;">Discover</p>
+        <h1>Popular Books</h1>
+        <p>See what students are borrowing most — updated in real time from checkout data.</p>
+      </div>
+
+      <!-- ── Trending (last 30 days) ── -->
+      <div class="section-eyebrow">Trending This Month</div>
+      <div class="pop-book-list">
+        <% if (trending.length === 0) { %>
+          <div class="pop-empty">No checkouts recorded in the last 30 days yet.</div>
+        <% } %>
+        <% trending.forEach(function(book, i) { %>
+          <div class="pop-book-row">
+            <div class="pop-rank <%= i < 3 ? 'top-3' : '' %>"><%= i + 1 %></div>
+            <img class="pop-cover"
+                 src="<%= book.cover || '' %>"
+                 loading="lazy"
+                 onerror="this.src='/assets/book-placeholder.svg'"
+                 alt="<%= book.title %>" />
+            <div class="pop-info">
+              <p class="pop-title"><%= book.title %></p>
+              <p class="pop-author"><%= book.author %></p>
+              <p class="pop-isbn">ISBN <%= book.isbn %></p>
+            </div>
+            <div class="pop-right">
+              <span class="pop-count-badge trending">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <%= book.recentCheckouts %> this month
+              </span>
+              <span class="status-pill <%= book.status === 'Available' ? 'avail' : (book.status === 'On Hold' ? 'hold' : 'out') %>">
+                <%= book.status === 'Available' ? 'AVAILABLE' : (book.status === 'On Hold' ? 'ON HOLD' : 'CHECKED OUT') %>
+              </span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <!-- ── All-time most borrowed ── -->
+      <div class="section-eyebrow">All-Time Most Borrowed</div>
+      <div class="pop-book-list">
+        <% if (allTime.length === 0) { %>
+          <div class="pop-empty">No checkout data yet.</div>
+        <% } %>
+        <% allTime.forEach(function(book, i) { %>
+          <div class="pop-book-row">
+            <div class="pop-rank <%= i < 3 ? 'top-3' : '' %>"><%= i + 1 %></div>
+            <img class="pop-cover"
+                 src="<%= book.cover || '' %>"
+                 loading="lazy"
+                 onerror="this.src='/assets/book-placeholder.svg'"
+                 alt="<%= book.title %>" />
+            <div class="pop-info">
+              <p class="pop-title"><%= book.title %></p>
+              <p class="pop-author"><%= book.author %></p>
+              <p class="pop-isbn">ISBN <%= book.isbn %></p>
+            </div>
+            <div class="pop-right">
+              <span class="pop-count-badge">
+                <%= book.totalCheckouts %> checkout<%= book.totalCheckouts !== 1 ? 's' : '' %>
+              </span>
+              <span class="status-pill <%= book.status === 'Available' ? 'avail' : (book.status === 'On Hold' ? 'hold' : 'out') %>">
+                <%= book.status === 'Available' ? 'AVAILABLE' : (book.status === 'On Hold' ? 'ON HOLD' : 'CHECKED OUT') %>
+              </span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <!-- ── Trending equipment ── -->
+      <div class="section-eyebrow">Trending Equipment This Month</div>
+      <div class="pop-book-list">
+        <% if (trendingEquip.length === 0) { %>
+          <div class="pop-empty">No equipment checkouts recorded in the last 30 days yet.</div>
+        <% } %>
+        <% trendingEquip.forEach(function(item, i) { %>
+          <div class="pop-book-row">
+            <div class="pop-rank <%= i < 3 ? 'top-3' : '' %>"><%= i + 1 %></div>
+            <img class="pop-cover"
+                 src="<%= item.image || '' %>"
+                 loading="lazy"
+                 onerror="this.src='/assets/book-placeholder.svg'"
+                 alt="<%= item.name %>" />
+            <div class="pop-info">
+              <p class="pop-title"><%= item.name %></p>
+              <p class="pop-author"><%= item.category || 'Equipment' %></p>
+              <p class="pop-isbn"><%= item.loanDurationDays %>-day loan</p>
+            </div>
+            <div class="pop-right">
+              <span class="pop-count-badge trending">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <%= item.recentCheckouts %> this month
+              </span>
+              <span class="status-pill <%= item.availableUnits > 0 ? 'avail' : 'out' %>">
+                <%= item.availableUnits > 0 ? item.availableUnits + ' AVAILABLE' : 'UNAVAILABLE' %>
+              </span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <!-- ── All-time equipment ── -->
+      <div class="section-eyebrow">All-Time Most Borrowed Equipment</div>
+      <div class="pop-book-list">
+        <% if (allTimeEquip.length === 0) { %>
+          <div class="pop-empty">No equipment checkout data yet.</div>
+        <% } %>
+        <% allTimeEquip.forEach(function(item, i) { %>
+          <div class="pop-book-row">
+            <div class="pop-rank <%= i < 3 ? 'top-3' : '' %>"><%= i + 1 %></div>
+            <img class="pop-cover"
+                 src="<%= item.image || '' %>"
+                 loading="lazy"
+                 onerror="this.src='/assets/book-placeholder.svg'"
+                 alt="<%= item.name %>" />
+            <div class="pop-info">
+              <p class="pop-title"><%= item.name %></p>
+              <p class="pop-author"><%= item.category || 'Equipment' %></p>
+              <p class="pop-isbn"><%= item.loanDurationDays %>-day loan</p>
+            </div>
+            <div class="pop-right">
+              <span class="pop-count-badge">
+                <%= item.totalCheckouts %> checkout<%= item.totalCheckouts !== 1 ? 's' : '' %>
+              </span>
+              <span class="status-pill <%= item.availableUnits > 0 ? 'avail' : 'out' %>">
+                <%= item.availableUnits > 0 ? item.availableUnits + ' AVAILABLE' : 'UNAVAILABLE' %>
+              </span>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+      <!-- ── CTA ── -->
+      <div class="pop-cta">
+        <p><strong>Ready to borrow?</strong> Browse the full catalog or visit the kiosk in Morril Hall 122.</p>
+        <div style="display:flex;gap:0.65rem;flex-wrap:wrap;">
+          <a href="/web-dashboard">Browse Catalog →</a>
+          <% if (!user) { %>
+            <a href="/auth/register" style="color:#4ade80;border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);">Create Account →</a>
+          <% } %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <%- include('../partials/footer') %>
+</body>
+</html>

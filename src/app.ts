@@ -1,7 +1,6 @@
 import { db } from './db/database.js';
-import { books, users, equipment, equipmentUnits } from './db/schema/schema.js';
-import { desc } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { books, users, loans, equipment, equipmentUnits, equipmentLoans } from './db/schema/schema.js';
+import { desc, count, and, eq, gt } from 'drizzle-orm';
 
 import express from 'express';
 import path from 'path';
@@ -214,6 +213,150 @@ app.post('/about/contact', async (req, res) => {
   }
 
   res.redirect('/about');
+});
+
+// POPULAR BOOKS PAGE
+app.get('/popular', async (req, res) => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Trending: most checkouts in the last 30 days
+    const trendingRaw = await db
+      .select({
+        isbn:            books.isbn,
+        title:           books.title,
+        author:          books.author,
+        cover:           books.cover,
+        status:          books.status,
+        recentCheckouts: count(loans.id),
+      })
+      .from(books)
+      .innerJoin(loans, and(
+        eq(books.isbn, loans.isbn),
+        gt(loans.checkedOut, thirtyDaysAgo),
+      ))
+      .groupBy(books.isbn, books.title, books.author, books.cover, books.status)
+      .orderBy(desc(count(loans.id)))
+      .limit(10);
+
+    // All-time most borrowed
+    const allTimeRaw = await db
+      .select({
+        isbn:           books.isbn,
+        title:          books.title,
+        author:         books.author,
+        cover:          books.cover,
+        status:         books.status,
+        totalCheckouts: count(loans.id),
+      })
+      .from(books)
+      .innerJoin(loans, eq(books.isbn, loans.isbn))
+      .groupBy(books.isbn, books.title, books.author, books.cover, books.status)
+      .orderBy(desc(count(loans.id)))
+      .limit(10);
+
+    // Recently returned (last 7 days, currently available)
+    const returnedRaw = await db
+      .select({
+        isbn:         books.isbn,
+        title:        books.title,
+        author:       books.author,
+        cover:        books.cover,
+        returnedDate: loans.returnedDate,
+      })
+      .from(loans)
+      .innerJoin(books, eq(loans.isbn, books.isbn))
+      .where(and(
+        eq(loans.returned, true),
+        gt(loans.returnedDate, sevenDaysAgo),
+        eq(books.status, 'Available'),
+      ))
+      .orderBy(desc(loans.returnedDate))
+      .limit(12);
+
+    // Deduplicate recently returned by ISBN (keep most recent)
+    const seenIsbns = new Set<string>();
+    const recentlyReturned = returnedRaw
+      .filter(b => { if (seenIsbns.has(b.isbn)) return false; seenIsbns.add(b.isbn); return true; })
+      .map(b => ({
+        ...b,
+        returnedAgo: (() => {
+          const diffMs = Date.now() - new Date(b.returnedDate!).getTime();
+          const diffH  = Math.floor(diffMs / 3600000);
+          const diffD  = Math.floor(diffMs / 86400000);
+          if (diffH < 1)  return 'just now';
+          if (diffH < 24) return `${diffH}h ago`;
+          return `${diffD} day${diffD !== 1 ? 's' : ''} ago`;
+        })(),
+      }));
+
+      // Trending equipment: most checkouts in the last 30 days
+      const trendingEquipRaw = await db
+        .select({
+          id:              equipment.id,
+          name:            equipment.name,
+          category:        equipment.category,
+          image:           equipment.image,
+          loanDurationDays: equipment.loanDurationDays,
+          recentCheckouts: count(equipmentLoans.id),
+        })
+        .from(equipment)
+        .innerJoin(equipmentUnits, eq(equipment.id, equipmentUnits.equipmentId))
+        .innerJoin(equipmentLoans, and(
+          eq(equipmentUnits.id, equipmentLoans.unitId),
+          gt(equipmentLoans.checkedOut, thirtyDaysAgo),
+        ))
+        .groupBy(equipment.id, equipment.name, equipment.category, equipment.image, equipment.loanDurationDays)
+        .orderBy(desc(count(equipmentLoans.id)))
+        .limit(10);
+
+      // All-time most borrowed equipment
+      const allTimeEquipRaw = await db
+        .select({
+          id:              equipment.id,
+          name:            equipment.name,
+          category:        equipment.category,
+          image:           equipment.image,
+          loanDurationDays: equipment.loanDurationDays,
+          totalCheckouts:  count(equipmentLoans.id),
+        })
+        .from(equipment)
+        .innerJoin(equipmentUnits, eq(equipment.id, equipmentUnits.equipmentId))
+        .innerJoin(equipmentLoans, eq(equipmentUnits.id, equipmentLoans.unitId))
+        .groupBy(equipment.id, equipment.name, equipment.category, equipment.image, equipment.loanDurationDays)
+        .orderBy(desc(count(equipmentLoans.id)))
+        .limit(10);
+
+      // Available unit counts per equipment type (for status display)
+      const availableUnits = await db
+        .select({ equipmentId: equipmentUnits.equipmentId, cnt: count() })
+        .from(equipmentUnits)
+        .where(eq(equipmentUnits.status, 'Available'))
+        .groupBy(equipmentUnits.equipmentId);
+
+      const availMap = new Map(availableUnits.map(u => [u.equipmentId, Number(u.cnt)]));
+
+      const trendingEquip  = trendingEquipRaw.map(e  => ({ ...e,  availableUnits: availMap.get(e.id)  ?? 0 }));
+      const allTimeEquip   = allTimeEquipRaw.map(e   => ({ ...e,  availableUnits: availMap.get(e.id)  ?? 0 }));
+    res.render('pages/popular', {
+      title: 'Popular Books & Equipment — CS Library',
+      user:  req.user ?? null,
+      trending:  trendingRaw,
+      allTime:   allTimeRaw,
+      recentlyReturned,
+      trendingEquip,
+      allTimeEquip,
+    });
+  } catch (err) {
+    console.error('[Popular] route error:', err);
+    res.status(500).render('pages/error', {
+      title: 'Error', error: 'Could not load popular books.',
+    });
+  }
 });
 
 // CHECK HEALTH
