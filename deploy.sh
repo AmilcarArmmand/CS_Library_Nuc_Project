@@ -13,6 +13,8 @@ set -e
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CURRENT_USER="$(whoami)"
 START_SCRIPT="$APP_DIR/start.sh"
+SERVICE_FILE="/etc/systemd/system/cslibrary.service"
+TMP_SERVICE="/tmp/cslibrary.service"
 
 echo ""
 echo "CS Library — Deploy Script"
@@ -61,9 +63,6 @@ echo "Node path: $NODE_PATH"
 # Create the systemd service file
 echo "▶ Creating systemd service..."
 
-# Write service file to tmp first, then move into place
-TMP_SERVICE="/tmp/cslibrary.service"
-
 cat > "$TMP_SERVICE" << SERVICEEOF
 [Unit]
 Description=CS Library Web Server
@@ -88,8 +87,6 @@ SERVICEEOF
 sudo mv "$TMP_SERVICE" "$SERVICE_FILE"
 echo "Service file written to $SERVICE_FILE"
 
-echo "Service file written to $SERVICE_FILE"
-
 # Enable and start the service
 echo "▶ Enabling and starting service..."
 sudo systemctl daemon-reload
@@ -111,8 +108,6 @@ fi
 # Summary
 echo ""
 echo "Deploy complete!"
-
-
 echo ""
 echo "Useful commands:"
 echo "============================================================"
@@ -123,7 +118,7 @@ echo "  Restart        → sudo systemctl restart cslibrary"
 echo "  Stop           → sudo systemctl stop cslibrary"
 echo ""
 echo "To deploy updates after a code change:"
-echo "git pull"
-echo "npm run build"
-echo "sudo systemctl restart cslibrary"
+echo "  git pull"
+echo "  npm run build"
+echo "  sudo systemctl restart cslibrary"
 echo ""
