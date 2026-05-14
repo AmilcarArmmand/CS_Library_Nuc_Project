@@ -53,25 +53,21 @@ npm run build
 # Create the systemd service file
 echo "▶ Creating systemd service..."
 
-SERVICE_FILE="/etc/systemd/system/cslibrary.service"
-
 sudo tee "$SERVICE_FILE" > /dev/null << SERVICEEOF
 [Unit]
 Description=CS Library Web Server
-Documentation=https://github.com/AmilcarArmmand/CS_Library_Nuc_Project
 After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=$CURRENT_USER
 WorkingDirectory=$APP_DIR
-ExecStart=/bin/bash -c 'source $APP_DIR/.env && node $APP_DIR/dist/app.js'
+ExecStart=NODE_FULL_PATH_HERE $APP_DIR/dist/app.js
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=cslibrary
-EnvironmentFile=$APP_DIR/.env
 
 [Install]
 WantedBy=multi-user.target
