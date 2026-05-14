@@ -605,4 +605,32 @@
     background: #f1f5f9 !important;
     border-color: rgba(148, 163, 184, 0.6) !important;
   }
+
+  /* ── Review widget ── */
+  .review-section { border-top-color: rgba(148, 163, 184, 0.2) !important; }
+  .review-section-title { color: #475569 !important; }
+  .review-avg-num { color: #0f172a !important; }
+  .review-avg-sub { color: #64748b !important; }
+  .star-empty { color: #cbd5e1 !important; }
+
+  .review-textarea {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.45) !important;
+    color: #0f172a !important;
+  }
+  .review-textarea::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .review-textarea:focus { border-color: rgba(37, 99, 235, 0.5) !important; }
+
+  .review-hint         { color: #64748b !important; }
+  .review-no-reviews   { color: #94a3b8 !important; }
+  .review-loading      { color: #94a3b8 !important; }
+  .review-login-prompt { color: #64748b !important; }
+
+  .review-item {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(148, 163, 184, 0.2) !important;
+  }
+  .review-item-name { color: #0f172a !important; }
+  .review-item-date { color: #94a3b8 !important; }
+  .review-item-body { color: #475569 !important; }
 }
