@@ -121,6 +121,7 @@ app.get('/', async (req, res) => {
       message:        req.query['message'] === 'logged_out' ? 'You have been signed out.' : null,
       user:           req.user ?? null,
       projectName:    'CS Library Project',
+      appBaseUrl: config.app.baseUrl,
       newestBooks:    newest,
       totalBooks:     total,
       availableBooks: available,
