@@ -50,19 +50,28 @@ echo "Dependencies installed!"
 echo "Building..."
 npm run build
 
+# Resolve the full path to node (needed since systemd doesn't load nvm)
+NODE_PATH=$(which node)
+if [ -z "$NODE_PATH" ]; then
+  echo "Error: cannot find node. Make sure nvm is loaded."
+  exit 1
+fi
+echo "Node path: $NODE_PATH"
+
 # Create the systemd service file
 echo "▶ Creating systemd service..."
 
 sudo tee "$SERVICE_FILE" > /dev/null << SERVICEEOF
 [Unit]
 Description=CS Library Web Server
+Documentation=https://github.com/AmilcarArmmand/CS_Library_Nuc_Project
 After=network.target postgresql.service
 
 [Service]
 Type=simple
 User=$CURRENT_USER
 WorkingDirectory=$APP_DIR
-ExecStart=NODE_FULL_PATH_HERE $APP_DIR/dist/app.js
+ExecStart=$NODE_PATH $APP_DIR/dist/app.js
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
