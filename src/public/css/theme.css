@@ -633,4 +633,19 @@
   .review-item-name { color: #0f172a !important; }
   .review-item-date { color: #94a3b8 !important; }
   .review-item-body { color: #475569 !important; }
+
+  /* ── Admin books & equipment — row text ── */
+  .book-title-admin  { color: #0f172a !important; }
+  .book-author-admin { color: #475569 !important; }
+
+  /* Book name cell — the strong tag inside the eq-name-copy div */
+  .eq-name-copy strong { color: #0f172a !important; }
+  .eq-name-copy span   { color: #64748b !important; }
+
+  /* General table strong/bold text in admin panels */
+  .panel table td strong { color: #0f172a !important; }
+  .panel table td        { color: #334155 !important; }
+
+  /* ISBN / date sub-text under book titles in admin */
+  .book-isbn-admin { color: #64748b !important; }
 }

@@ -50,6 +50,9 @@
 
         <form method="POST" action="/auth/register" id="registerForm">
 
+          <!-- Honeypot -->
+          <input type="text" name="website" style="display:none;position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
           <!-- Full Name -->
           <div class="field-group">
             <div class="field-label">

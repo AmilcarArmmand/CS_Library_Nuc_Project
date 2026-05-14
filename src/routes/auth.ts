@@ -440,6 +440,13 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
   });
 
   try {
+
+    // Honeypot — bots fill hidden fields, humans don't
+    if (String(req.body.website ?? '').trim()) {
+      // Silently redirect as if success so bots don't know they were caught
+      return res.redirect('/web-dashboard');
+    }
+
     const name      = String(req.body.name      ?? '').trim();
     const email     = normalizeEmail(String(req.body.email     ?? ''));
     const studentId = normalizeStudentId(String(req.body.studentId ?? ''));
@@ -449,6 +456,12 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     if (!name || !email || !studentId || !password) {
       return renderError('All fields are required.');
     }
+
+    // Only allow SCSU email addresses
+    if (!email.endsWith('@southernct.edu')) {
+      return renderError('Registration is only available to SCSU students and faculty. Please use your @southernct.edu email address.');
+    }
+
     if (!isValidStudentId(studentId)) {
       return renderError('Student ID must be 5–16 alphanumeric characters.');
     }
