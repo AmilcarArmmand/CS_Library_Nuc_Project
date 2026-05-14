@@ -61,7 +61,10 @@ echo "Node path: $NODE_PATH"
 # Create the systemd service file
 echo "▶ Creating systemd service..."
 
-sudo tee "$SERVICE_FILE" > /dev/null << SERVICEEOF
+# Write service file to tmp first, then move into place
+TMP_SERVICE="/tmp/cslibrary.service"
+
+cat > "$TMP_SERVICE" << SERVICEEOF
 [Unit]
 Description=CS Library Web Server
 Documentation=https://github.com/AmilcarArmmand/CS_Library_Nuc_Project
@@ -81,6 +84,9 @@ SyslogIdentifier=cslibrary
 [Install]
 WantedBy=multi-user.target
 SERVICEEOF
+
+sudo mv "$TMP_SERVICE" "$SERVICE_FILE"
+echo "Service file written to $SERVICE_FILE"
 
 echo "Service file written to $SERVICE_FILE"
 
