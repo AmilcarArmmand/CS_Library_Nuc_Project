@@ -508,4 +508,101 @@
   .pop-cta p { color: #475569 !important; }
   .pop-cta p strong { color: #0f172a !important; }
   .pop-empty { color: #64748b !important; }
+
+  /* ── Auth pages — left panel ── */
+  .left-panel {
+    background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 50%, #1d4ed8 100%) !important;
+  }
+  /* left panel text stays white since it's on a blue background — no override needed */
+
+  /* ── Auth pages — right panel & form ── */
+  .right-panel {
+    background: #f8fafc !important;
+  }
+  .form-box h1        { color: #0f172a !important; }
+  .subtitle           { color: #475569 !important; }
+  .form-top-link      { color: #2563eb !important; }
+  .form-top-link:hover { color: #1d4ed8 !important; }
+
+  /* Field labels and icons */
+  .field-label        { color: #475569 !important; }
+  .field-label .icon  { color: #64748b !important; }
+  .field-label span   { color: #475569 !important; }
+
+  /* Inputs */
+  .field-group input {
+    background: #ffffff !important;
+    border-color: rgba(148, 163, 184, 0.5) !important;
+    color: #0f172a !important;
+  }
+  .field-group input::placeholder { color: rgba(71, 85, 105, 0.5) !important; }
+  .field-group input:focus {
+    border-color: rgba(37, 99, 235, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  }
+
+  /* Submit button */
+  .btn-primary {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+  }
+  .btn-primary:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af) !important; }
+
+  /* Auth tabs */
+  .auth-tabs { border-color: rgba(148, 163, 184, 0.3) !important; }
+  .tab-btn   { color: #64748b !important; }
+  .tab-btn:hover { color: #0f172a !important; background: rgba(0,0,0,0.04) !important; }
+  .tab-btn.active {
+    background: #ffffff !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1) !important;
+  }
+
+  /* Links */
+  .inline-link { color: #2563eb !important; }
+  .inline-link:hover { color: #1d4ed8 !important; }
+  .back-link { color: #2563eb !important; }
+  .back-link:hover { color: #1d4ed8 !important; }
+  .links-row { color: #64748b !important; }
+  .links-row span { color: #64748b !important; }
+
+  /* Error / status messages */
+  .error-msg  { background: rgba(239,68,68,0.08) !important; color: #dc2626 !important; border-color: rgba(239,68,68,0.2) !important; }
+  .status-msg { background: rgba(34,197,94,0.08) !important; color: #15803d !important; border-color: rgba(34,197,94,0.2) !important; }
+
+  /* Field actions row */
+  .field-actions { border-top-color: rgba(148, 163, 184, 0.2) !important; }
+
+  /* Clock / timestamp on login page */
+  .login-time { color: #94a3b8 !important; }
+  .login-time svg { color: #94a3b8 !important; }
+
+  /* Separator line */
+  .separator-line { border-color: rgba(148, 163, 184, 0.3) !important; }
+  .separator-line span { color: #94a3b8 !important; background: #f8fafc !important; }
+
+  /* Outlook / Microsoft button */
+  .btn-outlook {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+  }
+  .btn-outlook:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(148, 163, 184, 0.6) !important;
+  }
+
+  /* Google button */
+  .btn-google {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: rgba(148, 163, 184, 0.4) !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+  }
+  .btn-google:hover {
+    background: #f1f5f9 !important;
+    border-color: rgba(148, 163, 184, 0.6) !important;
+  }
 }
