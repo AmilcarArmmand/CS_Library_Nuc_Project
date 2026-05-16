@@ -74,7 +74,7 @@ CS Library provides two interfaces over a shared PostgreSQL database:
 └─────────────────────────────┘
 ```
 
-The Pi never connects to the database directly. All data flows through the `/api/kiosk` REST API endpoints, authenticated with a shared `KIOSK_API_KEY`.
+The Pi never connects to the server and database directly. All data flows through the `/api/kiosk` REST API endpoints, authenticated with a shared `KIOSK_API_KEY`.
 
 ---
 
@@ -219,7 +219,7 @@ KIOSK_PORT=8081
 npm run build && npm start
 ```
 
-The kiosk UI is accessible at `http://localhost:8081`. On the Pi, configure Chromium to open this URL on boot in kiosk mode:
+The kiosk UI is accessible at `http://localhost:8080`. On the Pi, configure Chromium to open this URL on boot in kiosk mode:
 
 ```bash
 # Add to /etc/xdg/lxsession/LXDE-pi/autostart
@@ -235,7 +235,7 @@ The kiosk UI is accessible at `http://localhost:8081`. On the Pi, configure Chro
 ```bash
 ssh user@scsu-server
 cd /opt/app
-git clone -b reconstruction https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git CS_Library_Nuc_Project
+git clone https://github.com/AmilcarArmmand/CS_Library_Nuc_Project.git CS_Library_Nuc_Project
 cp CS_Library_Nuc_Project/.env.example .env
 mkdir -p kiosk
 cp CS_Library_Nuc_Project/kiosk/.env.example kiosk/.env
@@ -249,7 +249,7 @@ nano kiosk/.env  # fill in kiosk values
 ```bash
 ssh user@your-server
 cd /opt/app
-BRANCH=reconstruction ./deploy-scsu.sh
+./deploy-scsu.sh
 ```
 
 ### Useful commands
@@ -263,7 +263,7 @@ tail -f kiosk.log        # live kiosk logs
 
 ---
 
-## Admin Access
+## Assign Admin Access
 
 Promote any registered user to admin:
 
